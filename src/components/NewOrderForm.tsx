@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Order, OrderItem } from "@/types/order";
 import { toast } from "sonner";
+import { useCustomers } from "@/hooks/useCustomers";
 
 interface NewOrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "number" | "createdAt">) => void;
