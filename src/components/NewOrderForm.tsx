@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { Order, OrderItem } from "@/types/order";
 import { toast } from "sonner";
 import { useCustomers } from "@/hooks/useCustomers";
+import { useProducts } from "@/hooks/useProducts";
 
 interface NewOrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "number" | "createdAt">) => void;
@@ -15,11 +16,12 @@ interface NewOrderFormProps {
 }
 
 function createEmptyItem(): OrderItem {
-  return { id: crypto.randomUUID(), quantity: 1, product: "", additionalPrice: 0, unitPrice: 0, total: 0 };
+  return { id: crypto.randomUUID(), productCode: "", quantity: 1, product: "", additionalPrice: 0, unitPrice: 0, total: 0 };
 }
 
 export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
   const { data: customers = [] } = useCustomers();
+  const { data: products = [] } = useProducts();
   const [customerCode, setCustomerCode] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [address, setAddress] = useState("");
@@ -52,6 +54,26 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
         return updated;
       })
     );
+  };
+
+  const handleProductCodeSearch = (itemId: string, code: string) => {
+    const codeNum = parseInt(code);
+    if (isNaN(codeNum)) return;
+    const product = products.find((p) => p.code === codeNum);
+    if (product) {
+      setItems((prev) =>
+        prev.map((item) => {
+          if (item.id !== itemId) return item;
+          const price = Number(product.price);
+          const updated = { ...item, productCode: code, product: product.name, unitPrice: price };
+          updated.total = updated.quantity * updated.unitPrice + updated.additionalPrice;
+          return updated;
+        })
+      );
+      toast.success(`${product.name} - R$ ${Number(product.price).toFixed(2)}`);
+    } else if (code.trim()) {
+      toast.error("Produto não encontrado");
+    }
   };
 
   const subtotal = items.reduce((sum, i) => sum + i.total, 0);
@@ -106,22 +128,22 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
             </Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="name">Nome</Label>
-            <Input id="name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Nome do cliente" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="phone">Telefone</Label>
-            <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(00) 00000-0000" />
-          </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="address">Endereço</Label>
-            <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Endereço de entrega" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="cnpj">CNPJ</Label>
-            <Input id="cnpj" value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="Opcional" />
-          </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="name">Nome</Label>
+              <Input id="name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Nome do cliente" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="phone">Telefone</Label>
+              <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(00) 00000-0000" />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="address">Endereço</Label>
+              <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Endereço de entrega" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cnpj">CNPJ</Label>
+              <Input id="cnpj" value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="Opcional" />
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -129,64 +151,86 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle>Itens do Pedido</CardTitle>
+          <p className="text-xs text-muted-foreground">Digite o código do produto e pressione Enter para preencher automaticamente</p>
         </CardHeader>
         <CardContent className="space-y-3">
-          {items.map((item, idx) => (
-            <div key={item.id} className="grid grid-cols-12 gap-2 items-end bg-secondary/40 rounded-lg p-3">
-              <div className="col-span-1 space-y-1.5">
-                <Label className="text-xs">Qtd</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={item.quantity}
-                  onChange={(e) => updateItem(item.id, "quantity", parseInt(e.target.value) || 1)}
-                  className="text-center"
-                />
+          {items.map((item) => (
+            <div key={item.id} className="bg-secondary/40 rounded-lg p-3 space-y-2">
+              <div className="grid grid-cols-12 gap-2 items-end">
+                <div className="col-span-2 space-y-1.5">
+                  <Label className="text-xs">Código</Label>
+                  <Input
+                    value={item.productCode}
+                    onChange={(e) => updateItem(item.id, "productCode", e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleProductCodeSearch(item.id, item.productCode); } }}
+                    onBlur={() => handleProductCodeSearch(item.id, item.productCode)}
+                    placeholder="Cód."
+                    className="text-center"
+                  />
+                </div>
+                <div className="col-span-4 space-y-1.5">
+                  <Label className="text-xs">Produto</Label>
+                  <Input
+                    value={item.product}
+                    onChange={(e) => updateItem(item.id, "product", e.target.value)}
+                    placeholder="Nome do produto"
+                    readOnly={!!item.productCode}
+                    className={item.productCode ? "bg-muted" : ""}
+                  />
+                </div>
+                <div className="col-span-1 space-y-1.5">
+                  <Label className="text-xs">Qtd</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={item.quantity}
+                    onChange={(e) => updateItem(item.id, "quantity", parseInt(e.target.value) || 1)}
+                    className="text-center"
+                  />
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <Label className="text-xs">Valor</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    value={item.unitPrice || ""}
+                    onChange={(e) => updateItem(item.id, "unitPrice", parseFloat(e.target.value) || 0)}
+                    readOnly={!!item.productCode}
+                    className={item.productCode ? "bg-muted" : ""}
+                  />
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <Label className="text-xs">Total</Label>
+                  <p className="h-10 flex items-center text-sm font-bold text-primary">R$ {item.total.toFixed(2)}</p>
+                </div>
+                <div className="col-span-1 flex justify-end">
+                  {items.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={() => setItems((p) => p.filter((i) => i.id !== item.id))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
-              <div className="col-span-5 space-y-1.5">
-                <Label className="text-xs">Produto</Label>
-                <Input
-                  value={item.product}
-                  onChange={(e) => updateItem(item.id, "product", e.target.value)}
-                  placeholder="Nome do produto"
-                />
-              </div>
-              <div className="col-span-2 space-y-1.5">
-                <Label className="text-xs">Valor (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  value={item.unitPrice || ""}
-                  onChange={(e) => updateItem(item.id, "unitPrice", parseFloat(e.target.value) || 0)}
-                />
-              </div>
-              <div className="col-span-2 space-y-1.5">
-                <Label className="text-xs">Adicional</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  value={item.additionalPrice || ""}
-                  onChange={(e) => updateItem(item.id, "additionalPrice", parseFloat(e.target.value) || 0)}
-                />
-              </div>
-              <div className="col-span-1 space-y-1.5">
-                <Label className="text-xs">Total</Label>
-                <p className="h-10 flex items-center text-sm font-medium">R$ {item.total.toFixed(2)}</p>
-              </div>
-              <div className="col-span-1 flex justify-end">
-                {items.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                    onClick={() => setItems((p) => p.filter((i) => i.id !== item.id))}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
+              <div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Adicional (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    value={item.additionalPrice || ""}
+                    onChange={(e) => updateItem(item.id, "additionalPrice", parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                    className="w-32"
+                  />
+                </div>
               </div>
             </div>
           ))}
