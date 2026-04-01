@@ -1,15 +1,16 @@
 import { useState } from "react";
-import { Plus, Search, UtensilsCrossed } from "lucide-react";
+import { Plus, Search, UtensilsCrossed, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrderCard } from "@/components/OrderCard";
 import { OrderDetail } from "@/components/OrderDetail";
 import { NewOrderForm } from "@/components/NewOrderForm";
+import { CustomersPage } from "@/components/CustomersPage";
 import { useOrders } from "@/hooks/useOrders";
 import type { Order } from "@/types/order";
 
-type View = "list" | "new" | "detail";
+type View = "list" | "new" | "detail" | "customers";
 
 const Index = () => {
   const { orders, addOrder, updateStatus, deleteOrder } = useOrders();
