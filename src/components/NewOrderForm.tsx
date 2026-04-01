@@ -21,6 +21,7 @@ function createEmptyItem(): OrderItem {
 
 export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
   const { data: customers = [] } = useCustomers();
+  const { data: products = [] } = useProducts();
   const [customerCode, setCustomerCode] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [address, setAddress] = useState("");
