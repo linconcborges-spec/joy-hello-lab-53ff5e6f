@@ -95,9 +95,14 @@ const Index = () => {
               <p className="text-xs text-muted-foreground">Gerenciador de Pedidos</p>
             </div>
           </div>
-          <Button onClick={() => setView("new")} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Novo Pedido
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setView("customers")} className="gap-1.5">
+              <Users className="h-4 w-4" /> Clientes
+            </Button>
+            <Button onClick={() => setView("new")} className="gap-1.5">
+              <Plus className="h-4 w-4" /> Novo Pedido
+            </Button>
+          </div>
         </div>
 
         {/* Stats */}
