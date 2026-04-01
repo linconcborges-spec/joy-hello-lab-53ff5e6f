@@ -16,7 +16,7 @@ interface NewOrderFormProps {
 }
 
 function createEmptyItem(): OrderItem {
-  return { id: crypto.randomUUID(), quantity: 1, product: "", additionalPrice: 0, unitPrice: 0, total: 0 };
+  return { id: crypto.randomUUID(), productCode: "", quantity: 1, product: "", additionalPrice: 0, unitPrice: 0, total: 0 };
 }
 
 export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
