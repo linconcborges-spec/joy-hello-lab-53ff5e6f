@@ -89,7 +89,23 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
         <CardHeader className="pb-3">
           <CardTitle>Dados do Cliente</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <CardContent className="space-y-3">
+          <div className="flex gap-2 items-end">
+            <div className="space-y-1.5 flex-1">
+              <Label htmlFor="code">Código do Cliente</Label>
+              <Input
+                id="code"
+                value={customerCode}
+                onChange={(e) => setCustomerCode(e.target.value)}
+                placeholder="Ex: 1, 2, 3..."
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCustomerCodeSearch(); } }}
+              />
+            </div>
+            <Button type="button" variant="secondary" onClick={handleCustomerCodeSearch} className="gap-1.5">
+              <Search className="h-4 w-4" /> Buscar
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="name">Nome</Label>
             <Input id="name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Nome do cliente" />
