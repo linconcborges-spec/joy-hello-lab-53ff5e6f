@@ -122,6 +122,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
             <Label htmlFor="cnpj">CNPJ</Label>
             <Input id="cnpj" value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="Opcional" />
           </div>
+          </div>
         </CardContent>
       </Card>
 
