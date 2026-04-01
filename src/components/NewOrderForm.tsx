@@ -19,6 +19,8 @@ function createEmptyItem(): OrderItem {
 }
 
 export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
+  const { data: customers = [] } = useCustomers();
+  const [customerCode, setCustomerCode] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
@@ -27,6 +29,19 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [changeFor, setChangeFor] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<Order["paymentMethod"]>("cash");
+
+  const handleCustomerCodeSearch = () => {
+    const code = parseInt(customerCode);
+    const customer = customers.find((c) => c.code === code);
+    if (customer) {
+      setCustomerName(customer.name);
+      setAddress(customer.address);
+      setPhone(customer.phone);
+      toast.success(`Cliente "${customer.name}" encontrado!`);
+    } else {
+      toast.error("Cliente não encontrado com esse código");
+    }
+  };
 
   const updateItem = (id: string, field: keyof OrderItem, value: string | number) => {
     setItems((prev) =>
