@@ -56,6 +56,24 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
     );
   };
 
+  const handleProductCodeSearch = (itemId: string, code: string) => {
+    const codeNum = parseInt(code);
+    const product = products.find((p) => p.code === codeNum);
+    if (product) {
+      setItems((prev) =>
+        prev.map((item) => {
+          if (item.id !== itemId) return item;
+          const updated = { ...item, productCode: code, product: product.name, unitPrice: Number(product.price) };
+          updated.total = updated.quantity * updated.unitPrice + updated.additionalPrice;
+          return updated;
+        })
+      );
+      toast.success(`${product.name} - R$ ${Number(product.price).toFixed(2)}`);
+    } else if (code.trim()) {
+      toast.error("Produto não encontrado");
+    }
+  };
+
   const subtotal = items.reduce((sum, i) => sum + i.total, 0);
   const totalAmount = subtotal + deliveryFee;
 
