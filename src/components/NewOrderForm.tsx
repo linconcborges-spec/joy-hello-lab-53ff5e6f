@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { Plus, Trash2, ArrowLeft, Search } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import type { Order, OrderItem } from "@/types/order";
 import { toast } from "sonner";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useProducts } from "@/hooks/useProducts";
+import { useAddons } from "@/hooks/useAddons";
 
 interface NewOrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "number" | "createdAt">) => void;
@@ -16,12 +18,18 @@ interface NewOrderFormProps {
 }
 
 function createEmptyItem(): OrderItem {
-  return { id: crypto.randomUUID(), productCode: "", quantity: 1, product: "", additionalPrice: 0, unitPrice: 0, total: 0 };
+  return { id: crypto.randomUUID(), productCode: "", quantity: 1, product: "", addons: [], unitPrice: 0, total: 0 };
+}
+
+function calcTotal(item: OrderItem): number {
+  const addonsTotal = item.addons.reduce((s, a) => s + a.price, 0);
+  return item.quantity * item.unitPrice + addonsTotal;
 }
 
 export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
   const { data: customers = [] } = useCustomers();
   const { data: products = [] } = useProducts();
+  const { data: addons = [] } = useAddons();
   const [customerCode, setCustomerCode] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [address, setAddress] = useState("");
@@ -50,7 +58,22 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
       prev.map((item) => {
         if (item.id !== id) return item;
         const updated = { ...item, [field]: value };
-        updated.total = updated.quantity * updated.unitPrice + updated.additionalPrice;
+        updated.total = calcTotal(updated);
+        return updated;
+      })
+    );
+  };
+
+  const toggleAddon = (itemId: string, addon: { name: string; price: number }) => {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== itemId) return item;
+        const exists = item.addons.some((a) => a.name === addon.name);
+        const updated = {
+          ...item,
+          addons: exists ? item.addons.filter((a) => a.name !== addon.name) : [...item.addons, addon],
+        };
+        updated.total = calcTotal(updated);
         return updated;
       })
     );
@@ -66,7 +89,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
           if (item.id !== itemId) return item;
           const price = Number(product.price);
           const updated = { ...item, productCode: code, product: product.name, unitPrice: price };
-          updated.total = updated.quantity * updated.unitPrice + updated.additionalPrice;
+          updated.total = calcTotal(updated);
           return updated;
         })
       );
@@ -218,19 +241,33 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
                   )}
                 </div>
               </div>
-              <div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Adicional (R$)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    value={item.additionalPrice || ""}
-                    onChange={(e) => updateItem(item.id, "additionalPrice", parseFloat(e.target.value) || 0)}
-                    placeholder="0.00"
-                    className="w-32"
-                  />
+              {/* Addons selector */}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Adicionais</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {addons.map((addon) => {
+                    const selected = item.addons.some((a) => a.name === addon.name);
+                    return (
+                      <Badge
+                        key={addon.id}
+                        variant={selected ? "default" : "outline"}
+                        className="cursor-pointer select-none"
+                        onClick={() => toggleAddon(item.id, { name: addon.name, price: Number(addon.price) })}
+                      >
+                        {addon.name} +R${Number(addon.price).toFixed(2)}
+                        {selected && <X className="h-3 w-3 ml-1" />}
+                      </Badge>
+                    );
+                  })}
+                  {addons.length === 0 && (
+                    <span className="text-xs text-muted-foreground">Nenhum adicional cadastrado. Cadastre em Produtos → Adicionais.</span>
+                  )}
                 </div>
+                {item.addons.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Total adicionais: R$ {item.addons.reduce((s, a) => s + a.price, 0).toFixed(2)}
+                  </p>
+                )}
               </div>
             </div>
           ))}

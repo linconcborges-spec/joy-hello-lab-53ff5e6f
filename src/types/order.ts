@@ -1,9 +1,14 @@
+export interface OrderAddon {
+  name: string;
+  price: number;
+}
+
 export interface OrderItem {
   id: string;
   productCode: string;
   quantity: number;
   product: string;
-  additionalPrice: number;
+  addons: OrderAddon[];
   unitPrice: number;
   total: number;
 }

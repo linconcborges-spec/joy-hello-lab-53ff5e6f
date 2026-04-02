@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Search, UtensilsCrossed, Users } from "lucide-react";
+import { Plus, Search, UtensilsCrossed, Users, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,10 +7,11 @@ import { OrderCard } from "@/components/OrderCard";
 import { OrderDetail } from "@/components/OrderDetail";
 import { NewOrderForm } from "@/components/NewOrderForm";
 import { CustomersPage } from "@/components/CustomersPage";
+import { ProductsPage } from "@/components/ProductsPage";
 import { useOrders } from "@/hooks/useOrders";
 import type { Order } from "@/types/order";
 
-type View = "list" | "new" | "detail" | "customers";
+type View = "list" | "new" | "detail" | "customers" | "products";
 
 const Index = () => {
   const { orders, addOrder, updateStatus, deleteOrder } = useOrders();
@@ -63,6 +64,10 @@ const Index = () => {
     return <CustomersPage onBack={() => setView("list")} />;
   }
 
+  if (view === "products") {
+    return <ProductsPage onBack={() => setView("list")} />;
+  }
+
   if (view === "detail" && selectedOrder) {
     return (
       <div className="min-h-screen bg-background">
@@ -96,6 +101,9 @@ const Index = () => {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setView("products")} className="gap-1.5">
+              <Package className="h-4 w-4" /> Produtos
+            </Button>
             <Button variant="outline" onClick={() => setView("customers")} className="gap-1.5">
               <Users className="h-4 w-4" /> Clientes
             </Button>

@@ -83,8 +83,10 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete }: OrderDe
                     <div>
                       <span className="font-medium">{item.quantity}x</span>{" "}
                       <span>{item.product}</span>
-                      {item.additionalPrice > 0 && (
-                        <span className="text-muted-foreground ml-1">(+R$ {item.additionalPrice.toFixed(2)})</span>
+                      {item.addons && item.addons.length > 0 && (
+                        <span className="text-muted-foreground ml-1">
+                          (+{item.addons.map(a => a.name).join(", ")} R$ {item.addons.reduce((s, a) => s + a.price, 0).toFixed(2)})
+                        </span>
                       )}
                     </div>
                     <span className="font-medium">R$ {item.total.toFixed(2)}</span>

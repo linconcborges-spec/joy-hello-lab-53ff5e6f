@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      addons: {
+        Row: {
+          code: number
+          created_at: string
+          id: string
+          name: string
+          price: number
+        }
+        Insert: {
+          code?: number
+          created_at?: string
+          id?: string
+          name: string
+          price?: number
+        }
+        Update: {
+          code?: number
+          created_at?: string
+          id?: string
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string
