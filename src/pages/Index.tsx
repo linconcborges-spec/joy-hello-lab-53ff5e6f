@@ -101,6 +101,9 @@ const Index = () => {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setView("products")} className="gap-1.5">
+              <Package className="h-4 w-4" /> Produtos
+            </Button>
             <Button variant="outline" onClick={() => setView("customers")} className="gap-1.5">
               <Users className="h-4 w-4" /> Clientes
             </Button>

@@ -2,73 +2,73 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export interface Product {
+export interface Addon {
   id: string;
   code: number;
   name: string;
   price: number;
 }
 
-export function useProducts() {
+export function useAddons() {
   return useQuery({
-    queryKey: ["products"],
+    queryKey: ["addons"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("products")
+        .from("addons")
         .select("id, code, name, price")
         .order("code", { ascending: true });
       if (error) throw error;
-      return data as Product[];
+      return data as Addon[];
     },
   });
 }
 
-export function useAddProduct() {
+export function useAddAddon() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (product: { code: number; name: string; price: number }) => {
+    mutationFn: async (addon: { name: string; price: number }) => {
       const { data, error } = await supabase
-        .from("products")
-        .insert(product)
+        .from("addons")
+        .insert(addon)
         .select("id, code, name, price")
         .single();
       if (error) throw error;
-      return data as Product;
+      return data as Addon;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Produto cadastrado!");
+      qc.invalidateQueries({ queryKey: ["addons"] });
+      toast.success("Adicional cadastrado!");
     },
-    onError: () => toast.error("Erro ao cadastrar produto"),
+    onError: () => toast.error("Erro ao cadastrar adicional"),
   });
 }
 
-export function useUpdateProduct() {
+export function useUpdateAddon() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string; name: string; price: number }) => {
-      const { error } = await supabase.from("products").update(data).eq("id", id);
+      const { error } = await supabase.from("addons").update(data).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Produto atualizado!");
+      qc.invalidateQueries({ queryKey: ["addons"] });
+      toast.success("Adicional atualizado!");
     },
-    onError: () => toast.error("Erro ao atualizar produto"),
+    onError: () => toast.error("Erro ao atualizar adicional"),
   });
 }
 
-export function useDeleteProduct() {
+export function useDeleteAddon() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("products").delete().eq("id", id);
+      const { error } = await supabase.from("addons").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
-      toast.success("Produto removido!");
+      qc.invalidateQueries({ queryKey: ["addons"] });
+      toast.success("Adicional removido!");
     },
-    onError: () => toast.error("Erro ao remover produto"),
+    onError: () => toast.error("Erro ao remover adicional"),
   });
 }
