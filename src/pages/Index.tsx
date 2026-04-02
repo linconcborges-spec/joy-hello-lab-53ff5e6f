@@ -11,7 +11,7 @@ import { ProductsPage } from "@/components/ProductsPage";
 import { useOrders } from "@/hooks/useOrders";
 import type { Order } from "@/types/order";
 
-type View = "list" | "new" | "detail" | "customers";
+type View = "list" | "new" | "detail" | "customers" | "products";
 
 const Index = () => {
   const { orders, addOrder, updateStatus, deleteOrder } = useOrders();
