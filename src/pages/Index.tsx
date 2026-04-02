@@ -64,6 +64,10 @@ const Index = () => {
     return <CustomersPage onBack={() => setView("list")} />;
   }
 
+  if (view === "products") {
+    return <ProductsPage onBack={() => setView("list")} />;
+  }
+
   if (view === "detail" && selectedOrder) {
     return (
       <div className="min-h-screen bg-background">
