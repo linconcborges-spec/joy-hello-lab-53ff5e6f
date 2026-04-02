@@ -7,6 +7,7 @@ import { OrderCard } from "@/components/OrderCard";
 import { OrderDetail } from "@/components/OrderDetail";
 import { NewOrderForm } from "@/components/NewOrderForm";
 import { CustomersPage } from "@/components/CustomersPage";
+import { ProductsPage } from "@/components/ProductsPage";
 import { useOrders } from "@/hooks/useOrders";
 import type { Order } from "@/types/order";
 
