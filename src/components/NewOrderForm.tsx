@@ -132,7 +132,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Dados aa do Cliente</CardTitle>
+          <CardTitle>Dados do Cliente</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex gap-2 items-end">
