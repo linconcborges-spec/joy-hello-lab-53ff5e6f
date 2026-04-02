@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Search, UtensilsCrossed, Users } from "lucide-react";
+import { Plus, Search, UtensilsCrossed, Users, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
