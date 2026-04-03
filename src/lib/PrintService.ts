@@ -28,7 +28,6 @@ export function printOrder(order: Order, settings: AppSettings) {
           }
           .container {
             padding: 5px;
-            padding-top: ${settings.printMarginTop || '0mm'};
           }
           .header {
             text-align: center;
@@ -116,6 +115,7 @@ export function printOrder(order: Order, settings: AppSettings) {
         </style>
       </head>
       <body>
+        <div style="height: ${settings.printMarginTop || '0mm'}; width: 100%;"></div>
         <div class="container">
           <div class="header">
             <div class="store-name">${settings.storeName}</div>
