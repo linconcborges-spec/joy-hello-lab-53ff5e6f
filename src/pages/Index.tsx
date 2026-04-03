@@ -25,7 +25,6 @@ const Index = () => {
   const [view, setView] = useState<View>("list");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
 
   // Enquanto carrega a sessão, mostra nada
   if (authLoading) {
@@ -49,8 +48,7 @@ const Index = () => {
       o.customerName.toLowerCase().includes(search.toLowerCase()) ||
       o.number.toString().includes(search) ||
       o.phone.includes(search);
-    const matchStatus = statusFilter === "all" || o.status === statusFilter;
-    return matchSearch && matchStatus;
+    return matchSearch;
   });
 
   const todayCount = orders.filter(
@@ -120,80 +118,70 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-5">
+      <div className="max-w-[1400px] mx-auto p-4 sm:p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-              <UtensilsCrossed className="h-5 w-5 text-primary-foreground" />
+            <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+              <UtensilsCrossed className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">{settings.storeName}</h1>
-              <p className="text-xs text-muted-foreground">
-                Olá, {user.name} · <button onClick={logout} className="underline hover:text-foreground transition-colors">Sair</button>
+              <h1 className="text-2xl font-black text-foreground tracking-tight">{settings.storeName}</h1>
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
+                Painel de Controle · {user.name} · <button onClick={logout} className="text-primary hover:underline transition-colors">Sair</button>
               </p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {isAdmin && (
-              <Button variant="outline" size="icon" onClick={() => setView("settings")} title="Configurações">
+              <Button variant="outline" size="icon" onClick={() => setView("settings")} title="Configurações" className="rounded-xl">
                 <Settings className="h-4 w-4" />
               </Button>
             )}
-            <Button variant="outline" onClick={() => setView("products")} className="gap-1.5">
+            <Button variant="outline" onClick={() => setView("products")} className="gap-1.5 rounded-xl">
               <Package className="h-4 w-4" /> Produtos
             </Button>
-            <Button variant="outline" onClick={() => setView("customers")} className="gap-1.5">
+            <Button variant="outline" onClick={() => setView("customers")} className="gap-1.5 rounded-xl">
               <Users className="h-4 w-4" /> Clientes
             </Button>
-            <Button onClick={() => setView("new")} className="gap-1.5">
+            <Button onClick={() => setView("new")} className="gap-1.5 rounded-xl shadow-lg shadow-primary/20">
               <Plus className="h-4 w-4" /> Novo Pedido
             </Button>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-card border rounded-xl p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Pedidos hoje</p>
-            <p className="text-2xl font-bold text-foreground mt-1">{todayCount}</p>
+        {/* Info Bar */}
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-4 bg-secondary/30 p-4 rounded-3xl border border-border/40 backdrop-blur-sm">
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col">
+              <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Pedidos hoje</span>
+              <span className="text-xl font-black text-foreground">{todayCount}</span>
+            </div>
+            <div className="h-8 w-px bg-border/60 hidden sm:block" />
+            <div className="flex flex-col">
+              <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Faturamento total hoje</span>
+              <span className="text-xl font-black text-primary">R$ {todayRevenue.toFixed(2)}</span>
+            </div>
           </div>
-          <div className="bg-card border rounded-xl p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Faturamento hoje</p>
-            <p className="text-2xl font-bold text-primary mt-1">R$ {todayRevenue.toFixed(2)}</p>
-          </div>
-        </div>
 
-        {/* Search & Filter */}
-        <div className="space-y-3">
-          <div className="relative">
+          <div className="relative w-full lg:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por nome, número ou telefone..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+              className="pl-9 bg-background/50 border-border/40 rounded-2xl h-11"
             />
           </div>
-          <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-            <TabsList className="w-full justify-start">
-              <TabsTrigger value="all">Todos</TabsTrigger>
-              <TabsTrigger value="pending">Pendentes</TabsTrigger>
-              <TabsTrigger value="preparing">Preparando</TabsTrigger>
-              <TabsTrigger value="delivering">Entrega</TabsTrigger>
-              <TabsTrigger value="completed">Concluídos</TabsTrigger>
-              <TabsTrigger value="cancelled" className="text-destructive">Cancelados</TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
 
-        {/* Orders */}
-        <div className="space-y-3">
+        {/* Orders Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
           {filtered.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground">
-              <UtensilsCrossed className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p className="font-medium">Nenhum pedido encontrado</p>
-              <p className="text-sm mt-1">Crie um novo pedido para começar</p>
+            <div className="col-span-full text-center py-24 text-muted-foreground bg-secondary/10 rounded-3xl border border-dashed border-border/60">
+              <UtensilsCrossed className="h-16 w-16 mx-auto mb-4 opacity-10" />
+              <p className="text-lg font-bold">Nenhum pedido encontrado</p>
+              <p className="text-sm">Crie um novo pedido ou ajuste sua busca</p>
             </div>
           ) : (
             filtered.map((order) => (
