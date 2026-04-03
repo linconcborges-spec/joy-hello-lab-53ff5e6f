@@ -1,7 +1,10 @@
 import { useState } from "react";
-import { Plus, Trash2, ArrowLeft, Search, X } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Search, X, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,12 +21,177 @@ interface NewOrderFormProps {
 }
 
 function createEmptyItem(): OrderItem {
-  return { id: crypto.randomUUID(), productCode: "", quantity: 1, product: "", addons: [], unitPrice: 0, total: 0 };
+  return { id: crypto.randomUUID(), productCode: "", quantity: 1, product: "", addons: [], unitPrice: 0, total: 0, categoryId: null };
 }
 
 function calcTotal(item: OrderItem): number {
   const addonsTotal = item.addons.reduce((s, a) => s + a.price, 0);
   return item.quantity * item.unitPrice + addonsTotal;
+}
+
+function OrderItemRow({ 
+  item, 
+  items, 
+  setItems, 
+  updateItem, 
+  handleProductCodeSearch, 
+  addons, 
+  toggleAddon, 
+  products 
+}: any) {
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleCustomProductName = (name: string) => {
+    updateItem(item.id, "product", name);
+  };
+
+  return (
+    <div className="bg-secondary/40 rounded-lg p-3 space-y-2">
+      <div className="grid grid-cols-[5rem_5rem_1fr_6rem_6rem_auto] gap-2 items-end">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Código</Label>
+          <Input
+            value={item.productCode}
+            onChange={(e) => updateItem(item.id, "productCode", e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleProductCodeSearch(item.id, item.productCode); } }}
+            onBlur={() => handleProductCodeSearch(item.id, item.productCode)}
+            placeholder="Cód."
+            className="text-center px-1"
+            maxLength={5}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Qtd</Label>
+          <Input
+            type="number"
+            min={1}
+            value={item.quantity}
+            onChange={(e) => updateItem(item.id, "quantity", parseInt(e.target.value) || 1)}
+            className="text-center px-1"
+          />
+        </div>
+        <div className="space-y-1.5 flex flex-col">
+          <Label className="text-xs">Produto</Label>
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className={cn(
+                  "w-full justify-between h-9 px-3 font-normal overflow-hidden",
+                  !item.product && "text-muted-foreground",
+                  item.productCode ? "bg-muted" : ""
+                )}
+                disabled={!!item.productCode}
+              >
+                <span className="truncate">{item.product || "Busque ou digite..."}</span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-0" align="start">
+              <Command shouldFilter={false}>
+                <CommandInput 
+                  placeholder="Buscar produto por nome..." 
+                  value={searchQuery}
+                  onValueChange={(v) => {
+                    setSearchQuery(v);
+                    handleCustomProductName(v);
+                  }}
+                />
+                <CommandList>
+                  <CommandEmpty>Aperte enter para usar "{searchQuery}"</CommandEmpty>
+                  <CommandGroup>
+                    {products.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map((produto: any) => (
+                      <CommandItem
+                        key={produto.code}
+                        value={produto.name}
+                        onSelect={() => {
+                          updateItem(item.id, "productCode", produto.code.toString());
+                          updateItem(item.id, "product", produto.name);
+                          updateItem(item.id, "unitPrice", Number(produto.price));
+                          updateItem(item.id, "categoryId", produto.category_id || null);
+                          setSearchQuery("");
+                          setOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4 shrink-0",
+                            item.product === produto.name ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {produto.name} - R$ {Number(produto.price).toFixed(2)}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Valor</Label>
+          <Input
+            type="number"
+            step="0.01"
+            min={0}
+            value={item.unitPrice || ""}
+            onChange={(e) => updateItem(item.id, "unitPrice", parseFloat(e.target.value) || 0)}
+            readOnly={!!item.productCode}
+            className={item.productCode ? "bg-muted" : ""}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Total</Label>
+          <p className="h-10 flex items-center text-sm font-bold text-primary">R$ {item.total.toFixed(2)}</p>
+        </div>
+        <div className="flex justify-end w-8">
+          {items.length > 1 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-destructive hover:text-destructive"
+              onClick={() => setItems((p: any) => p.filter((i: any) => i.id !== item.id))}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs">Adicionais</Label>
+        <div className="flex flex-wrap gap-1.5">
+          {addons
+            .filter((addon: any) => !addon.category_id || addon.category_id === item.categoryId)
+            .map((addon: any) => {
+            const selected = item.addons.some((a: any) => a.name === addon.name);
+            return (
+              <Badge
+                key={addon.id}
+                variant={selected ? "default" : "outline"}
+                className="cursor-pointer select-none"
+                onClick={() => toggleAddon(item.id, { name: addon.name, price: Number(addon.price) })}
+              >
+                {addon.name} +R${Number(addon.price).toFixed(2)}
+                {selected && <X className="h-3 w-3 ml-1" />}
+              </Badge>
+            );
+          })}
+          {addons.filter((addon: any) => !addon.category_id || addon.category_id === item.categoryId).length === 0 && (
+            <span className="text-xs text-muted-foreground">Nenhum adicional disponível para este item.</span>
+          )}
+        </div>
+        {item.addons.length > 0 && (
+          <p className="text-xs text-muted-foreground">
+            Total adicionais: R$ {item.addons.reduce((s: any, a: any) => s + a.price, 0).toFixed(2)}
+          </p>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
@@ -88,7 +256,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
         prev.map((item) => {
           if (item.id !== itemId) return item;
           const price = Number(product.price);
-          const updated = { ...item, productCode: code, product: product.name, unitPrice: price };
+          const updated = { ...item, productCode: code, product: product.name, unitPrice: price, categoryId: product.category_id || null };
           updated.total = calcTotal(updated);
           return updated;
         })
@@ -178,98 +346,17 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
         </CardHeader>
         <CardContent className="space-y-3">
           {items.map((item) => (
-            <div key={item.id} className="bg-secondary/40 rounded-lg p-3 space-y-2">
-              <div className="grid grid-cols-12 gap-2 items-end">
-                <div className="col-span-2 space-y-1.5">
-                  <Label className="text-xs">Código</Label>
-                  <Input
-                    value={item.productCode}
-                    onChange={(e) => updateItem(item.id, "productCode", e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleProductCodeSearch(item.id, item.productCode); } }}
-                    onBlur={() => handleProductCodeSearch(item.id, item.productCode)}
-                    placeholder="Cód."
-                    className="text-center"
-                  />
-                </div>
-                <div className="col-span-1 space-y-1.5">
-                  <Label className="text-xs">Qtd</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={item.quantity}
-                    onChange={(e) => updateItem(item.id, "quantity", parseInt(e.target.value) || 1)}
-                    className="text-center"
-                  />
-                </div>
-                <div className="col-span-4 space-y-1.5">
-                  <Label className="text-xs">Produto</Label>
-                  <Input
-                    value={item.product}
-                    onChange={(e) => updateItem(item.id, "product", e.target.value)}
-                    placeholder="Nome do produto"
-                    readOnly={!!item.productCode}
-                    className={item.productCode ? "bg-muted" : ""}
-                  />
-                </div>
-                <div className="col-span-2 space-y-1.5">
-                  <Label className="text-xs">Valor</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    value={item.unitPrice || ""}
-                    onChange={(e) => updateItem(item.id, "unitPrice", parseFloat(e.target.value) || 0)}
-                    readOnly={!!item.productCode}
-                    className={item.productCode ? "bg-muted" : ""}
-                  />
-                </div>
-                <div className="col-span-2 space-y-1.5">
-                  <Label className="text-xs">Total</Label>
-                  <p className="h-10 flex items-center text-sm font-bold text-primary">R$ {item.total.toFixed(2)}</p>
-                </div>
-                <div className="col-span-1 flex justify-end">
-                  {items.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => setItems((p) => p.filter((i) => i.id !== item.id))}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-              {/* Addons selector */}
-              <div className="space-y-1.5">
-                <Label className="text-xs">Adicionais</Label>
-                <div className="flex flex-wrap gap-1.5">
-                  {addons.map((addon) => {
-                    const selected = item.addons.some((a) => a.name === addon.name);
-                    return (
-                      <Badge
-                        key={addon.id}
-                        variant={selected ? "default" : "outline"}
-                        className="cursor-pointer select-none"
-                        onClick={() => toggleAddon(item.id, { name: addon.name, price: Number(addon.price) })}
-                      >
-                        {addon.name} +R${Number(addon.price).toFixed(2)}
-                        {selected && <X className="h-3 w-3 ml-1" />}
-                      </Badge>
-                    );
-                  })}
-                  {addons.length === 0 && (
-                    <span className="text-xs text-muted-foreground">Nenhum adicional cadastrado. Cadastre em Produtos → Adicionais.</span>
-                  )}
-                </div>
-                {item.addons.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Total adicionais: R$ {item.addons.reduce((s, a) => s + a.price, 0).toFixed(2)}
-                  </p>
-                )}
-              </div>
-            </div>
+            <OrderItemRow
+              key={item.id}
+              item={item}
+              items={items}
+              setItems={setItems}
+              updateItem={updateItem}
+              handleProductCodeSearch={handleProductCodeSearch}
+              addons={addons}
+              toggleAddon={toggleAddon}
+              products={products}
+            />
           ))}
           <Button type="button" variant="outline" size="sm" onClick={() => setItems((p) => [...p, createEmptyItem()])} className="gap-1.5">
             <Plus className="h-4 w-4" /> Adicionar item

@@ -7,6 +7,7 @@ export interface Addon {
   code: number;
   name: string;
   price: number;
+  category_id?: string | null;
 }
 
 export function useAddons() {
@@ -15,7 +16,7 @@ export function useAddons() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("addons")
-        .select("id, code, name, price")
+        .select("id, code, name, price, category_id")
         .order("code", { ascending: true });
       if (error) throw error;
       return data as Addon[];
@@ -26,11 +27,11 @@ export function useAddons() {
 export function useAddAddon() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (addon: { name: string; price: number }) => {
+    mutationFn: async (addon: { name: string; price: number; category_id?: string | null }) => {
       const { data, error } = await supabase
         .from("addons")
         .insert(addon)
-        .select("id, code, name, price")
+        .select("id, code, name, price, category_id")
         .single();
       if (error) throw error;
       return data as Addon;
@@ -46,7 +47,7 @@ export function useAddAddon() {
 export function useUpdateAddon() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; name: string; price: number }) => {
+    mutationFn: async ({ id, ...data }: { id: string; name: string; price: number; category_id?: string | null }) => {
       const { error } = await supabase.from("addons").update(data).eq("id", id);
       if (error) throw error;
     },

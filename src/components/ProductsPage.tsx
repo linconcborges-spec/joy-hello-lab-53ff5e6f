@@ -6,8 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useProducts, useAddProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
 import { useAddons, useAddAddon, useUpdateAddon, useDeleteAddon } from "@/hooks/useAddons";
+import { useCategories, useAddCategory, useDeleteCategory } from "@/hooks/useCategories";
 
 interface ProductsPageProps {
   onBack: () => void;
@@ -16,35 +18,54 @@ interface ProductsPageProps {
 export function ProductsPage({ onBack }: ProductsPageProps) {
   const { data: products = [], isLoading: loadingProducts } = useProducts();
   const { data: addons = [], isLoading: loadingAddons } = useAddons();
+  const { data: categories = [], isLoading: loadingCategories } = useCategories();
+  
   const addProduct = useAddProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
+  
   const addAddon = useAddAddon();
   const updateAddon = useUpdateAddon();
   const deleteAddon = useDeleteAddon();
 
+  const addCategory = useAddCategory();
+  const deleteCategory = useDeleteCategory();
+
   const [search, setSearch] = useState("");
   const [addonSearch, setAddonSearch] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
+
+  // New category form
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [showNewCategory, setShowNewCategory] = useState(false);
 
   // New product form
   const [newCode, setNewCode] = useState("");
   const [newName, setNewName] = useState("");
   const [newPrice, setNewPrice] = useState("");
+  const [newProductCategoryId, setNewProductCategoryId] = useState("none");
   const [showNewProduct, setShowNewProduct] = useState(false);
 
   // New addon form
   const [newAddonName, setNewAddonName] = useState("");
   const [newAddonPrice, setNewAddonPrice] = useState("");
+  const [newAddonCategoryId, setNewAddonCategoryId] = useState("none");
   const [showNewAddon, setShowNewAddon] = useState(false);
 
   // Edit states
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
+  const [editProductCategoryId, setEditProductCategoryId] = useState("none");
 
   const [editingAddonId, setEditingAddonId] = useState<string | null>(null);
   const [editAddonName, setEditAddonName] = useState("");
   const [editAddonPrice, setEditAddonPrice] = useState("");
+  const [editAddonCategoryId, setEditAddonCategoryId] = useState("none");
+
+  const filteredCategories = categories.filter((c) =>
+    !categorySearch || c.name.toLowerCase().includes(categorySearch.toLowerCase())
+  );
 
   const filteredProducts = products.filter(
     (p) =>
@@ -60,17 +81,35 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
       a.code.toString().includes(addonSearch)
   );
 
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim()) return;
+    addCategory.mutate(
+      { name: newCategoryName.trim() },
+      { onSuccess: () => { setNewCategoryName(""); setShowNewCategory(false); } }
+    );
+  };
+
   const handleAddProduct = () => {
     if (!newName.trim() || !newCode.trim()) return;
     addProduct.mutate(
-      { code: parseInt(newCode), name: newName.trim(), price: parseFloat(newPrice) || 0 },
-      { onSuccess: () => { setNewCode(""); setNewName(""); setNewPrice(""); setShowNewProduct(false); } }
+      { 
+        code: parseInt(newCode), 
+        name: newName.trim(), 
+        price: parseFloat(newPrice) || 0,
+        category_id: newProductCategoryId === "none" ? null : newProductCategoryId
+      },
+      { onSuccess: () => { setNewCode(""); setNewName(""); setNewPrice(""); setNewProductCategoryId("none"); setShowNewProduct(false); } }
     );
   };
 
   const handleSaveProduct = (id: string) => {
     updateProduct.mutate(
-      { id, name: editName, price: parseFloat(editPrice) || 0 },
+      { 
+        id, 
+        name: editName, 
+        price: parseFloat(editPrice) || 0,
+        category_id: editProductCategoryId === "none" ? null : editProductCategoryId
+      },
       { onSuccess: () => setEditingProductId(null) }
     );
   };
@@ -78,17 +117,32 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   const handleAddAddon = () => {
     if (!newAddonName.trim()) return;
     addAddon.mutate(
-      { name: newAddonName.trim(), price: parseFloat(newAddonPrice) || 0 },
-      { onSuccess: () => { setNewAddonName(""); setNewAddonPrice(""); setShowNewAddon(false); } }
+      { 
+        name: newAddonName.trim(), 
+        price: parseFloat(newAddonPrice) || 0,
+        category_id: newAddonCategoryId === "none" ? null : newAddonCategoryId
+      },
+      { onSuccess: () => { setNewAddonName(""); setNewAddonPrice(""); setNewAddonCategoryId("none"); setShowNewAddon(false); } }
     );
   };
 
   const handleSaveAddon = (id: string) => {
     updateAddon.mutate(
-      { id, name: editAddonName, price: parseFloat(editAddonPrice) || 0 },
+      { 
+        id, 
+        name: editAddonName, 
+        price: parseFloat(editAddonPrice) || 0,
+        category_id: editAddonCategoryId === "none" ? null : editAddonCategoryId
+      },
       { onSuccess: () => setEditingAddonId(null) }
     );
   };
+
+  const getCategoryName = (id: string | null | undefined) => {
+    if (!id) return "Sem categoria";
+    const cat = categories.find(c => c.id === id);
+    return cat ? cat.name : "Desconhecida";
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -101,6 +155,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
           <TabsList>
             <TabsTrigger value="products">Produtos ({products.length})</TabsTrigger>
             <TabsTrigger value="addons">Adicionais ({addons.length})</TabsTrigger>
+            <TabsTrigger value="categories">Categorias ({categories.length})</TabsTrigger>
           </TabsList>
 
           {/* PRODUCTS TAB */}
@@ -118,14 +173,26 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
             {showNewProduct && (
               <Card>
                 <CardHeader className="pb-3"><CardTitle className="text-base">Novo Produto</CardTitle></CardHeader>
-                <CardContent className="flex gap-2 items-end">
+                <CardContent className="flex flex-wrap gap-2 items-end">
                   <div className="space-y-1.5">
                     <Label className="text-xs">Código</Label>
                     <Input value={newCode} onChange={(e) => setNewCode(e.target.value)} placeholder="Cód." className="w-20" />
                   </div>
-                  <div className="space-y-1.5 flex-1">
+                  <div className="space-y-1.5 flex-1 min-w-[200px]">
                     <Label className="text-xs">Nome</Label>
                     <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nome do produto" />
+                  </div>
+                  <div className="space-y-1.5 w-32">
+                    <Label className="text-xs">Categoria</Label>
+                    <Select value={newProductCategoryId} onValueChange={setNewProductCategoryId}>
+                      <SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nenhuma</SelectItem>
+                        {categories.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Preço (R$)</Label>
@@ -137,15 +204,16 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
             )}
 
             <Card>
-              <CardContent className="p-0">
+              <CardContent className="p-0 overflow-x-auto">
                 {loadingProducts ? (
                   <p className="text-center py-8 text-muted-foreground">Carregando...</p>
                 ) : (
-                  <Table>
+                  <Table className="min-w-[600px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-20">Código</TableHead>
                         <TableHead>Nome</TableHead>
+                        <TableHead>Categoria</TableHead>
                         <TableHead className="w-28">Preço</TableHead>
                         <TableHead className="w-24">Ações</TableHead>
                       </TableRow>
@@ -159,6 +227,23 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                               <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-8" />
                             ) : (
                               p.name
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingProductId === p.id ? (
+                              <Select value={editProductCategoryId} onValueChange={setEditProductCategoryId}>
+                                <SelectTrigger className="h-8"><SelectValue placeholder="Nenhuma" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">Nenhuma</SelectItem>
+                                  {categories.map((c) => (
+                                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <span className="text-xs px-2 py-1 bg-secondary rounded-full">
+                                {getCategoryName(p.category_id)}
+                              </span>
                             )}
                           </TableCell>
                           <TableCell>
@@ -181,7 +266,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                 </>
                               ) : (
                                 <>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingProductId(p.id); setEditName(p.name); setEditPrice(String(p.price)); }}>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingProductId(p.id); setEditName(p.name); setEditPrice(String(p.price)); setEditProductCategoryId(p.category_id || "none"); }}>
                                     <Pencil className="h-3.5 w-3.5" />
                                   </Button>
                                   <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteProduct.mutate(p.id)}>
@@ -194,7 +279,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                         </TableRow>
                       ))}
                       {filteredProducts.length === 0 && (
-                        <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Nenhum produto encontrado</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum produto encontrado</TableCell></TableRow>
                       )}
                     </TableBody>
                   </Table>
@@ -218,10 +303,22 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
             {showNewAddon && (
               <Card>
                 <CardHeader className="pb-3"><CardTitle className="text-base">Novo Adicional</CardTitle></CardHeader>
-                <CardContent className="flex gap-2 items-end">
-                  <div className="space-y-1.5 flex-1">
+                <CardContent className="flex flex-wrap gap-2 items-end">
+                  <div className="space-y-1.5 flex-1 min-w-[150px]">
                     <Label className="text-xs">Nome</Label>
                     <Input value={newAddonName} onChange={(e) => setNewAddonName(e.target.value)} placeholder="Ex: Bacon, Ovo..." />
+                  </div>
+                  <div className="space-y-1.5 w-32">
+                    <Label className="text-xs">Categoria</Label>
+                    <Select value={newAddonCategoryId} onValueChange={setNewAddonCategoryId}>
+                      <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Todas / Geral</SelectItem>
+                        {categories.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Preço (R$)</Label>
@@ -233,15 +330,16 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
             )}
 
             <Card>
-              <CardContent className="p-0">
+              <CardContent className="p-0 overflow-x-auto">
                 {loadingAddons ? (
                   <p className="text-center py-8 text-muted-foreground">Carregando...</p>
                 ) : (
-                  <Table>
+                  <Table className="min-w-[600px]">
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-20">Código</TableHead>
                         <TableHead>Nome</TableHead>
+                        <TableHead>Categoria</TableHead>
                         <TableHead className="w-28">Preço</TableHead>
                         <TableHead className="w-24">Ações</TableHead>
                       </TableRow>
@@ -255,6 +353,23 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                               <Input value={editAddonName} onChange={(e) => setEditAddonName(e.target.value)} className="h-8" />
                             ) : (
                               a.name
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {editingAddonId === a.id ? (
+                              <Select value={editAddonCategoryId} onValueChange={setEditAddonCategoryId}>
+                                <SelectTrigger className="h-8"><SelectValue placeholder="Todas" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">Todas / Geral</SelectItem>
+                                  {categories.map((c) => (
+                                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <span className="text-xs px-2 py-1 bg-secondary rounded-full">
+                                {!a.category_id ? "Todas / Geral" : getCategoryName(a.category_id)}
+                              </span>
                             )}
                           </TableCell>
                           <TableCell>
@@ -277,7 +392,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                 </>
                               ) : (
                                 <>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingAddonId(a.id); setEditAddonName(a.name); setEditAddonPrice(String(a.price)); }}>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingAddonId(a.id); setEditAddonName(a.name); setEditAddonPrice(String(a.price)); setEditAddonCategoryId(a.category_id || "none"); }}>
                                     <Pencil className="h-3.5 w-3.5" />
                                   </Button>
                                   <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteAddon.mutate(a.id)}>
@@ -290,7 +405,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                         </TableRow>
                       ))}
                       {filteredAddons.length === 0 && (
-                        <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Nenhum adicional cadastrado</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum adicional cadastrado</TableCell></TableRow>
                       )}
                     </TableBody>
                   </Table>
@@ -298,6 +413,65 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* CATEGORIES TAB */}
+          <TabsContent value="categories" className="space-y-4">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Buscar categoria..." value={categorySearch} onChange={(e) => setCategorySearch(e.target.value)} className="pl-9" />
+              </div>
+              <Button onClick={() => setShowNewCategory(!showNewCategory)} className="gap-1.5">
+                <Plus className="h-4 w-4" /> Nova
+              </Button>
+            </div>
+
+            {showNewCategory && (
+              <Card>
+                <CardHeader className="pb-3"><CardTitle className="text-base">Nova Categoria</CardTitle></CardHeader>
+                <CardContent className="flex gap-2 items-end">
+                  <div className="space-y-1.5 flex-1">
+                    <Label className="text-xs">Nome da Categoria</Label>
+                    <Input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Ex: Bebidas, Lanches..." />
+                  </div>
+                  <Button onClick={handleAddCategory} disabled={addCategory.isPending}>Salvar</Button>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card>
+              <CardContent className="p-0">
+                {loadingCategories ? (
+                  <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nome</TableHead>
+                        <TableHead className="w-24">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCategories.map((c) => (
+                        <TableRow key={c.id}>
+                          <TableCell>{c.name}</TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteCategory.mutate(c.id)}>
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {filteredCategories.length === 0 && (
+                        <TableRow><TableCell colSpan={2} className="text-center text-muted-foreground py-8">Nenhuma categoria encontrada</TableCell></TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
         </Tabs>
       </div>
     </div>

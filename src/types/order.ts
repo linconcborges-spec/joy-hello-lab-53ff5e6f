@@ -11,6 +11,7 @@ export interface OrderItem {
   addons: OrderAddon[];
   unitPrice: number;
   total: number;
+  categoryId?: string | null;
 }
 
 export interface Order {
