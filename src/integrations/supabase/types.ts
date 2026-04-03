@@ -97,6 +97,166 @@ export type Database = {
         }
         Relationships: []
       }
+      employees: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          password: string
+          role: string
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          password: string
+          role?: string
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          password?: string
+          role?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      order_addons: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          order_item_id: string | null
+          price: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          order_item_id?: string | null
+          price: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          order_item_id?: string | null
+          price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_addons_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          observation: string | null
+          order_id: string | null
+          product_id: string | null
+          product_name: string
+          quantity: number
+          total: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          observation?: string | null
+          order_id?: string | null
+          product_id?: string | null
+          product_name: string
+          quantity: number
+          total: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          observation?: string | null
+          order_id?: string | null
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          total?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          address: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          change_for: number | null
+          created_at: string | null
+          customer_name: string | null
+          delivery_fee: number | null
+          id: string
+          is_printed: boolean | null
+          last_edited_at: string | null
+          last_edited_by: string | null
+          number: number
+          payment_method: string
+          phone: string | null
+          status: string
+          total_amount: number
+        }
+        Insert: {
+          address?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          change_for?: number | null
+          created_at?: string | null
+          customer_name?: string | null
+          delivery_fee?: number | null
+          id?: string
+          is_printed?: boolean | null
+          last_edited_at?: string | null
+          last_edited_by?: string | null
+          number: number
+          payment_method: string
+          phone?: string | null
+          status?: string
+          total_amount: number
+        }
+        Update: {
+          address?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          change_for?: number | null
+          created_at?: string | null
+          customer_name?: string | null
+          delivery_fee?: number | null
+          id?: string
+          is_printed?: boolean | null
+          last_edited_at?: string | null
+          last_edited_by?: string | null
+          number?: number
+          payment_method?: string
+          phone?: string | null
+          status?: string
+          total_amount?: number
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category_id: string | null
@@ -130,139 +290,6 @@ export type Database = {
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      orders: {
-        Row: {
-          id: string
-          number: number
-          customer_name: string | null
-          address: string | null
-          phone: string | null
-          delivery_fee: number
-          total_amount: number
-          change_for: number
-          status: string
-          payment_method: string
-          is_printed: boolean
-          created_at: string
-          cancelled_by: string | null
-          cancelled_at: string | null
-          last_edited_by: string | null
-          last_edited_at: string | null
-        }
-        Insert: {
-          id?: string
-          number: number
-          customer_name?: string | null
-          address?: string | null
-          phone?: string | null
-          delivery_fee?: number
-          total_amount: number
-          change_for?: number
-          status?: string
-          payment_method: string
-          is_printed?: boolean
-          created_at?: string
-          cancelled_by?: string | null
-          cancelled_at?: string | null
-          last_edited_by?: string | null
-          last_edited_at?: string | null
-        }
-        Update: {
-          id?: string
-          number?: number
-          customer_name?: string | null
-          address?: string | null
-          phone?: string | null
-          delivery_fee?: number
-          total_amount?: number
-          change_for?: number
-          status?: string
-          payment_method?: string
-          is_printed?: boolean
-          created_at?: string
-          cancelled_by?: string | null
-          cancelled_at?: string | null
-          last_edited_by?: string | null
-          last_edited_at?: string | null
-        }
-        Relationships: []
-      }
-      order_items: {
-        Row: {
-          id: string
-          order_id: string
-          product_id: string | null
-          product_name: string
-          quantity: number
-          unit_price: number
-          total: number
-          observation: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          order_id: string
-          product_id?: string | null
-          product_name: string
-          quantity: number
-          unit_price: number
-          total: number
-          observation?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          order_id?: string
-          product_id?: string | null
-          product_name?: string
-          quantity?: number
-          unit_price?: number
-          total?: number
-          observation?: string | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "order_items_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      order_addons: {
-        Row: {
-          id: string
-          order_item_id: string
-          name: string
-          price: number
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          order_item_id: string
-          name: string
-          price: number
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          order_item_id?: string
-          name?: string
-          price?: number
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "order_addons_order_item_id_fkey"
-            columns: ["order_item_id"]
-            isOneToOne: false
-            referencedRelation: "order_items"
-            referencedColumns: ["id"]
-          }
         ]
       }
     }
