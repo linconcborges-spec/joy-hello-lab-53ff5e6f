@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       addons: {
         Row: {
+          category_id: string | null
           code: number
           created_at: string
           id: string
@@ -23,6 +24,7 @@ export type Database = {
           price: number
         }
         Insert: {
+          category_id?: string | null
           code?: number
           created_at?: string
           id?: string
@@ -30,11 +32,38 @@ export type Database = {
           price?: number
         }
         Update: {
+          category_id?: string | null
           code?: number
           created_at?: string
           id?: string
           name?: string
           price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "addons_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
         }
         Relationships: []
       }
@@ -70,6 +99,7 @@ export type Database = {
       }
       products: {
         Row: {
+          category_id: string | null
           code: number
           created_at: string
           id: string
@@ -77,6 +107,7 @@ export type Database = {
           price: number
         }
         Insert: {
+          category_id?: string | null
           code: number
           created_at?: string
           id?: string
@@ -84,13 +115,22 @@ export type Database = {
           price?: number
         }
         Update: {
+          category_id?: string | null
           code?: number
           created_at?: string
           id?: string
           name?: string
           price?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
