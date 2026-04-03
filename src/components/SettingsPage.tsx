@@ -20,7 +20,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useEmployees, useAddEmployee, useUpdateEmployee, useDeleteEmployee } from "@/hooks/useEmployees";
 import { useSettings } from "@/hooks/useSettings";
+import { useOrders } from "@/hooks/useOrders";
+import { exportOrdersToCSV } from "@/lib/ExportService";
 import { toast } from "sonner";
+import { Download } from "lucide-react";
 
 interface SettingsPageProps {
   onBack: () => void;
@@ -28,6 +31,7 @@ interface SettingsPageProps {
 
 export function SettingsPage({ onBack }: SettingsPageProps) {
   const { data: employees = [], isLoading } = useEmployees();
+  const { data: orders = [] } = useOrders(); // Pega pedidos do ciclo atual
   const addEmployee = useAddEmployee();
   const updateEmployee = useUpdateEmployee();
   const deleteEmployee = useDeleteEmployee();
@@ -332,6 +336,31 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                 </TableBody>
               </Table>
             )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base text-primary">Backup e Manutenção</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-secondary/20 border border-border/40">
+              <div className="space-y-1">
+                <p className="text-sm font-bold">Resumo do Expediente (Backup)</p>
+                <p className="text-xs text-muted-foreground">Baixe um arquivo CSV com todos os pedidos do ciclo atual para backup local ou análise em Excel.</p>
+              </div>
+              <Button 
+                variant="outline" 
+                onClick={() => exportOrdersToCSV(orders)} 
+                disabled={orders.length === 0}
+                className="gap-2 shrink-0 border-primary/20 hover:bg-primary/5 h-11"
+              >
+                <Download className="h-4 w-4" /> Exportar Pedidos ({orders.length})
+              </Button>
+            </div>
+            
+            <p className="text-[10px] text-muted-foreground italic text-center">
+              Sistema preparado para integração futura com envio automático por e-mail.
+            </p>
           </CardContent>
         </Card>
       </div>

@@ -1,83 +1,205 @@
-import { useState, useEffect, useCallback } from "react";
-import type { Order } from "@/types/order";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import type { Order, OrderItem } from "@/types/order";
 
-const STORAGE_KEY = "imperio-orders";
-
-function loadOrders(): Order[] {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
+/**
+ * Retorna a data de início do ciclo atual (04:50 da madrugada)
+ */
+function getCycleStart() {
+  const now = new Date();
+  const cycleStart = new Date(now);
+  cycleStart.setHours(4, 50, 0, 0);
+  
+  // Se ainda não deu 04:50 hoje, o ciclo começou ontem às 04:50
+  if (now < cycleStart) {
+    cycleStart.setDate(cycleStart.getDate() - 1);
   }
+  return cycleStart.toISOString();
 }
 
-function saveOrders(orders: Order[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+export function useOrders(startDate?: string) {
+  const start = startDate || getCycleStart();
+  
+  return useQuery({
+    queryKey: ["orders", start],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select(`
+          *,
+          items:order_items(
+            *,
+            addons:order_addons(*)
+          )
+        `)
+        .gte("created_at", start)
+        .order("number", { ascending: false });
+
+      if (error) throw error;
+      
+      // Mapear snake_case do banco para camelCase do TS
+      return (data as any[]).map(order => ({
+        id: order.id,
+        number: order.number,
+        customerName: order.customer_name,
+        address: order.address,
+        phone: order.phone,
+        deliveryFee: Number(order.delivery_fee),
+        totalAmount: Number(order.total_amount),
+        changeFor: Number(order.change_for),
+        status: order.status,
+        paymentMethod: order.payment_method,
+        isPrinted: order.is_printed,
+        createdAt: order.created_at,
+        cancelledBy: order.cancelled_by,
+        cancelledAt: order.cancelled_at,
+        lastEditedBy: order.last_edited_by,
+        lastEditedAt: order.last_edited_at,
+        items: (order.items || []).map((item: any) => ({
+          id: item.id,
+          product: item.product_name,
+          quantity: item.quantity,
+          unitPrice: Number(item.unit_price),
+          total: Number(item.total),
+          observation: item.observation,
+          addons: (item.addons || []).map((addon: any) => ({
+            name: addon.name,
+            price: Number(addon.price)
+          }))
+        }))
+      })) as Order[];
+    },
+  });
 }
 
-export function useOrders() {
-  const [orders, setOrders] = useState<Order[]>(loadOrders);
+export function useAddOrder() {
+  const qc = useQueryClient();
 
-  useEffect(() => {
-    saveOrders(orders);
-  }, [orders]);
+  return useMutation({
+    mutationFn: async (orderData: Omit<Order, "id" | "number" | "createdAt">) => {
+      const cycleStart = getCycleStart();
+      
+      // 1. Buscar o próximo número do pedido para o ciclo atual
+      const { data: lastOrder } = await supabase
+        .from("orders")
+        .select("number")
+        .gte("created_at", cycleStart)
+        .order("number", { ascending: false })
+        .limit(1)
+        .single();
 
-  const addOrder = useCallback((order: Omit<Order, "id" | "number" | "createdAt">) => {
-    setOrders((prev) => {
-      const nextNumber = prev.length > 0 ? Math.max(...prev.map((o) => o.number)) + 1 : 1;
-      const newOrder: Order = {
-        ...order,
-        id: crypto.randomUUID(),
-        number: nextNumber,
-        createdAt: new Date().toISOString(),
-      };
-      return [newOrder, ...prev];
-    });
-  }, []);
+      const nextNumber = lastOrder ? lastOrder.number + 1 : 1;
 
-  const updateStatus = useCallback((id: string, status: Order["status"], employeeName?: string) => {
-    setOrders((prev) =>
-      prev.map((o) => {
-        if (o.id !== id) return o;
-        const updated = { ...o, status };
-        if (employeeName) {
-          updated.lastEditedBy = employeeName;
-          updated.lastEditedAt = new Date().toISOString();
+      // 2. Inserir o cabeçalho do pedido
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          number: nextNumber,
+          customer_name: orderData.customerName,
+          address: orderData.address,
+          phone: orderData.phone,
+          delivery_fee: orderData.deliveryFee,
+          total_amount: orderData.totalAmount,
+          change_for: orderData.changeFor,
+          status: orderData.status,
+          payment_method: orderData.paymentMethod,
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // 3. Inserir itens e seus adicionais
+      for (const item of orderData.items) {
+        const { data: insertedItem, error: itemError } = await supabase
+          .from("order_items")
+          .insert({
+            order_id: order.id,
+            product_name: item.product,
+            quantity: item.quantity,
+            unit_price: item.unitPrice,
+            total: item.total,
+            observation: item.observation,
+          })
+          .select()
+          .single();
+
+        if (itemError) throw itemError;
+
+        if (item.addons && item.addons.length > 0) {
+          const addonsToInsert = item.addons.map(addon => ({
+            order_item_id: insertedItem.id,
+            name: addon.name,
+            price: addon.price,
+          }));
+
+          const { error: addonsError } = await supabase
+            .from("order_addons")
+            .insert(addonsToInsert);
+          
+          if (addonsError) throw addonsError;
         }
-        return updated;
-      })
-    );
-  }, []);
+      }
 
-  const cancelOrder = useCallback((id: string, employeeName: string) => {
-    setOrders((prev) =>
-      prev.map((o) => {
-        if (o.id !== id) return o;
-        return {
-          ...o,
-          status: "cancelled" as const,
-          cancelledBy: employeeName,
-          cancelledAt: new Date().toISOString(),
-        };
-      })
-    );
-  }, []);
+      return order;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      toast.success("Pedido criado com sucesso!");
+    },
+    onError: (error) => {
+      console.error(error);
+      toast.error("Erro ao criar pedido");
+    }
+  });
+}
 
-  const deleteOrder = useCallback((id: string) => {
-    setOrders((prev) => {
-      const order = prev.find((o) => o.id === id);
-      // Só permite excluir pedidos pendentes
-      if (order && order.status !== "pending") return prev;
-      return prev.filter((o) => o.id !== id);
-    });
-  }, []);
+export function useUpdateOrderStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status, employeeName }: { id: string; status: Order["status"]; employeeName?: string }) => {
+      const updateData: any = { status };
+      if (employeeName) {
+        updateData.last_edited_by = employeeName;
+        updateData.last_edited_at = new Date().toISOString();
+      }
+      
+      const { error } = await supabase.from("orders").update(updateData).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
+  });
+}
 
-  const markAsPrinted = useCallback((id: string) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, isPrinted: true } : o))
-    );
-  }, []);
+export function useCancelOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, employeeName }: { id: string; employeeName: string }) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          status: "cancelled",
+          cancelled_by: employeeName,
+          cancelled_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      toast.success("Pedido cancelado");
+    },
+  });
+}
 
-  return { orders, addOrder, updateStatus, cancelOrder, deleteOrder, markAsPrinted };
+export function useMarkAsPrinted() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("orders").update({ is_printed: true }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
+  });
 }
