@@ -1,44 +1,21 @@
 
 
-## Plano: Página de Produtos + Sistema de Adicionais
+## Plano: Aplicar migration de Categorias
+
+O código já está sincronizado do GitHub (hooks, componentes, etc.), mas a migration SQL ainda não foi executada no banco de dados.
 
 ### O que será feito
 
-**1. Página de Gestão de Produtos**
-- Criar uma página similar à de Clientes, listando todos os produtos cadastrados (código, nome, preço)
-- Permitir editar nome e preço de qualquer produto
-- Permitir cadastrar novos produtos e excluir existentes
-- Busca por nome ou código
-- Botão "Produtos" no header da página principal
+Aplicar a migration `20260403000000_categories_init.sql` que:
 
-**2. Tabela de Adicionais no banco de dados**
-- Criar tabela `addons` com campos: `id`, `code` (SERIAL), `name`, `price`, `created_at`
-- RLS público (mesmo padrão das outras tabelas)
-
-**3. Página/seção de Gestão de Adicionais**
-- CRUD completo para adicionais (cadastrar, editar, excluir) — dentro da própria página de Produtos ou como aba separada
-- Botão "+" para cadastro rápido
-
-**4. Seletor de Adicionais no formulário de pedido**
-- Substituir o campo numérico "Adicional (R$)" por um menu de seleção múltipla
-- Ao selecionar adicionais, o preço é somado automaticamente ao item
-- Exibir os adicionais selecionados com seus valores
+1. **Cria a tabela `categories`** com campos `id` (UUID), `name` (TEXT UNIQUE) e `created_at`
+2. **Adiciona coluna `category_id`** na tabela `products` (FK para `categories`)
+3. **Adiciona coluna `category_id`** na tabela `addons` (FK para `categories`)
+4. **Configura RLS** com acesso público (mesmo padrão das outras tabelas)
 
 ### Detalhes técnicos
 
-| Componente | Arquivo |
-|---|---|
-| Migration SQL | Nova migration: tabela `addons` |
-| Hook de produtos (CRUD) | Atualizar `src/hooks/useProducts.ts` com mutations |
-| Hook de adicionais | Novo `src/hooks/useAddons.ts` |
-| Página de produtos | Novo `src/components/ProductsPage.tsx` |
-| Formulário de pedido | Editar `src/components/NewOrderForm.tsx` |
-| Tipo OrderItem | Editar `src/types/order.ts` — adicionar `addons: { name, price }[]` |
-| Navegação | Editar `src/pages/Index.tsx` — adicionar view "products" |
+A migration será executada via ferramenta de migração do banco de dados com o SQL exato que já está no arquivo `supabase/migrations/20260403000000_categories_init.sql`.
 
-### Fluxo do usuário
-
-1. Header → botão **"Produtos"** → lista todos os produtos com busca, edição inline de preço/nome
-2. Na mesma página, seção **"Adicionais"** com listagem e botão "+" para cadastrar
-3. No formulário de pedido, cada item terá um dropdown multi-select para escolher adicionais cadastrados, com preço somado automaticamente
+Nenhuma alteração de código é necessária — os arquivos já vieram atualizados do GitHub (`useCategories.ts`, `ProductsPage.tsx`, `NewOrderForm.tsx`, etc.).
 
