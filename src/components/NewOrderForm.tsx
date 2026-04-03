@@ -68,9 +68,16 @@ function OrderItemRow({
         <div className="space-y-1.5">
           <Label className="text-xs">Código</Label>
           <Input
+            id={`code-${item.id}`}
             value={item.productCode}
             onChange={(e) => updateItem(item.id, "productCode", e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleProductCodeSearch(item.id, item.productCode); } }}
+            onKeyDown={(e) => { 
+              if (e.key === "Enter") { 
+                e.preventDefault(); 
+                handleProductCodeSearch(item.id, item.productCode); 
+                document.getElementById(`qty-${item.id}`)?.focus();
+              } 
+            }}
             onBlur={() => handleProductCodeSearch(item.id, item.productCode)}
             placeholder="Cód."
             className="text-center px-1"
@@ -80,10 +87,21 @@ function OrderItemRow({
         <div className="space-y-1.5">
           <Label className="text-xs">Qtd</Label>
           <Input
+            id={`qty-${item.id}`}
             type="number"
             min={1}
             value={item.quantity}
             onChange={(e) => updateItem(item.id, "quantity", parseInt(e.target.value) || 1)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (item.productCode || item.product) {
+                  document.getElementById(`price-${item.id}`)?.focus();
+                } else {
+                  document.getElementById(`combobox-${item.id}`)?.focus();
+                }
+              }
+            }}
             className="text-center px-1"
           />
         </div>
@@ -92,6 +110,7 @@ function OrderItemRow({
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button
+                id={`combobox-${item.id}`}
                 variant="outline"
                 role="combobox"
                 aria-expanded={open}
@@ -130,6 +149,9 @@ function OrderItemRow({
                           updateItem(item.id, "categoryId", produto.category_id || null);
                           setSearchQuery("");
                           setOpen(false);
+                          setTimeout(() => {
+                            document.getElementById(`price-${item.id}`)?.focus();
+                          }, 50);
                         }}
                       >
                         <Check
@@ -150,13 +172,20 @@ function OrderItemRow({
         <div className="space-y-1.5">
           <Label className="text-xs">Valor</Label>
           <Input
+            id={`price-${item.id}`}
             type="number"
             step="0.01"
             min={0}
             value={item.unitPrice || ""}
             onChange={(e) => updateItem(item.id, "unitPrice", parseFloat(e.target.value) || 0)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                document.getElementById("btn-add-item")?.click();
+              }
+            }}
             readOnly={!!item.productCode}
-            className={item.productCode ? "bg-muted" : ""}
+            className={item.productCode ? "bg-muted cursor-default focus-visible:ring-1" : "focus-visible:ring-1"}
           />
         </div>
         <div className="space-y-1.5">
@@ -396,7 +425,20 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
               products={products}
             />
           ))}
-          <Button type="button" variant="outline" size="sm" onClick={() => setItems((p) => [...p, createEmptyItem()])} className="gap-1.5">
+          <Button 
+            id="btn-add-item" 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              const newItem = createEmptyItem();
+              setItems((p) => [...p, newItem]);
+              setTimeout(() => {
+                document.getElementById(`code-${newItem.id}`)?.focus();
+              }, 50);
+            }} 
+            className="gap-1.5"
+          >
             <Plus className="h-4 w-4" /> Adicionar item
           </Button>
         </CardContent>
