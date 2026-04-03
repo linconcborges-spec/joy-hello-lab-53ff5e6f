@@ -18,13 +18,13 @@ function getCycleStart() {
   return cycleStart.toISOString();
 }
 
-export function useOrders(startDate?: string) {
+export function useOrders(startDate?: string, endDate?: string) {
   const start = startDate || getCycleStart();
   
   return useQuery({
-    queryKey: ["orders", start],
+    queryKey: ["orders", start, endDate],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("orders")
         .select(`
           *,
@@ -33,8 +33,13 @@ export function useOrders(startDate?: string) {
             addons:order_addons(*)
           )
         `)
-        .gte("created_at", start)
-        .order("number", { ascending: false });
+        .gte("created_at", start);
+
+      if (endDate) {
+        query = query.lte("created_at", endDate);
+      }
+
+      const { data, error } = await query.order("created_at", { ascending: false });
 
       if (error) throw error;
       
