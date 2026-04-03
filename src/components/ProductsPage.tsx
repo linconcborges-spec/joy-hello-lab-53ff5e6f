@@ -7,9 +7,46 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useProducts, useAddProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
 import { useAddons, useAddAddon, useUpdateAddon, useDeleteAddon } from "@/hooks/useAddons";
 import { useCategories, useAddCategory, useDeleteCategory } from "@/hooks/useCategories";
+
+function ConfirmDelete({ onConfirm, title }: { onConfirm: () => void; title: string }) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Essa ação removerá o(a) {title.toLowerCase()} permanentemente do banco de dados. Deseja continuar?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Sim, excluir
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
 
 interface ProductsPageProps {
   onBack: () => void;
@@ -269,9 +306,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingProductId(p.id); setEditName(p.name); setEditPrice(String(p.price)); setEditProductCategoryId(p.category_id || "none"); }}>
                                     <Pencil className="h-3.5 w-3.5" />
                                   </Button>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteProduct.mutate(p.id)}>
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
+                                  <ConfirmDelete onConfirm={() => deleteProduct.mutate(p.id)} title="produto" />
                                 </>
                               )}
                             </div>
@@ -395,9 +430,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingAddonId(a.id); setEditAddonName(a.name); setEditAddonPrice(String(a.price)); setEditAddonCategoryId(a.category_id || "none"); }}>
                                     <Pencil className="h-3.5 w-3.5" />
                                   </Button>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteAddon.mutate(a.id)}>
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
+                                  <ConfirmDelete onConfirm={() => deleteAddon.mutate(a.id)} title="adicional" />
                                 </>
                               )}
                             </div>
@@ -456,9 +489,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                         <TableRow key={c.id}>
                           <TableCell>{c.name}</TableCell>
                           <TableCell>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteCategory.mutate(c.id)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                            <ConfirmDelete onConfirm={() => deleteCategory.mutate(c.id)} title="categoria" />
                           </TableCell>
                         </TableRow>
                       ))}
