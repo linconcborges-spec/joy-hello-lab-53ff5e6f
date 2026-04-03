@@ -369,7 +369,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
               <Input id="cnpj" value={cnpj} onChange={(e) => setCnpj(formatCpfCnpj(e.target.value))} placeholder="Opcional" />
             </div>
             <div className="flex items-end pt-1">
-              <Button type="button" onClick={handleQuickRegister} disabled={addCustomer.isPending || !customerName.trim()} variant="outline" className="gap-1.5 w-full border-primary/50 hover:bg-primary/10">
+              <Button type="button" onClick={handleQuickRegister} disabled={addCustomer.isPending || !customerName.trim()} className="gap-1.5 w-full bg-orange-500 text-white hover:bg-orange-600 border-none transition-colors">
                 <Plus className="h-4 w-4" /> Salvar Cliente no Sistema
               </Button>
             </div>
