@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { 
   Plus, Search, UtensilsCrossed, Users, Package, Settings, 
-  Eye, EyeOff, Calendar as CalendarIcon, Printer, FileText, ChevronDown
+  Eye, EyeOff, Calendar as CalendarIcon, Printer, FileText, ChevronDown,
+  LayoutDashboard, Truck, CheckCircle2, Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 
 import { 
   ContextMenu, 
@@ -57,6 +59,15 @@ const Index = () => {
     to: new Date()
   });
 
+  // Responsive state
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   // Auto-hide revenue after 10 seconds
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -70,7 +81,6 @@ const Index = () => {
     };
   }, [showRevenue]);
 
-  // Novos Hooks do Supabase
   const { data: orders = [], isLoading: ordersLoading } = useOrders(
     isHistoryView ? dateRange.from?.toISOString() : undefined,
     isHistoryView ? dateRange.to?.toISOString() : undefined
@@ -81,26 +91,21 @@ const Index = () => {
   const cancelOrderMutation = useCancelOrder();
   const markAsPrintedMutation = useMarkAsPrinted();
 
-  // Enquanto carrega a sessão ou pedidos, mostra loading
   if (authLoading || (ordersLoading && !isHistoryView)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted-foreground font-medium">Sincronizando com o banco de dados...</p>
+          <div className="h-14 w-14 border-4 border-primary border-t-transparent rounded-full animate-spin shadow-2xl shadow-primary/20" />
+          <p className="text-muted-foreground font-black uppercase tracking-widest text-[10px]">Sincronizando Banco de Dados</p>
         </div>
       </div>
     );
   }
 
-  // Sem login -> tela de login
-  if (!user) {
-    return <LoginPage />;
-  }
+  if (!user) return <LoginPage />;
 
   const selectedOrder = orders.find((o) => o.id === selectedOrderId);
 
-  // Filtros de Busca
   const filtered = orders.filter((o) => {
     const matchSearch =
       !search ||
@@ -114,7 +119,6 @@ const Index = () => {
       if (showCancelled) return matchSearch && (isCompleted || isCancelled);
       return matchSearch && isCompleted;
     }
-    
     return matchSearch;
   });
 
@@ -124,72 +128,24 @@ const Index = () => {
     .filter((o) => o.status !== "cancelled")
     .reduce((sum, o) => sum + o.totalAmount, 0);
 
-  if (view === "new") {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-3xl mx-auto p-4 sm:p-6">
-          <NewOrderForm
-            onSubmit={(order) => {
-              addOrderMutation.mutate(order, {
-                onSuccess: () => setView("list")
-              });
-            }}
-            onCancel={() => setView("list")}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  if (view === "customers") {
-    return <CustomersPage onBack={() => setView("list")} />;
-  }
-
-  if (view === "products") {
-    return <ProductsPage onBack={() => setView("list")} />;
-  }
-
-  if (view === "settings") {
-    return <SettingsPage onBack={() => setView("list")} />;
-  }
-
-  if (view === "detail" && selectedOrder) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="max-w-3xl mx-auto p-4 sm:p-6">
-          <OrderDetail
-            order={selectedOrder}
-            onBack={() => setView("list")}
-            onUpdateStatus={(id, status) => updateStatusMutation.mutate({ id, status, employeeName: user.name })}
-            onDelete={(id) => setView("list")}
-            onCancel={(id) => cancelOrderMutation.mutate({ id, employeeName: user.name })}
-            onPrint={(order) => {
-              printOrder(order, settings);
-              markAsPrintedMutation.mutate(order.id);
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  const KanbanColumn = ({ title, status, orders, colorClass }: { title: string; status: Order["status"]; orders: Order[]; colorClass: string; }) => {
+  const KanbanColumn = ({ title, status, orders, colorClass, compact = false }: { title: string; status: Order["status"]; orders: Order[]; colorClass: string; compact?: boolean }) => {
     const columnOrders = orders.filter(o => o.status === status);
     return (
-      <div className="flex flex-col h-[700px] min-w-[280px] bg-secondary/5 rounded-2xl border border-border/40 overflow-hidden">
-        <div className={`p-3 border-b border-border/40 flex items-center justify-between ${colorClass}`}>
-          <h2 className="text-sm font-black uppercase tracking-tighter flex items-center gap-2">
+      <div className={`flex flex-col ${compact ? 'h-full' : 'h-[700px] min-w-[300px]'} bg-card rounded-3xl border border-border/40 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300`}>
+        <div className={`p-4 border-b border-border/40 flex items-center justify-between ${colorClass} bg-opacity-5`}>
+          <h2 className="text-sm font-black uppercase tracking-tighter flex items-center gap-3">
+            <span className={`h-2 w-2 rounded-full ${colorClass.replace('bg-', 'bg-').split(' ')[0]}`} />
             {title}
-            <span className="bg-background/50 px-2 py-0.5 rounded-full text-[10px] font-bold">
+            <span className="bg-foreground/5 px-2 py-0.5 rounded-full text-[10px] font-black opacity-60">
               {columnOrders.length}
             </span>
           </h2>
         </div>
-        <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
           {columnOrders.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center opacity-20 py-10">
-              <Package className="h-8 w-8 mb-2" />
-              <p className="text-[10px] font-bold uppercase">Vazio</p>
+            <div className="h-full flex flex-col items-center justify-center opacity-10 py-10">
+              <Package className="h-10 w-10 mb-2" />
+              <p className="text-[10px] font-black uppercase tracking-tighter">Sem Pedidos</p>
             </div>
           ) : (
             columnOrders.map((order) => (
@@ -203,26 +159,26 @@ const Index = () => {
                     }}
                   />
                 </ContextMenuTrigger>
-                <ContextMenuContent className="w-56">
+                <ContextMenuContent className="w-56 rounded-xl shadow-xl border-border/60">
                   <ContextMenuLabel className="text-[10px] uppercase font-black opacity-50">Pedido #{order.number}</ContextMenuLabel>
                   <ContextMenuSeparator />
                   {order.status === "pending" && (
-                    <ContextMenuItem onClick={() => updateStatusMutation.mutate({ id: order.id, status: "preparing", employeeName: user.name })}>Mover para Produção</ContextMenuItem>
+                    <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "preparing", employeeName: user.name })}>Mover para Produção</ContextMenuItem>
                   )}
                   {order.status === "preparing" && (
-                    <ContextMenuItem onClick={() => updateStatusMutation.mutate({ id: order.id, status: "delivering", employeeName: user.name })}>Mover para Entrega</ContextMenuItem>
+                    <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "delivering", employeeName: user.name })}>Mover para Entrega</ContextMenuItem>
                   )}
                   {order.status === "delivering" && (
-                    <ContextMenuItem onClick={() => updateStatusMutation.mutate({ id: order.id, status: "completed", employeeName: user.name })}>Concluir Pedido</ContextMenuItem>
+                    <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "completed", employeeName: user.name })}>Concluir Pedido</ContextMenuItem>
                   )}
                   <ContextMenuSeparator />
-                  <ContextMenuLabel className="text-[10px] uppercase font-black opacity-50">Mudar para</ContextMenuLabel>
-                  <ContextMenuItem onClick={() => updateStatusMutation.mutate({ id: order.id, status: "pending", employeeName: user.name })}>Pendente</ContextMenuItem>
-                  <ContextMenuItem onClick={() => updateStatusMutation.mutate({ id: order.id, status: "preparing", employeeName: user.name })}>Em Produção</ContextMenuItem>
-                  <ContextMenuItem onClick={() => updateStatusMutation.mutate({ id: order.id, status: "delivering", employeeName: user.name })}>Em Entrega</ContextMenuItem>
-                  <ContextMenuItem onClick={() => updateStatusMutation.mutate({ id: order.id, status: "completed", employeeName: user.name })}>Concluído</ContextMenuItem>
+                  <ContextMenuLabel className="text-[10px] uppercase font-black opacity-50 px-3">Mudar Status</ContextMenuLabel>
+                  <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "pending", employeeName: user.name })}>Pendente</ContextMenuItem>
+                  <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "preparing", employeeName: user.name })}>Produção</ContextMenuItem>
+                  <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "delivering", employeeName: user.name })}>Entrega</ContextMenuItem>
+                  <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "completed", employeeName: user.name })}>Concluído</ContextMenuItem>
                   <ContextMenuSeparator />
-                  <ContextMenuItem className="text-destructive font-bold" onClick={() => cancelOrderMutation.mutate({ id: order.id, employeeName: user.name })}>Cancelar Pedido</ContextMenuItem>
+                  <ContextMenuItem className="text-destructive font-bold rounded-lg m-1" onClick={() => cancelOrderMutation.mutate({ id: order.id, employeeName: user.name })}>Cancelar Pedido</ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
             ))
@@ -233,24 +189,27 @@ const Index = () => {
   };
 
   const HistoryTable = () => (
-    <div className="bg-card rounded-2xl border border-border/40 overflow-hidden shadow-sm">
+    <div className="bg-card rounded-3xl border border-border/40 overflow-hidden shadow-sm mx-auto max-w-6xl w-full">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow className="bg-secondary/20 hover:bg-secondary/20">
-              <TableHead className="w-[100px] font-black uppercase text-[10px]">Número</TableHead>
-              <TableHead className="font-black uppercase text-[10px]">Cliente</TableHead>
-              <TableHead className="font-black uppercase text-[10px]">Data Conclusão</TableHead>
-              <TableHead className="font-black uppercase text-[10px]">Forma Pag.</TableHead>
-              <TableHead className="font-black uppercase text-[10px] text-right">Valor Total</TableHead>
-              <TableHead className="font-black uppercase text-[10px] text-center">Status</TableHead>
+            <TableRow className="bg-secondary/5 hover:bg-secondary/5 border-b border-border/40">
+              <TableHead className="w-[100px] font-black uppercase text-[10px] px-6">Número</TableHead>
+              <TableHead className="font-black uppercase text-[10px] px-6">Cliente</TableHead>
+              <TableHead className="font-black uppercase text-[10px] px-6">Conclusão</TableHead>
+              <TableHead className="font-black uppercase text-[10px] px-6">Pagamento</TableHead>
+              <TableHead className="font-black uppercase text-[10px] px-6 text-right">Total</TableHead>
+              <TableHead className="font-black uppercase text-[10px] px-6 text-center">Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-40 text-center text-muted-foreground italic">
-                  Nenhum pedido encontrado no período selecionado.
+                <TableCell colSpan={6} className="h-60 text-center text-muted-foreground italic opacity-50">
+                  <div className="flex flex-col items-center gap-2">
+                    <Search className="h-8 w-8 opacity-20" />
+                    <p className="text-[10px] font-black uppercase">Nenhum resultado</p>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
@@ -258,48 +217,42 @@ const Index = () => {
                 <ContextMenu key={order.id}>
                   <ContextMenuTrigger asChild>
                     <TableRow 
-                      className="cursor-pointer transition-colors hover:bg-primary/5 group"
-                      onClick={() => {
-                        setSelectedOrderId(order.id);
-                        setView("detail");
-                      }}
+                      className="cursor-pointer transition-colors hover:bg-primary/5 group border-b border-border/20 last:border-0"
+                      onClick={() => { setSelectedOrderId(order.id); setView("detail"); }}
                     >
-                      <TableCell className="font-black text-xs">#{order.number}</TableCell>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-black text-xs px-6">#{order.number}</TableCell>
+                      <TableCell className="font-medium px-6">
                         <div className="flex flex-col">
-                          <span className="text-sm">{order.customerName || "Venda Avulsa"}</span>
-                          <span className="text-[10px] text-muted-foreground">{order.phone || "Sem telefone"}</span>
+                          <span className="text-sm font-bold">{order.customerName || "Avulso"}</span>
+                          <span className="text-[10px] text-muted-foreground font-medium">{order.phone || "S/ Telefone"}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs">
-                        {format(new Date(order.lastEditedAt || order.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                      <TableCell className="text-[11px] px-6 font-medium text-muted-foreground">
+                        {format(new Date(order.lastEditedAt || order.createdAt), "dd MMM, HH:mm", { locale: ptBR })}
                       </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="text-[10px] uppercase font-bold py-0 h-5">
+                      <TableCell className="px-6">
+                        <Badge variant="outline" className="text-[9px] uppercase font-bold py-0 h-5 border-border/60">
                           {order.paymentMethod === 'cash' ? 'Dinheiro' : order.paymentMethod === 'pix' ? 'PIX' : 'Cartão'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-black text-sm">
+                      <TableCell className="text-right font-black text-sm px-6">
                         R$ {order.totalAmount.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-center">
-                        <Badge 
-                          variant={order.status === 'completed' ? 'success' : 'destructive'} 
-                          className="text-[9px] uppercase font-black"
-                        >
+                      <TableCell className="text-center px-6">
+                        <Badge variant={order.status === 'completed' ? 'success' : 'destructive'} className="text-[9px] uppercase font-black px-2 shadow-sm">
                           {STATUS_LABELS[order.status]}
                         </Badge>
                       </TableCell>
                     </TableRow>
                   </ContextMenuTrigger>
-                  <ContextMenuContent className="w-56">
-                    <ContextMenuLabel className="text-[10px] uppercase font-black opacity-50">Opções Pedido #{order.number}</ContextMenuLabel>
+                  <ContextMenuContent className="w-56 rounded-xl shadow-xl">
+                    <ContextMenuLabel className="text-[10px] uppercase font-black opacity-50">Pedido #{order.number}</ContextMenuLabel>
                     <ContextMenuSeparator />
-                    <ContextMenuItem className="gap-2" onClick={() => { setSelectedOrderId(order.id); setView("detail"); }}>
-                      <FileText className="h-4 w-4" /> Visualizar Detalhes
+                    <ContextMenuItem className="gap-3 rounded-lg m-1" onClick={() => { setSelectedOrderId(order.id); setView("detail"); }}>
+                      <FileText className="h-4 w-4 text-muted-foreground" /> Visualizar Detalhes
                     </ContextMenuItem>
-                    <ContextMenuItem className="gap-2" onClick={() => printOrder(order, settings)}>
-                      <Printer className="h-4 w-4" /> Reimprimir Pedido
+                    <ContextMenuItem className="gap-3 rounded-lg m-1" onClick={() => printOrder(order, settings)}>
+                      <Printer className="h-4 w-4 text-muted-foreground" /> Reimprimir
                     </ContextMenuItem>
                   </ContextMenuContent>
                 </ContextMenu>
@@ -311,145 +264,239 @@ const Index = () => {
     </div>
   );
 
+  const FAB = ({ icon: Icon, color, title, status, count }: { icon: any, color: string, title: string, status: Order["status"], count: number }) => (
+    <Drawer>
+      <DrawerTrigger asChild>
+        <button 
+          className={`h-14 w-14 rounded-full ${color} shadow-lg flex items-center justify-center relative transition-transform active:scale-90`}
+          title={title}
+        >
+          <Icon className="h-6 w-6 text-white" />
+          {count > 0 && (
+            <span className="absolute -top-1 -right-1 bg-white text-[10px] font-black px-1.5 py-0.5 rounded-full border-2 border-current leading-none min-w-[20px] text-center" style={{ color: color.replace('bg-', '') }}>
+              {count}
+            </span>
+          )}
+        </button>
+      </DrawerTrigger>
+      <DrawerContent className="h-[85vh] p-4 pt-0">
+        <DrawerHeader className="px-0">
+          <DrawerTitle className="text-xl font-black uppercase tracking-tighter text-center">{title}</DrawerTitle>
+        </DrawerHeader>
+        <div className="flex-1 overflow-hidden">
+          <KanbanColumn 
+            title={title} 
+            status={status} 
+            orders={todayOrders} 
+            colorClass={color.replace('bg-', 'bg-opacity-10 text-')} 
+            compact 
+          />
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+
+  if (view === "new") {
+    return (
+      <div className="min-h-screen bg-background p-4 sm:p-10 flex items-center justify-center">
+        <div className="max-w-3xl w-full">
+          <NewOrderForm
+            onSubmit={(order) => addOrderMutation.mutate(order, { onSuccess: () => setView("list") })}
+            onCancel={() => setView("list")}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (view === "customers") return <CustomersPage onBack={() => setView("list")} />;
+  if (view === "products") return <ProductsPage onBack={() => setView("list")} />;
+  if (view === "settings") return <SettingsPage onBack={() => setView("list")} />;
+
+  if (view === "detail" && selectedOrder) {
+    return (
+      <div className="min-h-screen bg-background p-4 sm:p-10 flex items-center justify-center">
+        <div className="max-w-3xl w-full">
+          <OrderDetail
+            order={selectedOrder}
+            onBack={() => setView("list")}
+            onUpdateStatus={(id, status) => updateStatusMutation.mutate({ id, status, employeeName: user.name })}
+            onDelete={(id) => setView("list")}
+            onCancel={(id) => cancelOrderMutation.mutate({ id, employeeName: user.name })}
+            onPrint={(order) => { printOrder(order, settings); markAsPrintedMutation.mutate(order.id); }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
-      <div className="max-w-full px-4 sm:px-6 py-6 space-y-6">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-              <UtensilsCrossed className="h-6 w-6 text-primary-foreground" />
+    <div className="min-h-screen bg-background selection:bg-primary/20 selection:text-primary">
+      <div className="container mx-auto px-4 sm:px-6 py-6 space-y-10">
+        {/* Superior Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 text-center lg:text-left">
+          <div className="flex flex-col lg:flex-row items-center gap-4">
+            <div className="h-16 w-16 rounded-3xl bg-primary flex items-center justify-center shadow-2xl shadow-primary/30 transform hover:rotate-3 transition-transform">
+              <UtensilsCrossed className="h-8 w-8 text-primary-foreground" />
             </div>
-            <div>
-              <h1 className="text-2xl font-black text-foreground tracking-tight italic uppercase">{settings.storeName}</h1>
-              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest leading-tight">
-                Painel Gestão · {user.name} · <button onClick={logout} className="text-primary hover:underline">Sair</button>
-              </p>
+            <div className="space-y-1">
+              <h1 className="text-3xl font-black text-foreground tracking-tight italic uppercase">{settings.storeName}</h1>
+              <div className="flex items-center justify-center lg:justify-start gap-3">
+                <Badge variant="outline" className="text-[9px] uppercase font-black tracking-widest px-2">{user.name}</Badge>
+                <button onClick={logout} className="text-primary hover:text-primary/70 text-[10px] font-bold uppercase underline underline-offset-4 decoration-2">Sair do Sistema</button>
+              </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-4 bg-secondary/30 p-2 rounded-2xl border border-border/40 flex-1 max-w-2xl">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          {/* Stats & Search Central Container */}
+          <div className="flex flex-col md:flex-row items-center gap-4 bg-card p-3 rounded-3xl border border-border/40 shadow-sm flex-1 max-w-2xl mx-auto lg:mx-0">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
               <Input
-                placeholder="Buscar por cliente ou número..."
+                placeholder="Busca centralizada..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-background/50 border-none h-10 rounded-xl"
+                className="pl-11 bg-background border-none h-11 rounded-2xl shadow-inner text-sm font-medium"
               />
             </div>
             {isHistoryView && (
-              <div className="flex items-center gap-3 pl-2">
+              <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto px-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 rounded-xl border-border/40 gap-2 text-xs font-bold uppercase">
+                    <Button variant="outline" size="sm" className="h-11 rounded-2xl border-border/40 gap-2 shrink-0">
                       <CalendarIcon className="h-3 w-3" />
-                      {dateRange.from ? (
-                        dateRange.to ? (
-                          <>
-                            {format(dateRange.from, "dd/MM")} - {format(dateRange.to, "dd/MM")}
-                          </>
-                        ) : format(dateRange.from, "dd/MM")
-                      ) : "Selecionar Período"}
-                      <ChevronDown className="h-3 w-3 opacity-50" />
+                      <span className="text-[10px] font-black uppercase">
+                        {dateRange.from ? format(dateRange.from, "dd/MM") : "Dê"} - {dateRange.to ? format(dateRange.to, "dd/MM") : "Até"}
+                      </span>
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="end">
-                    <Calendar
-                      initialFocus
-                      mode="range"
-                      defaultMonth={dateRange.from}
-                      selected={dateRange as any}
-                      onSelect={(range: any) => setDateRange(range || { from: undefined, to: undefined })}
-                      numberOfMonths={2}
-                      locale={ptBR}
-                    />
+                    <Calendar mode="range" selected={dateRange as any} onSelect={(r: any) => setDateRange(r || { from: undefined, to: undefined })} numberOfMonths={2} locale={ptBR} />
                   </PopoverContent>
                 </Popover>
-
-                <div className="flex items-center gap-2 pr-2">
-                  <Checkbox 
-                    id="cancelled" 
-                    checked={showCancelled} 
-                    onCheckedChange={(checked) => setShowCancelled(checked as boolean)}
-                    className="border-border/40"
-                  />
-                  <label htmlFor="cancelled" className="text-[9px] uppercase font-black cursor-pointer select-none whitespace-nowrap">
-                    Mostrar Cancelados
-                  </label>
+                <div className="flex items-center gap-2 bg-secondary/10 px-3 py-2 rounded-2xl border border-border/20 h-11">
+                  <Checkbox checked={showCancelled} onCheckedChange={(c) => setShowCancelled(c as boolean)} className="border-border/60" />
+                  <span className="text-[9px] font-black uppercase opacity-60">Cancelados</span>
                 </div>
               </div>
             )}
-            <div className="h-8 w-px bg-border/40 mx-1" />
-            <div className="flex items-center gap-4 pr-2 whitespace-nowrap">
-              <div className="flex flex-col">
-                <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">
-                  {isHistoryView ? "Total Pedidos" : "Pedidos"}
-                </span>
-                <span className="text-sm font-black text-foreground leading-none">{todayCount}</span>
+            <div className="hidden md:block h-8 w-px bg-border/40 md:mx-1" />
+            <div className="flex items-center gap-6 px-4 py-2 border-t md:border-t-0 border-border/20 w-full md:w-auto justify-around">
+              <div className="flex flex-col items-center md:items-end">
+                <span className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">Pedidos</span>
+                <span className="text-lg font-black leading-none">{todayCount}</span>
               </div>
-              <div className="flex flex-col relative group">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter">
-                    {isHistoryView ? "Faturamento" : "Total Hoje"}
-                  </span>
-                  <button onClick={() => setShowRevenue(!showRevenue)} className="p-0.5 hover:bg-primary/10 rounded transition-colors text-muted-foreground hover:text-primary">
+              <div className="flex flex-col items-center md:items-end">
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">Faturamento</span>
+                  <button onClick={() => setShowRevenue(!showRevenue)} className="hover:text-primary transition-colors">
                     {showRevenue ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                   </button>
                 </div>
-                <span className={`text-sm font-black text-primary leading-none transition-all duration-300 ${!showRevenue ? "blur-sm select-none" : ""}`}>
-                  {showRevenue ? `R$ ${todayRevenue.toFixed(2)}` : "R$ 0.000,00"}
+                <span className={`text-lg font-black text-primary leading-none transition-all duration-500 ${!showRevenue ? "blur-md select-none opacity-20" : ""}`}>
+                  R$ {todayRevenue.toFixed(2)}
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button 
-              variant={isHistoryView ? "default" : "outline"}
-              onClick={() => setIsHistoryView(!isHistoryView)}
-              className="gap-2 rounded-xl h-12 border-border/40 font-bold uppercase text-xs shadow-sm hover:shadow-md transition-all"
-            >
-              <CalendarIcon className="h-4 w-4" /> {isHistoryView ? "Painel Kanban" : "Ver Histórico"}
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => setView("settings")} className="h-14 w-14 rounded-2xl bg-card border-border/40 shadow-sm hover:shadow-md">
+              <Settings className="h-5 w-5" />
             </Button>
-            {isAdmin && (
-              <Button variant="outline" size="icon" onClick={() => setView("settings")} title="Configurações" className="rounded-xl h-12 w-12 border-border/40">
-                <Settings className="h-5 w-5" />
-              </Button>
-            )}
-            <Button variant="outline" onClick={() => setView("products")} className="gap-2 rounded-xl h-12 border-border/40 font-bold uppercase text-xs">
+            <Button variant="outline" onClick={() => setView("products")} className="h-14 rounded-2xl px-5 border-border/40 bg-card gap-2 text-[11px] font-black uppercase shadow-sm">
               <Package className="h-4 w-4" /> Produtos
             </Button>
-            <Button variant="outline" onClick={() => setView("customers")} className="gap-2 rounded-xl h-12 border-border/40 font-bold uppercase text-xs">
-              <Users className="h-4 w-4" /> Clientes
-            </Button>
-            <Button onClick={() => setView("new")} className="gap-2 rounded-xl h-12 shadow-lg shadow-primary/20 font-black uppercase text-xs px-6">
-              <Plus className="h-4 w-4" /> Novo Pedido
+            <Button onClick={() => setView("new")} className="h-14 rounded-2xl px-8 shadow-xl shadow-primary/20 font-black uppercase text-xs gap-3">
+              <Plus className="h-5 w-5" /> Novo Pedido
             </Button>
           </div>
         </div>
 
-        {isHistoryView ? (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div className="flex items-center justify-between px-2">
-              <h2 className="text-xl font-black uppercase tracking-tighter italic text-muted-foreground/50">Histórico de Vendas</h2>
-              <p className="text-[10px] uppercase font-bold text-muted-foreground">
-                Exibindo {filtered.length} resultados para o período selecionado
-              </p>
-            </div>
-            <HistoryTable />
-          </div>
-        ) : (
-          <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar-h min-h-[720px] animate-in fade-in duration-500">
-            <KanbanColumn title="Pendentes" status="pending" orders={todayOrders} colorClass="bg-warning/10 text-warning" />
-            <KanbanColumn title="Em Produção" status="preparing" orders={todayOrders} colorClass="bg-primary/10 text-primary" />
-            <KanbanColumn title="Em Entrega" status="delivering" orders={todayOrders} colorClass="bg-blue-500/10 text-blue-600" />
-            <KanbanColumn title="Finalizados" status="completed" orders={todayOrders} colorClass="bg-success/10 text-success" />
-            <div className="w-[200px] shrink-0 opacity-80">
-              <KanbanColumn title="Cancelados" status="cancelled" orders={todayOrders} colorClass="bg-destructive/10 text-destructive" />
-            </div>
+        {/* Action Buttons Central (Desktop) */}
+        {!isMobile && (
+          <div className="flex items-center justify-center gap-3">
+             <Button 
+                variant={isHistoryView ? "default" : "outline"} 
+                onClick={() => setIsHistoryView(!isHistoryView)} 
+                className="h-14 rounded-full px-10 gap-3 border-border/40 font-black uppercase tracking-widest text-[11px] shadow-sm"
+              >
+                {isHistoryView ? <LayoutDashboard className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+                {isHistoryView ? "Painel Operacional" : "Histórico de Vendas"}
+              </Button>
+              <Button variant="outline" onClick={() => setView("customers")} className="h-14 rounded-full px-10 border-border/40 gap-3 font-black uppercase tracking-widest text-[11px] shadow-sm">
+                <Users className="h-5 w-5" /> Clientes
+              </Button>
           </div>
         )}
+
+        {/* View Switcher: Kanban vs History Table */}
+        <div className="flex justify-center w-full">
+          {isHistoryView ? (
+            <div className="w-full flex flex-col items-center space-y-6">
+              <div className="text-center space-y-2">
+                <h2 className="text-3xl font-black uppercase italic tracking-tighter text-foreground opacity-10">Relatório Geral</h2>
+                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Listagem tabular para análise detalhada de performance</p>
+              </div>
+              <HistoryTable />
+            </div>
+          ) : (
+            <div className="w-full">
+              {isMobile ? (
+                <div className="flex flex-col items-center space-y-10 py-10">
+                  <div className="h-64 w-64 rounded-full bg-secondary/10 border-4 border-dashed border-border/40 flex items-center justify-center opacity-40">
+                    <div className="text-center p-6">
+                      <LayoutDashboard className="h-12 w-12 mx-auto mb-4" />
+                      <p className="text-xs font-black uppercase tracking-tighter">Modo Mobile Ativo</p>
+                      <p className="text-[9px] font-medium mt-1">Use os balões flutuantes para ver os pedidos</p>
+                    </div>
+                  </div>
+                  <Button onClick={() => setView("new")} className="h-20 w-full rounded-3xl shadow-2xl shadow-primary/30 text-xl font-black uppercase tracking-widest gap-4">
+                    <Plus className="h-8 w-8" /> Iniciar Pedido
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-6 overflow-x-auto pb-8 custom-scrollbar-h justify-center">
+                  <KanbanColumn title="Pendentes" status="pending" orders={todayOrders} colorClass="text-warning" />
+                  <KanbanColumn title="Produção" status="preparing" orders={todayOrders} colorClass="text-primary" />
+                  <KanbanColumn title="Entrega" status="delivering" orders={todayOrders} colorClass="text-blue-500" />
+                  <KanbanColumn title="Concluídos" status="completed" orders={todayOrders} colorClass="text-success" />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Mobile Floating Action Buttons (FAB) */}
+      {isMobile && !isHistoryView && view === "list" && (
+        <div className="fixed bottom-6 right-6 flex flex-col gap-3 items-end z-50">
+          <FAB icon={Clock} color="bg-warning" title="Pendentes" status="pending" count={todayOrders.filter(o => o.status === 'pending').length} />
+          <FAB icon={UtensilsCrossed} color="bg-primary" title="Em Produção" status="preparing" count={todayOrders.filter(o => o.status === 'preparing').length} />
+          <FAB icon={Truck} color="bg-blue-500" title="Em Entrega" status="delivering" count={todayOrders.filter(o => o.status === 'delivering').length} />
+          <FAB icon={CheckCircle2} color="bg-success" title="Finalizados" status="completed" count={todayOrders.filter(o => o.status === 'completed').length} />
+          <Button 
+            size="icon" 
+            variant="outline" 
+            onClick={() => setIsHistoryView(true)}
+            className="h-14 w-14 rounded-full shadow-lg bg-card border-border/60"
+          >
+            <CalendarIcon className="h-6 w-6" />
+          </Button>
+        </div>
+      )}
+      
+      {isMobile && isHistoryView && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <Button 
+            size="icon" 
+            onClick={() => setIsHistoryView(false)}
+            className="h-16 w-16 rounded-full shadow-2xl bg-foreground text-background"
+          >
+            <LayoutDashboard className="h-8 w-8" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

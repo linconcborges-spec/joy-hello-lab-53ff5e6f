@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, Pencil, Trash2, Save, X, Eye, EyeOff, Shield, User } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Save, X, Eye, EyeOff, Shield, User, Moon, Sun, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,15 +22,16 @@ import {
 import { useEmployees, useAddEmployee, useUpdateEmployee, useDeleteEmployee } from "@/hooks/useEmployees";
 import { useSettings } from "@/hooks/useSettings";
 import { useOrders } from "@/hooks/useOrders";
+import { useTheme } from "next-themes";
 import { exportOrdersToCSV } from "@/lib/ExportService";
 import { toast } from "sonner";
-import { Download } from "lucide-react";
 
 interface SettingsPageProps {
   onBack: () => void;
 }
 
 export function SettingsPage({ onBack }: SettingsPageProps) {
+  const { theme, setTheme } = useTheme();
   const { data: employees = [], isLoading } = useEmployees();
   const { data: orders = [] } = useOrders(); // Pega pedidos do ciclo atual
   const addEmployee = useAddEmployee();
@@ -102,6 +104,33 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold">Configurações Gerais</h2>
         </div>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base text-primary">Aparência</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/20 border border-border/40">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-background flex items-center justify-center border border-border/40 text-primary">
+                  {theme === "dark" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                </div>
+                <div>
+                  <p className="text-sm font-bold">Modo de Cor</p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Trocar entre tema Claro e Escuro</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-black uppercase opacity-50">Claro</span>
+                <Switch 
+                  checked={theme === "dark"} 
+                  onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")} 
+                />
+                <span className="text-[10px] font-black uppercase opacity-50">Escuro</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader className="pb-3">
