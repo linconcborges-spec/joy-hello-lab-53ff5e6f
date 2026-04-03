@@ -16,6 +16,15 @@ import { useSettings } from "@/hooks/useSettings";
 import { printOrder } from "@/lib/PrintService";
 import type { Order } from "@/types/order";
 
+import { 
+  ContextMenu, 
+  ContextMenuContent, 
+  ContextMenuItem, 
+  ContextMenuTrigger,
+  ContextMenuSeparator,
+  ContextMenuLabel
+} from "@/components/ui/context-menu";
+
 type View = "list" | "new" | "detail" | "customers" | "products" | "settings";
 
 const Index = () => {
@@ -170,14 +179,52 @@ const Index = () => {
             </div>
           ) : (
             columnOrders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onClick={() => {
-                  setSelectedOrderId(order.id);
-                  setView("detail");
-                }}
-              />
+              <ContextMenu key={order.id}>
+                <ContextMenuTrigger>
+                  <OrderCard
+                    order={order}
+                    onClick={() => {
+                      setSelectedOrderId(order.id);
+                      setView("detail");
+                    }}
+                  />
+                </ContextMenuTrigger>
+                <ContextMenuContent className="w-56">
+                  <ContextMenuLabel className="text-[10px] uppercase font-black opacity-50">Pedido #{order.number}</ContextMenuLabel>
+                  <ContextMenuSeparator />
+                  
+                  {order.status === "pending" && (
+                    <ContextMenuItem onClick={() => updateStatusMutation.mutate({ id: order.id, status: "preparing", employeeName: user.name })}>
+                      Mover para Produção
+                    </ContextMenuItem>
+                  )}
+                  {order.status === "preparing" && (
+                    <ContextMenuItem onClick={() => updateStatusMutation.mutate({ id: order.id, status: "delivering", employeeName: user.name })}>
+                      Mover para Entrega
+                    </ContextMenuItem>
+                  )}
+                  {order.status === "delivering" && (
+                    <ContextMenuItem onClick={() => updateStatusMutation.mutate({ id: order.id, status: "completed", employeeName: user.name })}>
+                      Concluir Pedido
+                    </ContextMenuItem>
+                  )}
+
+                  <ContextMenuSeparator />
+                  <ContextMenuLabel className="text-[10px] uppercase font-black opacity-50">Mudar para</ContextMenuLabel>
+                  <ContextMenuItem onClick={() => updateStatusMutation.mutate({ id: order.id, status: "pending", employeeName: user.name })}>Pendente</ContextMenuItem>
+                  <ContextMenuItem onClick={() => updateStatusMutation.mutate({ id: order.id, status: "preparing", employeeName: user.name })}>Em Produção</ContextMenuItem>
+                  <ContextMenuItem onClick={() => updateStatusMutation.mutate({ id: order.id, status: "delivering", employeeName: user.name })}>Em Entrega</ContextMenuItem>
+                  <ContextMenuItem onClick={() => updateStatusMutation.mutate({ id: order.id, status: "completed", employeeName: user.name })}>Concluído</ContextMenuItem>
+                  
+                  <ContextMenuSeparator />
+                  <ContextMenuItem 
+                    className="text-destructive font-bold"
+                    onClick={() => cancelOrderMutation.mutate({ id: order.id, employeeName: user.name })}
+                  >
+                    Cancelar Pedido
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             ))
           )}
         </div>
