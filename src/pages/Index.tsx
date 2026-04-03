@@ -105,7 +105,7 @@ const Index = () => {
               <Package className="h-4 w-4" /> Produtos
             </Button>
             <Button variant="outline" onClick={() => setView("customers")} className="gap-1.5">
-              <Users className="h-4 w-4" /> Clientes
+              <Users className="h-4 w-4" /> Cliente
             </Button>
             <Button onClick={() => setView("new")} className="gap-1.5">
               <Plus className="h-4 w-4" /> Novo Pedido
