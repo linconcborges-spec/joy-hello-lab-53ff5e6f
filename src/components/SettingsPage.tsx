@@ -36,6 +36,9 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   // General settings state
   const [storeName, setStoreName] = useState(settings.storeName);
   const [defaultDeliveryFee, setDefaultDeliveryFee] = useState(settings.defaultDeliveryFee);
+  const [printPaperWidth, setPrintPaperWidth] = useState(settings.printPaperWidth);
+  const [printMargin, setPrintMargin] = useState(settings.printMargin);
+  const [printFontSize, setPrintFontSize] = useState(settings.printFontSize);
 
   // New employee form
   const [showNew, setShowNew] = useState(false);
@@ -72,7 +75,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   };
 
   const handleSaveGeneral = () => {
-    updateSettings({ storeName, defaultDeliveryFee });
+    updateSettings({ storeName, defaultDeliveryFee, printPaperWidth, printMargin, printFontSize });
     toast.success("Configurações atualizadas com sucesso!");
   };
 
@@ -120,7 +123,39 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                 placeholder="0.00" 
               />
             </div>
-            <div className="sm:col-span-2 flex justify-end">
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base text-primary">Configurações de Impressão</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Largura do Papel (ex: 80mm, 58mm, A4)</Label>
+              <Input 
+                value={printPaperWidth} 
+                onChange={(e) => setPrintPaperWidth(e.target.value)} 
+                placeholder="80mm" 
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Margens (ex: 0mm, 5px)</Label>
+              <Input 
+                value={printMargin} 
+                onChange={(e) => setPrintMargin(e.target.value)} 
+                placeholder="0mm" 
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Tamanho da Fonte (ex: 12px, 14px)</Label>
+              <Input 
+                value={printFontSize} 
+                onChange={(e) => setPrintFontSize(e.target.value)} 
+                placeholder="14px" 
+              />
+            </div>
+            <div className="sm:col-span-3 flex justify-end">
               <Button onClick={handleSaveGeneral} className="gap-1.5">
                 <Save className="h-4 w-4" /> Salvar Configurações
               </Button>

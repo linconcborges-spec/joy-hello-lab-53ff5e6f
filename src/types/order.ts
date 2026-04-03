@@ -29,6 +29,7 @@ export interface Order {
   status: "pending" | "preparing" | "delivering" | "completed" | "cancelled";
   createdAt: string;
   paymentMethod: "cash" | "card" | "pix";
+  isPrinted?: boolean;
   cancelledBy?: string;
   cancelledAt?: string;
   lastEditedBy?: string;

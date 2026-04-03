@@ -1,4 +1,4 @@
-import { ArrowLeft, Trash2, Ban } from "lucide-react";
+import { ArrowLeft, Trash2, Ban, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,9 +23,10 @@ interface OrderDetailProps {
   onUpdateStatus: (id: string, status: Order["status"]) => void;
   onDelete: (id: string) => void;
   onCancel: (id: string) => void;
+  onPrint?: (order: Order) => void;
 }
 
-export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel }: OrderDetailProps) {
+export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel, onPrint }: OrderDetailProps) {
   const date = new Date(order.createdAt).toLocaleString("pt-BR");
   const isPending = order.status === "pending";
   const isCancelled = order.status === "cancelled";
@@ -130,7 +131,27 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel 
               <Badge variant="destructive">Cancelado</Badge>
             )}
           </div>
-          <p className="text-sm text-muted-foreground">{date}</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-sm text-muted-foreground">{date}</p>
+            {order.isPrinted ? (
+              <Badge variant="outline" className="text-[10px] h-5 gap-1 bg-primary/5 border-primary/20 text-primary">
+                <Printer className="h-3 w-3" /> Impresso
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-[10px] h-5 bg-muted/50 border-muted-foreground/20 text-muted-foreground">
+                Não impresso
+              </Badge>
+            )}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6 ml-auto" 
+              onClick={() => onPrint?.(order)}
+              title="Imprimir Pedido"
+            >
+              <Printer className="h-3.5 w-3.5" />
+            </Button>
+          </div>
           {order.cancelledBy && (
             <p className="text-xs text-destructive mt-1">
               Cancelado por: {order.cancelledBy} em {new Date(order.cancelledAt!).toLocaleString("pt-BR")}

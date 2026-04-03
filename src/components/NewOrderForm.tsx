@@ -15,6 +15,17 @@ import { useCustomers, useAddCustomer } from "@/hooks/useCustomers";
 import { useProducts } from "@/hooks/useProducts";
 import { useAddons } from "@/hooks/useAddons";
 import { useSettings } from "@/hooks/useSettings";
+import { printOrder } from "@/lib/PrintService";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface NewOrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "number" | "createdAt">) => void;
@@ -271,6 +282,8 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
   const [deliveryFee, setDeliveryFee] = useState(settings.defaultDeliveryFee);
   const [changeFor, setChangeFor] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<Order["paymentMethod"]>("cash");
+  const [showPrintDialog, setShowPrintDialog] = useState(false);
+  const [pendingOrder, setPendingOrder] = useState<Omit<Order, "id" | "number" | "createdAt"> | null>(null);
 
   const handleCustomerCodeSearch = () => {
     const code = parseInt(customerCode);
@@ -357,7 +370,8 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
       toast.error("Adicione pelo menos um item ao pedido");
       return;
     }
-    onSubmit({
+
+    const orderData: Omit<Order, "id" | "number" | "createdAt"> = {
       customerName: customerName.trim(),
       address: address.trim(),
       phone: phone.trim(),
@@ -368,8 +382,36 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
       changeFor,
       status: "pending",
       paymentMethod,
-    });
-    toast.success("Pedido criado com sucesso!");
+      isPrinted: false,
+    };
+
+    setPendingOrder(orderData);
+    setShowPrintDialog(true);
+  };
+
+  const handleConfirmPrint = (shouldPrint: boolean) => {
+    if (!pendingOrder) return;
+
+    const finalOrder = {
+      ...pendingOrder,
+      status: (shouldPrint ? "preparing" : "pending") as Order["status"],
+      isPrinted: shouldPrint,
+    };
+
+    // Para o print real, precisamos de um objeto que pareça com a Order (com number e id fake para o PrintService)
+    if (shouldPrint) {
+      const orderToPrint: Order = {
+        ...finalOrder,
+        id: "temp",
+        number: 0, // O número real será gerado pelo hook, mas para o print imediato usamos 0 ou buscamos depois
+        createdAt: new Date().toISOString(),
+      };
+      printOrder(orderToPrint, settings);
+    }
+
+    onSubmit(finalOrder);
+    setShowPrintDialog(false);
+    toast.success(shouldPrint ? "Pedido enviado para preparação e impresso!" : "Pedido criado com sucesso!");
   };
 
   return (
@@ -493,6 +535,22 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
         <span className="text-lg font-bold">Total: R$ {totalAmount.toFixed(2)}</span>
         <Button type="submit" size="lg" className="px-8">Criar Pedido</Button>
       </div>
+
+      <AlertDialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deseja imprimir o pedido?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se SIM: O pedido será marcado como impresso e mudará para o status "Preparando".<br/>
+              Se NÃO: O pedido ficará com o status "Pendente" e sem marcação de impresso.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => handleConfirmPrint(false)}>Não</AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirmPrint(true)}>Sim, imprimir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </form>
   );
 }

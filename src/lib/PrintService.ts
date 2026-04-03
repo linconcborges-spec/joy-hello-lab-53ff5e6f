@@ -1,0 +1,182 @@
+import type { Order } from "@/types/order";
+import type { AppSettings } from "@/hooks/useSettings";
+
+export function printOrder(order: Order, settings: AppSettings) {
+  const printWindow = window.open("", "_blank", "width=800,height=600");
+  if (!printWindow) return;
+
+  const date = new Date(order.createdAt).toLocaleString("pt-BR");
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Pedido #${order.number}</title>
+        <style>
+          @page {
+            margin: ${settings.printMargin};
+            size: ${settings.printPaperWidth} auto;
+          }
+          body {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: ${settings.printFontSize};
+            width: ${settings.printPaperWidth};
+            margin: 0;
+            padding: 0;
+            color: #000;
+          }
+          .container {
+            padding: 10px;
+          }
+          .header {
+            text-align: center;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+          }
+          .store-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+          }
+          .order-number {
+            font-size: 1.1em;
+            font-weight: bold;
+          }
+          .section {
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 5px;
+          }
+          .section-title {
+            font-weight: bold;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            font-size: 0.9em;
+          }
+          .item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+          }
+          .item-details {
+            flex: 1;
+          }
+          .item-price {
+            margin-left: 10px;
+          }
+          .addon {
+            font-size: 0.9em;
+            margin-left: 10px;
+            font-style: italic;
+          }
+          .obs {
+            font-size: 0.9em;
+            margin-left: 10px;
+            color: #333;
+          }
+          .totals {
+            margin-top: 10px;
+          }
+          .total-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+          }
+          .grand-total {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-top: 5px;
+            border-top: 1px solid #000;
+            padding-top: 5px;
+          }
+          .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.8em;
+          }
+          @media print {
+            body { width: 100%; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="store-name">${settings.storeName}</div>
+            <div class="order-number">Pedido #${order.number}</div>
+            <div>${date}</div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Cliente</div>
+            <div>${order.customerName || "Não informado"}</div>
+            <div>${order.phone || ""}</div>
+            <div>${order.address || "Retirada"}</div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Itens</div>
+            ${order.items.map(item => `
+              <div class="item">
+                <div class="item-details">
+                  ${item.quantity}x ${item.product}
+                </div>
+                <div class="item-price">R$ ${item.total.toFixed(2)}</div>
+              </div>
+              ${item.addons && item.addons.length > 0 ? `
+                ${item.addons.map(a => `
+                  <div class="addon">+ ${a.name} (R$ ${a.price.toFixed(2)})</div>
+                `).join('')}
+              ` : ''}
+              ${item.observation ? `<div class="obs">Obs: ${item.observation}</div>` : ''}
+            `).join('')}
+          </div>
+
+          <div class="totals text-right">
+            <div class="total-line">
+              <span>Subtotal</span>
+              <span>R$ ${(order.totalAmount - order.deliveryFee).toFixed(2)}</span>
+            </div>
+            <div class="total-line">
+              <span>Taxa de Entrega</span>
+              <span>R$ ${order.deliveryFee.toFixed(2)}</span>
+            </div>
+            <div class="total-line grand-total">
+              <span>TOTAL</span>
+              <span>R$ ${order.totalAmount.toFixed(2)}</span>
+            </div>
+            ${order.changeFor > 0 ? `
+              <div class="total-line">
+                <span>Troco para</span>
+                <span>R$ ${order.changeFor.toFixed(2)}</span>
+              </div>
+              <div class="total-line">
+                <span>Total Troco</span>
+                <span>R$ ${(order.changeFor - order.totalAmount).toFixed(2)}</span>
+              </div>
+            ` : ''}
+            <div class="total-line">
+              <span>Pagamento</span>
+              <span>${order.paymentMethod.toUpperCase()}</span>
+            </div>
+          </div>
+
+          <div class="footer">
+            Obrigado pela preferência!
+          </div>
+        </div>
+        <script>
+          window.focus();
+          setTimeout(() => {
+            window.print();
+            window.close();
+          }, 500);
+        </script>
+      </body>
+    </html>
+  `;
+
+  printWindow.document.write(html);
+  printWindow.document.close();
+}

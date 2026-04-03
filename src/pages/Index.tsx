@@ -13,13 +13,14 @@ import { LoginPage } from "@/components/LoginPage";
 import { useOrders } from "@/hooks/useOrders";
 import { useAuth } from "@/hooks/useAuth";
 import { useSettings } from "@/hooks/useSettings";
+import { printOrder } from "@/lib/PrintService";
 import type { Order } from "@/types/order";
 
 type View = "list" | "new" | "detail" | "customers" | "products" | "settings";
 
 const Index = () => {
   const { user, isAdmin, logout, isLoading: authLoading } = useAuth();
-  const { orders, addOrder, updateStatus, cancelOrder, deleteOrder } = useOrders();
+  const { orders, addOrder, updateStatus, cancelOrder, deleteOrder, markAsPrinted } = useOrders();
   const { settings } = useSettings();
   const [view, setView] = useState<View>("list");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -106,6 +107,10 @@ const Index = () => {
             }}
             onCancel={(id) => {
               cancelOrder(id, user.name);
+            }}
+            onPrint={(order) => {
+              printOrder(order, settings);
+              markAsPrinted(order.id);
             }}
           />
         </div>

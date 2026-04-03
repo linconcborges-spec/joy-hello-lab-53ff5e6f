@@ -1,4 +1,4 @@
-import { Clock, MapPin, Phone, ChevronRight } from "lucide-react";
+import { Clock, MapPin, Phone, ChevronRight, Printer } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Order } from "@/types/order";
@@ -35,6 +35,9 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
             <p className="text-sm font-medium text-foreground/80">{order.customerName || "Cliente não informado"}</p>
           </div>
           <div className="flex items-center gap-2">
+            {order.isPrinted && (
+              <Printer className="h-4 w-4 text-primary" />
+            )}
             <Badge className={`${statusVariant[order.status]} border text-xs font-medium`}>
               {STATUS_LABELS[order.status]}
             </Badge>

@@ -73,5 +73,11 @@ export function useOrders() {
     });
   }, []);
 
-  return { orders, addOrder, updateStatus, cancelOrder, deleteOrder };
+  const markAsPrinted = useCallback((id: string) => {
+    setOrders((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, isPrinted: true } : o))
+    );
+  }, []);
+
+  return { orders, addOrder, updateStatus, cancelOrder, deleteOrder, markAsPrinted };
 }
