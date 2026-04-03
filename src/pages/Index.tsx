@@ -12,6 +12,7 @@ import { SettingsPage } from "@/components/SettingsPage";
 import { LoginPage } from "@/components/LoginPage";
 import { useOrders } from "@/hooks/useOrders";
 import { useAuth } from "@/hooks/useAuth";
+import { useSettings } from "@/hooks/useSettings";
 import type { Order } from "@/types/order";
 
 type View = "list" | "new" | "detail" | "customers" | "products" | "settings";
@@ -19,6 +20,7 @@ type View = "list" | "new" | "detail" | "customers" | "products" | "settings";
 const Index = () => {
   const { user, isAdmin, logout, isLoading: authLoading } = useAuth();
   const { orders, addOrder, updateStatus, cancelOrder, deleteOrder } = useOrders();
+  const { settings } = useSettings();
   const [view, setView] = useState<View>("list");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -121,7 +123,7 @@ const Index = () => {
               <UtensilsCrossed className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">Império Chiclets</h1>
+              <h1 className="text-xl font-bold text-foreground">{settings.storeName}</h1>
               <p className="text-xs text-muted-foreground">
                 Olá, {user.name} · <button onClick={logout} className="underline hover:text-foreground transition-colors">Sair</button>
               </p>

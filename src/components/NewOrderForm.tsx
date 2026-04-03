@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { useCustomers, useAddCustomer } from "@/hooks/useCustomers";
 import { useProducts } from "@/hooks/useProducts";
 import { useAddons } from "@/hooks/useAddons";
+import { useSettings } from "@/hooks/useSettings";
 
 interface NewOrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "number" | "createdAt">) => void;
@@ -256,6 +257,7 @@ function OrderItemRow({
 }
 
 export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
+  const { settings } = useSettings();
   const { data: customers = [] } = useCustomers();
   const addCustomer = useAddCustomer();
   const { data: products = [] } = useProducts();
@@ -266,7 +268,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
   const [phone, setPhone] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [items, setItems] = useState<OrderItem[]>([createEmptyItem()]);
-  const [deliveryFee, setDeliveryFee] = useState(0);
+  const [deliveryFee, setDeliveryFee] = useState(settings.defaultDeliveryFee);
   const [changeFor, setChangeFor] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<Order["paymentMethod"]>("cash");
 

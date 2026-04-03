@@ -19,6 +19,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useEmployees, useAddEmployee, useUpdateEmployee, useDeleteEmployee } from "@/hooks/useEmployees";
+import { useSettings } from "@/hooks/useSettings";
+import { toast } from "sonner";
 
 interface SettingsPageProps {
   onBack: () => void;
@@ -29,6 +31,11 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const addEmployee = useAddEmployee();
   const updateEmployee = useUpdateEmployee();
   const deleteEmployee = useDeleteEmployee();
+  const { settings, updateSettings } = useSettings();
+
+  // General settings state
+  const [storeName, setStoreName] = useState(settings.storeName);
+  const [defaultDeliveryFee, setDefaultDeliveryFee] = useState(settings.defaultDeliveryFee);
 
   // New employee form
   const [showNew, setShowNew] = useState(false);
@@ -64,6 +71,11 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
     updateEmployee.mutate(payload, { onSuccess: () => setEditingId(null) });
   };
 
+  const handleSaveGeneral = () => {
+    updateSettings({ storeName, defaultDeliveryFee });
+    toast.success("Configurações atualizadas com sucesso!");
+  };
+
   const startEdit = (emp: any) => {
     setEditingId(emp.id);
     setEditName(emp.name);
@@ -81,6 +93,42 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
         </Button>
 
         <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold">Configurações Gerais</h2>
+        </div>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base text-primary">Estabelecimento</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Nome do Estabelecimento</Label>
+              <Input 
+                value={storeName} 
+                onChange={(e) => setStoreName(e.target.value)} 
+                placeholder="Ex: Império Chiclets" 
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Taxa de Entrega Padrão (R$)</Label>
+              <Input 
+                type="number" 
+                step="0.01" 
+                min={0} 
+                value={defaultDeliveryFee === 0 ? "" : defaultDeliveryFee} 
+                onChange={(e) => setDefaultDeliveryFee(parseFloat(e.target.value) || 0)} 
+                placeholder="0.00" 
+              />
+            </div>
+            <div className="sm:col-span-2 flex justify-end">
+              <Button onClick={handleSaveGeneral} className="gap-1.5">
+                <Save className="h-4 w-4" /> Salvar Configurações
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex items-center justify-between pt-4 border-t">
           <h2 className="text-xl font-bold">Configurações — Funcionários</h2>
           <Button onClick={() => setShowNew(!showNew)} className="gap-1.5">
             <Plus className="h-4 w-4" /> Novo Funcionário
