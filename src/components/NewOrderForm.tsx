@@ -77,7 +77,7 @@ function OrderItemRow({
   return (
     <div className="bg-secondary/40 rounded-[2rem] p-4 sm:p-6 space-y-5 border border-border/20 shadow-sm">
       {/* Grid Iterativa e Responsiva - 7 Colunas no Desktop */}
-      <div className="grid grid-cols-1 md:grid-cols-[5rem_5rem_2fr_7rem_1.5fr_6rem_auto] gap-4 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-[4.5rem_4.5rem_2.2fr_6.5rem_1.8fr_6rem_auto] gap-4 items-start">
         
         {/* 1. Código */}
         <div className="space-y-1.5 flex flex-col">
@@ -95,7 +95,7 @@ function OrderItemRow({
             }}
             onBlur={() => handleProductCodeSearch(item.id, item.productCode)}
             placeholder="000"
-            className="text-center font-bold rounded-xl md:h-10 h-12 bg-background border-none shadow-sm focus-visible:ring-1 focus-visible:ring-primary/30"
+            className="text-center font-bold rounded-xl md:h-11 h-12 bg-background border-none shadow-sm focus-visible:ring-1 focus-visible:ring-primary/30"
             maxLength={5}
           />
         </div>
@@ -119,13 +119,13 @@ function OrderItemRow({
                 }
               }
             }}
-            className="text-center font-bold rounded-xl md:h-10 h-12 bg-background border-none shadow-sm focus-visible:ring-1 focus-visible:ring-primary/30"
+            className="text-center font-bold rounded-xl md:h-11 h-12 bg-background border-none shadow-sm focus-visible:ring-1 focus-visible:ring-primary/30"
           />
         </div>
 
         {/* 3. Produto (Busca/Seleção) */}
         <div className="space-y-1.5 flex flex-col min-w-0">
-          <Label className="text-[10px] font-black uppercase opacity-60 ml-2">Nome do Produto</Label>
+          <Label className="text-[10px] font-black uppercase opacity-60 ml-2 whitespace-nowrap">Nome do Produto</Label>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -134,7 +134,7 @@ function OrderItemRow({
                 role="combobox"
                 aria-expanded={open}
                 className={cn(
-                  "w-full justify-between md:h-10 h-12 px-4 rounded-xl font-bold bg-background border-none shadow-sm overflow-hidden",
+                  "w-full justify-between md:h-11 h-12 px-4 rounded-xl font-bold bg-background border-none shadow-sm overflow-hidden",
                   !item.product && "text-muted-foreground",
                   item.productCode ? "bg-muted/50 opacity-100" : "" 
                 )}
@@ -191,7 +191,7 @@ function OrderItemRow({
 
         {/* 4. Valor Unitário */}
         <div className="space-y-1.5 flex flex-col">
-          <Label className="text-[10px] font-black uppercase opacity-60 ml-2">Valor Unit.</Label>
+          <Label className="text-[10px] font-black uppercase opacity-60 ml-2 whitespace-nowrap">Valor Unit.</Label>
           <Input
             id={`price-${item.id}`}
             type="number"
@@ -206,7 +206,7 @@ function OrderItemRow({
               }
             }}
             readOnly={!!item.productCode}
-            className={cn("md:h-10 h-12 font-bold rounded-xl bg-background border-none shadow-sm", item.productCode ? "bg-muted/50 cursor-default" : "")}
+            className={cn("md:h-11 h-12 font-bold rounded-xl bg-background border-none shadow-sm", item.productCode ? "bg-muted/50 cursor-default" : "")}
           />
         </div>
 
@@ -224,14 +224,14 @@ function OrderItemRow({
               }
             }}
             placeholder="Ex: sem cebola"
-            className="md:h-10 h-12 font-medium rounded-xl bg-background border-none shadow-sm px-4"
+            className="md:h-11 h-12 font-medium rounded-xl bg-background border-none shadow-sm px-4"
           />
         </div>
 
         {/* 6. Total do Item */}
         <div className="space-y-1.5 flex flex-col text-right">
           <Label className="text-[10px] font-black uppercase opacity-60 mr-2">Subtotal</Label>
-          <div className="md:h-10 h-12 flex items-center justify-end px-2">
+          <div className="md:h-11 h-12 flex items-center justify-end px-2">
             <span className="text-sm font-black text-primary">R$ {item.total.toFixed(2)}</span>
           </div>
         </div>
@@ -239,7 +239,7 @@ function OrderItemRow({
         {/* 7. Ações (Remover) */}
         <div className="space-y-1.5 flex flex-col items-end">
           <Label className="text-[10px] font-black uppercase opacity-0 mr-2 md:block hidden">Ação</Label>
-          <div className="md:h-10 h-12 flex items-center">
+          <div className="md:h-11 h-12 flex items-center">
             {items.length > 1 && (
               <Button
                 type="button"
