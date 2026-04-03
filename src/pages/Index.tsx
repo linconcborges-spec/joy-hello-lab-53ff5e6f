@@ -299,7 +299,7 @@ const Index = () => {
   if (view === "new") {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-10 flex items-center justify-center">
-        <div className="max-w-3xl w-full">
+        <div className="max-w-7xl w-full">
           <NewOrderForm
             onSubmit={(order) => addOrderMutation.mutate(order, { onSuccess: () => setView("list") })}
             onCancel={() => setView("list")}
@@ -316,7 +316,7 @@ const Index = () => {
   if (view === "detail" && selectedOrder) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-10 flex items-center justify-center">
-        <div className="max-w-3xl w-full">
+        <div className="max-w-7xl w-full">
           <OrderDetail
             order={selectedOrder}
             onBack={() => setView("list")}
@@ -332,7 +332,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background selection:bg-primary/20 selection:text-primary overflow-x-hidden w-full max-w-full">
-      <div className="container mx-auto px-4 sm:px-6 py-6 space-y-10">
+      <div className="max-w-[1500px] mx-auto px-4 sm:px-10 py-6 space-y-10">
         {/* Superior Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 text-center lg:text-left">
           <div className="flex flex-col lg:flex-row items-center gap-4">

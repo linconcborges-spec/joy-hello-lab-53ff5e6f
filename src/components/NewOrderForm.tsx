@@ -77,7 +77,7 @@ function OrderItemRow({
   return (
     <div className="bg-secondary/40 rounded-[2rem] p-4 sm:p-6 space-y-5 border border-border/20 shadow-sm">
       {/* Grid Iterativa e Responsiva - 7 Colunas no Desktop */}
-      <div className="grid grid-cols-1 md:grid-cols-[4.5rem_4.5rem_2.2fr_6.5rem_1.8fr_6rem_auto] gap-4 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-[4.5rem_4.5rem_2.5fr_6.5rem_1.5fr_6.5rem_auto] gap-4 items-start">
         
         {/* 1. Código */}
         <div className="space-y-1.5 flex flex-col">
