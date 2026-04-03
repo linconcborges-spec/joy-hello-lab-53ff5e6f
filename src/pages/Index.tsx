@@ -463,24 +463,24 @@ const Index = () => {
           ) : (
             <div className="w-full">
               {isMobile ? (
-                <div className="flex flex-col items-center space-y-8 py-4">
-                  <div className="w-full max-w-sm bg-card rounded-[2.5rem] border border-border/40 p-8 shadow-2xl shadow-primary/10 text-center space-y-6">
-                    <div className="h-24 w-24 bg-primary/5 rounded-full flex items-center justify-center mx-auto border-2 border-primary/20">
-                      <Plus className="h-12 w-12 text-primary animate-pulse" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-black uppercase tracking-tighter">Iniciar Pedido</h2>
-                      <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-1 opacity-60">Toque abaixo para abrir o balcão</p>
-                    </div>
-                    <Button 
-                      onClick={() => setView("new")} 
-                      className="h-20 w-full rounded-[2rem] shadow-xl shadow-primary/30 text-xl font-black uppercase tracking-widest gap-4 transform active:scale-95 transition-all"
+                <div className="flex flex-col items-center space-y-8 py-8 px-4">
+                  <div className="w-full max-w-sm bg-card rounded-[3rem] border border-border/40 p-12 shadow-2xl shadow-primary/10 text-center space-y-8 flex flex-col items-center">
+                    
+                    <button 
+                      onClick={() => setView("new")}
+                      className="group relative h-40 w-40 bg-primary rounded-full flex items-center justify-center shadow-2xl shadow-primary/40 transform active:scale-90 transition-all"
                     >
-                      <Plus className="h-8 w-8" /> Novo Pedido
-                    </Button>
+                      <Plus className="h-20 w-20 text-primary-foreground group-hover:scale-110 transition-transform" />
+                      <div className="absolute inset-0 rounded-full border-4 border-primary animate-ping opacity-20" />
+                    </button>
+
+                    <div>
+                      <h2 className="text-3xl font-black uppercase tracking-tighter">Iniciar Pedido</h2>
+                      <p className="text-[11px] font-black uppercase text-muted-foreground tracking-widest mt-2 opacity-50">Toque no ícone acima para começar</p>
+                    </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4 w-full px-2">
+                  <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
                     <Button variant="outline" onClick={() => setView("products")} className="h-24 rounded-3xl border-border/40 bg-card flex-col gap-2 font-black uppercase text-[10px] tracking-widest">
                       <Package className="h-6 w-6 opacity-40" /> Produtos
                     </Button>
