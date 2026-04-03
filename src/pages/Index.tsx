@@ -449,22 +449,6 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Action Buttons Central (Desktop) */}
-        {!isMobile && (
-          <div className="flex items-center justify-center gap-3">
-             <Button 
-                variant={isHistoryView ? "default" : "outline"} 
-                onClick={() => setIsHistoryView(!isHistoryView)} 
-                className="h-14 rounded-full px-10 gap-3 border-border/40 font-black uppercase tracking-widest text-[11px] shadow-sm"
-              >
-                {isHistoryView ? <LayoutDashboard className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
-                {isHistoryView ? "Painel Operacional" : "Histórico de Vendas"}
-              </Button>
-              <Button variant="outline" onClick={() => setView("customers")} className="h-14 rounded-full px-10 border-border/40 gap-3 font-black uppercase tracking-widest text-[11px] shadow-sm">
-                <Users className="h-5 w-5" /> Clientes
-              </Button>
-          </div>
-        )}
 
         {/* View Switcher: Kanban vs History Table */}
         <div className="flex justify-center w-full pb-20 md:pb-0">
