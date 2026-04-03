@@ -191,16 +191,6 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
                     className="text-center"
                   />
                 </div>
-                <div className="col-span-4 space-y-1.5">
-                  <Label className="text-xs">Produto</Label>
-                  <Input
-                    value={item.product}
-                    onChange={(e) => updateItem(item.id, "product", e.target.value)}
-                    placeholder="Nome do produto"
-                    readOnly={!!item.productCode}
-                    className={item.productCode ? "bg-muted" : ""}
-                  />
-                </div>
                 <div className="col-span-1 space-y-1.5">
                   <Label className="text-xs">Qtd</Label>
                   <Input
@@ -209,6 +199,16 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
                     value={item.quantity}
                     onChange={(e) => updateItem(item.id, "quantity", parseInt(e.target.value) || 1)}
                     className="text-center"
+                  />
+                </div>
+                <div className="col-span-4 space-y-1.5">
+                  <Label className="text-xs">Produto</Label>
+                  <Input
+                    value={item.product}
+                    onChange={(e) => updateItem(item.id, "product", e.target.value)}
+                    placeholder="Nome do produto"
+                    readOnly={!!item.productCode}
+                    className={item.productCode ? "bg-muted" : ""}
                   />
                 </div>
                 <div className="col-span-2 space-y-1.5">
