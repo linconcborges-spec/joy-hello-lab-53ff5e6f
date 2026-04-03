@@ -12,6 +12,7 @@ export interface OrderItem {
   unitPrice: number;
   total: number;
   categoryId?: string | null;
+  observation?: string;
 }
 
 export interface Order {

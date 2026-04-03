@@ -21,7 +21,7 @@ interface NewOrderFormProps {
 }
 
 function createEmptyItem(): OrderItem {
-  return { id: crypto.randomUUID(), productCode: "", quantity: 1, product: "", addons: [], unitPrice: 0, total: 0, categoryId: null };
+  return { id: crypto.randomUUID(), productCode: "", quantity: 1, product: "", addons: [], unitPrice: 0, total: 0, categoryId: null, observation: "" };
 }
 
 function calcTotal(item: OrderItem): number {
@@ -64,7 +64,7 @@ function OrderItemRow({
 
   return (
     <div className="bg-secondary/40 rounded-lg p-3 space-y-2">
-      <div className="grid grid-cols-[5rem_5rem_1fr_6rem_6rem_auto] gap-2 items-end">
+      <div className="grid grid-cols-[4.5rem_4.5rem_2fr_5.5rem_2fr_5.5rem_auto] gap-2 items-end">
         <div className="space-y-1.5">
           <Label className="text-xs">Código</Label>
           <Input
@@ -181,11 +181,27 @@ function OrderItemRow({
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                document.getElementById("btn-add-item")?.click();
+                document.getElementById(`obs-${item.id}`)?.focus();
               }
             }}
             readOnly={!!item.productCode}
             className={item.productCode ? "bg-muted cursor-default focus-visible:ring-1" : "focus-visible:ring-1"}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Obs</Label>
+          <Input
+            id={`obs-${item.id}`}
+            value={item.observation || ""}
+            onChange={(e) => updateItem(item.id, "observation", e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                document.getElementById("btn-add-item")?.click();
+              }
+            }}
+            placeholder="Ex: sem molho"
+            className="px-2"
           />
         </div>
         <div className="space-y-1.5">
