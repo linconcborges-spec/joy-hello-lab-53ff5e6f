@@ -16,28 +16,28 @@ export type Database = {
     Tables: {
       addons: {
         Row: {
+          category_id: string | null
           code: number
           created_at: string
           id: string
           name: string
           price: number
-          category_id: string | null
         }
         Insert: {
+          category_id?: string | null
           code?: number
           created_at?: string
           id?: string
           name: string
           price?: number
-          category_id?: string | null
         }
         Update: {
+          category_id?: string | null
           code?: number
           created_at?: string
           id?: string
           name?: string
           price?: number
-          category_id?: string | null
         }
         Relationships: [
           {
@@ -46,22 +46,22 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       categories: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
           name: string
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           name: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           name?: string
         }
@@ -99,28 +99,28 @@ export type Database = {
       }
       products: {
         Row: {
+          category_id: string | null
           code: number
           created_at: string
           id: string
           name: string
           price: number
-          category_id: string | null
         }
         Insert: {
+          category_id?: string | null
           code: number
           created_at?: string
           id?: string
           name: string
           price?: number
-          category_id?: string | null
         }
         Update: {
+          category_id?: string | null
           code?: number
           created_at?: string
           id?: string
           name?: string
           price?: number
-          category_id?: string | null
         }
         Relationships: [
           {
@@ -129,7 +129,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
     }
