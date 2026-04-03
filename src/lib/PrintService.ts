@@ -18,82 +18,96 @@ export function printOrder(order: Order, settings: AppSettings) {
             size: ${settings.printPaperWidth} auto;
           }
           body {
-            font-family: 'Courier New', Courier, monospace;
+            font-family: Arial, Helvetica, sans-serif;
             font-size: ${settings.printFontSize};
             width: ${settings.printPaperWidth};
             margin: 0;
             padding: 0;
             color: #000;
+            line-height: 1.2;
           }
           .container {
-            padding: 10px;
+            padding: 5px;
           }
           .header {
             text-align: center;
-            border-bottom: 1px dashed #000;
+            border-bottom: 2px solid #000;
             padding-bottom: 10px;
             margin-bottom: 10px;
           }
           .store-name {
-            font-size: 1.2em;
-            font-weight: bold;
+            font-size: 1.5em;
+            font-weight: 900;
             margin-bottom: 5px;
+            text-transform: uppercase;
           }
           .order-number {
-            font-size: 1.1em;
-            font-weight: bold;
+            font-size: 1.3em;
+            font-weight: 900;
           }
           .section {
-            margin-bottom: 10px;
-            border-bottom: 1px dashed #000;
-            padding-bottom: 5px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #000;
+            padding-bottom: 8px;
           }
           .section-title {
-            font-weight: bold;
-            margin-bottom: 3px;
+            font-weight: 900;
+            margin-bottom: 4px;
             text-transform: uppercase;
-            font-size: 0.9em;
+            font-size: 1em;
+            text-decoration: underline;
           }
           .item {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
+            font-weight: bold;
+            font-size: 1.1em;
           }
           .item-details {
             flex: 1;
+            padding-right: 5px;
           }
           .item-price {
             margin-left: 10px;
+            font-weight: 900;
           }
           .addon {
-            font-size: 0.9em;
-            margin-left: 10px;
-            font-style: italic;
+            font-size: 1em;
+            margin-left: 15px;
+            font-weight: bold;
           }
           .obs {
-            font-size: 0.9em;
-            margin-left: 10px;
-            color: #333;
+            font-size: 1em;
+            margin-left: 15px;
+            font-weight: 900;
+            background: #eee;
+            padding: 2px 5px;
+            margin-top: 2px;
           }
           .totals {
-            margin-top: 10px;
+            margin-top: 15px;
           }
           .total-line {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
+            font-weight: bold;
           }
           .grand-total {
-            font-weight: bold;
-            font-size: 1.1em;
-            margin-top: 5px;
-            border-top: 1px solid #000;
-            padding-top: 5px;
+            font-weight: 900;
+            font-size: 1.4em;
+            margin-top: 8px;
+            border-top: 2px solid #000;
+            padding-top: 8px;
           }
           .footer {
             text-align: center;
-            margin-top: 20px;
-            font-size: 0.8em;
+            margin-top: 25px;
+            font-size: 1em;
+            font-weight: bold;
+            border-top: 1px dashed #000;
+            padding-top: 10px;
           }
           @media print {
             body { width: 100%; }
