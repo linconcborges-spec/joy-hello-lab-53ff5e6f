@@ -28,6 +28,7 @@ export function printOrder(order: Order, settings: AppSettings) {
           }
           .container {
             padding: 5px;
+            padding-top: ${settings.printMarginTop || '0mm'};
           }
           .header {
             text-align: center;

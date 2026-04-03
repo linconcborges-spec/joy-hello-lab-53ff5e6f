@@ -44,6 +44,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const [defaultDeliveryFee, setDefaultDeliveryFee] = useState(settings.defaultDeliveryFee);
   const [printPaperWidth, setPrintPaperWidth] = useState(settings.printPaperWidth);
   const [printMargin, setPrintMargin] = useState(settings.printMargin);
+  const [printMarginTop, setPrintMarginTop] = useState(settings.printMarginTop || "0mm");
   const [printFontSize, setPrintFontSize] = useState(settings.printFontSize);
 
   // New employee form
@@ -81,7 +82,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   };
 
   const handleSaveGeneral = () => {
-    updateSettings({ storeName, defaultDeliveryFee, printPaperWidth, printMargin, printFontSize });
+    updateSettings({ storeName, defaultDeliveryFee, printPaperWidth, printMargin, printMarginTop, printFontSize });
     toast.success("Configurações atualizadas com sucesso!");
   };
 
@@ -165,7 +166,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-xs">Largura do Papel (ex: 80mm, 58mm, A4)</Label>
+              <Label className="text-xs">Largura do Papel (ex: 80mm)</Label>
               <Input 
                 value={printPaperWidth} 
                 onChange={(e) => setPrintPaperWidth(e.target.value)} 
@@ -173,7 +174,16 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Margens (ex: 0mm, 5px)</Label>
+              <Label className="text-xs font-bold text-primary">Espaço Superior (ex: 3cm)</Label>
+              <Input 
+                value={printMarginTop} 
+                onChange={(e) => setPrintMarginTop(e.target.value)} 
+                placeholder="3cm ou 30mm" 
+                className="border-primary/20"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Margens Laterais (ex: 0mm)</Label>
               <Input 
                 value={printMargin} 
                 onChange={(e) => setPrintMargin(e.target.value)} 
@@ -181,7 +191,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Tamanho da Fonte (ex: 12px, 14px)</Label>
+              <Label className="text-xs">Tamanho da Fonte (ex: 14px)</Label>
               <Input 
                 value={printFontSize} 
                 onChange={(e) => setPrintFontSize(e.target.value)} 
