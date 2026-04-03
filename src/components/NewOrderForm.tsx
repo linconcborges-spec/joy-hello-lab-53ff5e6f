@@ -75,168 +75,198 @@ function OrderItemRow({
   };
 
   return (
-    <div className="bg-secondary/40 rounded-lg p-3 space-y-2">
-      <div className="grid grid-cols-[4.5rem_4.5rem_2fr_5.5rem_2fr_5.5rem_auto] gap-2 items-end">
-        <div className="space-y-1.5">
-          <Label className="text-xs">Código</Label>
-          <Input
-            id={`code-${item.id}`}
-            value={item.productCode}
-            onChange={(e) => updateItem(item.id, "productCode", e.target.value)}
-            onKeyDown={(e) => { 
-              if (e.key === "Enter") { 
-                e.preventDefault(); 
-                handleProductCodeSearch(item.id, item.productCode); 
-                document.getElementById(`qty-${item.id}`)?.focus();
-              } 
-            }}
-            onBlur={() => handleProductCodeSearch(item.id, item.productCode)}
-            placeholder="Cód."
-            className="text-center px-1"
-            maxLength={5}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Qtd</Label>
-          <Input
-            id={`qty-${item.id}`}
-            type="number"
-            min={1}
-            value={item.quantity}
-            onChange={(e) => updateItem(item.id, "quantity", parseInt(e.target.value) || 1)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                if (item.productCode || item.product) {
-                  document.getElementById(`price-${item.id}`)?.focus();
-                } else {
-                  document.getElementById(`combobox-${item.id}`)?.focus();
+    <div className="bg-secondary/40 rounded-3xl p-4 sm:p-5 space-y-4 border border-border/20 shadow-inner">
+      {/* Grid Iterativa e Responsiva */}
+      <div className="flex flex-col md:grid md:grid-cols-[6rem_6rem_1fr_7rem_1fr_6rem_auto] gap-4 items-end">
+        
+        {/* Código e Qtd em linha no mobile tamém para economizar espaço vertical */}
+        <div className="grid grid-cols-2 gap-3 w-full md:contents">
+          <div className="space-y-1.5 flex-1">
+            <Label className="text-[10px] font-black uppercase opacity-60 ml-2">Código</Label>
+            <Input
+              id={`code-${item.id}`}
+              value={item.productCode}
+              onChange={(e) => updateItem(item.id, "productCode", e.target.value)}
+              onKeyDown={(e) => { 
+                if (e.key === "Enter") { 
+                  e.preventDefault(); 
+                  handleProductCodeSearch(item.id, item.productCode); 
+                  document.getElementById(`qty-${item.id}`)?.focus();
+                } 
+              }}
+              onBlur={() => handleProductCodeSearch(item.id, item.productCode)}
+              placeholder="000"
+              className="text-center font-bold rounded-xl h-12 bg-background border-none shadow-sm"
+              maxLength={5}
+            />
+          </div>
+          <div className="space-y-1.5 flex-1">
+            <Label className="text-[10px] font-black uppercase opacity-60 ml-2">Qtd</Label>
+            <Input
+              id={`qty-${item.id}`}
+              type="number"
+              min={1}
+              value={item.quantity}
+              onChange={(e) => updateItem(item.id, "quantity", parseInt(e.target.value) || 1)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (item.productCode || item.product) {
+                    document.getElementById(`price-${item.id}`)?.focus();
+                  } else {
+                    document.getElementById(`combobox-${item.id}`)?.focus();
+                  }
                 }
-              }
-            }}
-            className="text-center px-1"
-          />
+              }}
+              className="text-center font-bold rounded-xl h-12 bg-background border-none shadow-sm"
+            />
+          </div>
         </div>
-        <div className="space-y-1.5 flex flex-col">
-          <Label className="text-xs">Produto</Label>
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
+
+        {/* Produto e Valor */}
+        <div className="grid grid-cols-[1fr_auto] gap-3 w-full md:contents">
+          <div className="space-y-1.5 flex flex-col min-w-0">
+            <Label className="text-[10px] font-black uppercase opacity-60 ml-2">Produto</Label>
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  id={`combobox-${item.id}`}
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className={cn(
+                    "w-full justify-between h-12 px-4 rounded-xl font-bold bg-background border-none shadow-sm overflow-hidden",
+                    !item.product && "text-muted-foreground",
+                    item.productCode ? "bg-muted/50" : ""
+                  )}
+                  disabled={!!item.productCode}
+                >
+                  <span className="truncate">{item.product || "Busque p/ nome..."}</span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[calc(100vw-3rem)] sm:w-[400px] p-0 rounded-2xl shadow-2xl border-none overflow-hidden" align="start">
+                <Command shouldFilter={false}>
+                  <CommandInput 
+                    placeholder="Buscar produto por nome..." 
+                    value={searchQuery}
+                    onValueChange={(v) => {
+                      setSearchQuery(v);
+                      handleCustomProductName(v);
+                    }}
+                    className="h-14 font-bold"
+                  />
+                  <CommandList className="max-h-[300px]">
+                    <CommandEmpty className="py-6 text-center text-xs font-black uppercase opacity-30">Aperte enter para usar "{searchQuery}"</CommandEmpty>
+                    <CommandGroup>
+                      {products.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map((produto: any) => (
+                        <CommandItem
+                          key={produto.code}
+                          value={produto.name}
+                          className="py-3 px-4 m-1 rounded-xl cursor-pointer"
+                          onSelect={() => {
+                            updateItem(item.id, "productCode", produto.code.toString());
+                            updateItem(item.id, "product", produto.name);
+                            updateItem(item.id, "unitPrice", Number(produto.price));
+                            updateItem(item.id, "categoryId", produto.category_id || null);
+                            setSearchQuery("");
+                            setOpen(false);
+                            setTimeout(() => {
+                              document.getElementById(`price-${item.id}`)?.focus();
+                            }, 50);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-3 h-4 w-4 shrink-0 text-primary",
+                              item.product === produto.name ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-bold">{produto.name}</span>
+                            <span className="text-[10px] opacity-50 uppercase font-black">R$ {Number(produto.price).toFixed(2)}</span>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="space-y-1.5 w-[7rem] md:contents">
+            <Label className="text-[10px] font-black uppercase opacity-60 ml-2 md:hidden">Valor</Label>
+            <div className="md:contents space-y-1.5">
+               <Label className="hidden md:block text-[10px] font-black uppercase opacity-60 ml-2">Valor</Label>
+               <Input
+                id={`price-${item.id}`}
+                type="number"
+                step="0.01"
+                min={0}
+                value={item.unitPrice || ""}
+                onChange={(e) => updateItem(item.id, "unitPrice", parseFloat(e.target.value) || 0)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    document.getElementById(`obs-${item.id}`)?.focus();
+                  }
+                }}
+                readOnly={!!item.productCode}
+                className={cn("h-12 font-bold rounded-xl bg-background border-none shadow-sm", item.productCode ? "bg-muted/50 cursor-default" : "")}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Obs e Total */}
+        <div className="grid grid-cols-[1fr_auto_auto] gap-3 w-full md:contents">
+          <div className="space-y-1.5 flex-1 min-w-0">
+            <Label className="text-[10px] font-black uppercase opacity-60 ml-2">Observação</Label>
+            <Input
+              id={`obs-${item.id}`}
+              value={item.observation || ""}
+              onChange={(e) => updateItem(item.id, "observation", e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  document.getElementById("btn-add-item")?.click();
+                }
+              }}
+              placeholder="Ex: sem cebola"
+              className="h-12 font-medium rounded-xl bg-background border-none shadow-sm px-4"
+            />
+          </div>
+          <div className="space-y-1.5 min-w-[5rem] text-right">
+            <Label className="text-[10px] font-black uppercase opacity-60 mr-2">Total</Label>
+            <div className="h-12 flex items-center justify-end px-2">
+              <span className="text-sm font-black text-primary">R$ {item.total.toFixed(2)}</span>
+            </div>
+          </div>
+          <div className="space-y-1.5 flex items-end pb-1 px-1">
+            {items.length > 1 && (
               <Button
-                id={`combobox-${item.id}`}
-                variant="outline"
-                role="combobox"
-                aria-expanded={open}
-                className={cn(
-                  "w-full justify-between h-9 px-3 font-normal overflow-hidden",
-                  !item.product && "text-muted-foreground",
-                  item.productCode ? "bg-muted" : ""
-                )}
-                disabled={!!item.productCode}
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 text-destructive/40 hover:text-destructive hover:bg-destructive/10 rounded-xl"
+                onClick={() => setItems((p: any) => p.filter((i: any) => i.id !== item.id))}
               >
-                <span className="truncate">{item.product || "Busque ou digite..."}</span>
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                <Trash2 className="h-5 w-5" />
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-0" align="start">
-              <Command shouldFilter={false}>
-                <CommandInput 
-                  placeholder="Buscar produto por nome..." 
-                  value={searchQuery}
-                  onValueChange={(v) => {
-                    setSearchQuery(v);
-                    handleCustomProductName(v);
-                  }}
-                />
-                <CommandList>
-                  <CommandEmpty>Aperte enter para usar "{searchQuery}"</CommandEmpty>
-                  <CommandGroup>
-                    {products.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map((produto: any) => (
-                      <CommandItem
-                        key={produto.code}
-                        value={produto.name}
-                        onSelect={() => {
-                          updateItem(item.id, "productCode", produto.code.toString());
-                          updateItem(item.id, "product", produto.name);
-                          updateItem(item.id, "unitPrice", Number(produto.price));
-                          updateItem(item.id, "categoryId", produto.category_id || null);
-                          setSearchQuery("");
-                          setOpen(false);
-                          setTimeout(() => {
-                            document.getElementById(`price-${item.id}`)?.focus();
-                          }, 50);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4 shrink-0",
-                            item.product === produto.name ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        {produto.name} - R$ {Number(produto.price).toFixed(2)}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Valor</Label>
-          <Input
-            id={`price-${item.id}`}
-            type="number"
-            step="0.01"
-            min={0}
-            value={item.unitPrice || ""}
-            onChange={(e) => updateItem(item.id, "unitPrice", parseFloat(e.target.value) || 0)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                document.getElementById(`obs-${item.id}`)?.focus();
-              }
-            }}
-            readOnly={!!item.productCode}
-            className={item.productCode ? "bg-muted cursor-default focus-visible:ring-1" : "focus-visible:ring-1"}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Obs</Label>
-          <Input
-            id={`obs-${item.id}`}
-            value={item.observation || ""}
-            onChange={(e) => updateItem(item.id, "observation", e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                document.getElementById("btn-add-item")?.click();
-              }
-            }}
-            placeholder="Ex: sem molho"
-            className="px-2"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Total</Label>
-          <p className="h-10 flex items-center text-sm font-bold text-primary">R$ {item.total.toFixed(2)}</p>
-        </div>
-        <div className="flex justify-end w-8">
-          {items.length > 1 && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              onClick={() => setItems((p: any) => p.filter((i: any) => i.id !== item.id))}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
+            )}
+          </div>
         </div>
       </div>
-      <div className="space-y-1.5">
-        <Label className="text-xs">Adicionais</Label>
-        <div className="flex flex-wrap gap-1.5">
+
+      {/* Adicionais com quebra de linha garantida */}
+      <div className="space-y-2 bg-background/30 p-4 rounded-2xl border border-border/10">
+        <div className="flex items-center justify-between">
+          <Label className="text-[10px] font-black uppercase opacity-40 tracking-widest">Adicionais Extras</Label>
+          {item.addons.length > 0 && (
+            <span className="text-[10px] font-black text-primary uppercase">+ R$ {item.addons.reduce((s: any, a: any) => s + a.price, 0).toFixed(2)}</span>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
           {addons
             .filter((addon: any) => !addon.category_id || addon.category_id === item.categoryId)
             .map((addon: any) => {
@@ -244,24 +274,23 @@ function OrderItemRow({
             return (
               <Badge
                 key={addon.id}
-                variant={selected ? "default" : "outline"}
-                className="cursor-pointer select-none"
+                variant={selected ? "success" : "outline"}
+                className={cn(
+                  "cursor-pointer select-none py-2 px-3 rounded-xl border-none transition-all active:scale-95",
+                  selected ? "shadow-md shadow-success/20 ring-2 ring-success/20" : "bg-background/50 opacity-60 hover:opacity-100"
+                )}
                 onClick={() => toggleAddon(item.id, { name: addon.name, price: Number(addon.price) })}
               >
-                {addon.name} +R${Number(addon.price).toFixed(2)}
-                {selected && <X className="h-3 w-3 ml-1" />}
+                <span className="text-[10px] font-bold">{addon.name}</span>
+                <span className="text-[10px] ml-1.5 font-black opacity-40">R${Number(addon.price).toFixed(0)}</span>
+                {selected && <Check className="h-3 w-3 ml-2" />}
               </Badge>
             );
           })}
           {addons.filter((addon: any) => !addon.category_id || addon.category_id === item.categoryId).length === 0 && (
-            <span className="text-xs text-muted-foreground">Nenhum adicional disponível para este item.</span>
+            <span className="text-[10px] text-muted-foreground uppercase font-black opacity-20">Nenhum adicional p/ esta categoria</span>
           )}
         </div>
-        {item.addons.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            Total adicionais: R$ {item.addons.reduce((s: any, a: any) => s + a.price, 0).toFixed(2)}
-          </p>
-        )}
       </div>
     </div>
   );

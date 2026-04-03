@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -188,22 +189,35 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel,
             {order.items.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhum item</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {order.items.map((item) => (
-                  <div key={item.id} className={`flex justify-between items-start text-sm rounded-lg px-3 py-2 ${isCancelled ? "bg-destructive/10 line-through opacity-70" : "bg-secondary/50"}`}>
-                    <div>
-                      <span className="font-medium">{item.quantity}x</span>{" "}
-                      <span>{item.product}</span>
+                  <div key={item.id} className={cn(
+                    "flex flex-col sm:flex-row sm:justify-between sm:items-start text-sm rounded-2xl px-4 py-3 border border-border/10",
+                    isCancelled ? "bg-destructive/10 line-through opacity-70" : "bg-secondary/20"
+                  )}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-black text-primary">{item.quantity}x</span>
+                        <span className="font-bold break-words">{item.product}</span>
+                      </div>
                       {item.addons && item.addons.length > 0 && (
-                        <span className="text-muted-foreground ml-1">
-                          (+{item.addons.map(a => a.name).join(", ")} R$ {item.addons.reduce((s, a) => s + a.price, 0).toFixed(2)})
-                        </span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {item.addons.map((a, idx) => (
+                            <Badge key={idx} variant="outline" className="text-[9px] uppercase font-bold py-0 h-4 bg-background/50 border-none">
+                              +{a.name}
+                            </Badge>
+                          ))}
+                        </div>
                       )}
                       {item.observation && (
-                        <p className="text-xs text-orange-600 mt-0.5">Obs: {item.observation}</p>
+                        <p className="text-[10px] text-orange-600 font-bold uppercase tracking-widest mt-2 bg-orange-500/5 px-2 py-1 rounded-lg inline-block italic">
+                          Obs: {item.observation}
+                        </p>
                       )}
                     </div>
-                    <span className="font-medium whitespace-nowrap ml-2">R$ {item.total.toFixed(2)}</span>
+                    <div className="flex justify-end items-center mt-3 sm:mt-0 sm:ml-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-border/10">
+                      <span className="font-black text-sm">R$ {item.total.toFixed(2)}</span>
+                    </div>
                   </div>
                 ))}
               </div>

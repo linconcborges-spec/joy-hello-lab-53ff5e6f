@@ -331,7 +331,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background selection:bg-primary/20 selection:text-primary">
+    <div className="min-h-screen bg-background selection:bg-primary/20 selection:text-primary overflow-x-hidden w-full max-w-full">
       <div className="container mx-auto px-4 sm:px-6 py-6 space-y-10">
         {/* Superior Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 text-center lg:text-left">
@@ -407,7 +407,7 @@ const Index = () => {
             <Button variant="outline" onClick={() => setView("products")} className="h-14 rounded-2xl px-5 border-border/40 bg-card gap-2 text-[11px] font-black uppercase shadow-sm">
               <Package className="h-4 w-4" /> Produtos
             </Button>
-            <Button onClick={() => setView("new")} className="h-14 rounded-2xl px-8 shadow-xl shadow-primary/20 font-black uppercase text-xs gap-3">
+            <Button onClick={() => setView("new")} className="hidden lg:flex h-14 rounded-2xl px-8 shadow-xl shadow-primary/20 font-black uppercase text-xs gap-3">
               <Plus className="h-5 w-5" /> Novo Pedido
             </Button>
           </div>
@@ -431,7 +431,7 @@ const Index = () => {
         )}
 
         {/* View Switcher: Kanban vs History Table */}
-        <div className="flex justify-center w-full">
+        <div className="flex justify-center w-full pb-20 md:pb-0">
           {isHistoryView ? (
             <div className="w-full flex flex-col items-center space-y-6">
               <div className="text-center space-y-2">
@@ -443,17 +443,31 @@ const Index = () => {
           ) : (
             <div className="w-full">
               {isMobile ? (
-                <div className="flex flex-col items-center space-y-10 py-10">
-                  <div className="h-64 w-64 rounded-full bg-secondary/10 border-4 border-dashed border-border/40 flex items-center justify-center opacity-40">
-                    <div className="text-center p-6">
-                      <LayoutDashboard className="h-12 w-12 mx-auto mb-4" />
-                      <p className="text-xs font-black uppercase tracking-tighter">Modo Mobile Ativo</p>
-                      <p className="text-[9px] font-medium mt-1">Use os balões flutuantes para ver os pedidos</p>
+                <div className="flex flex-col items-center space-y-8 py-4">
+                  <div className="w-full max-w-sm bg-card rounded-[2.5rem] border border-border/40 p-8 shadow-2xl shadow-primary/10 text-center space-y-6">
+                    <div className="h-24 w-24 bg-primary/5 rounded-full flex items-center justify-center mx-auto border-2 border-primary/20">
+                      <Plus className="h-12 w-12 text-primary animate-pulse" />
                     </div>
+                    <div>
+                      <h2 className="text-2xl font-black uppercase tracking-tighter">Iniciar Pedido</h2>
+                      <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-1 opacity-60">Toque abaixo para abrir o balcão</p>
+                    </div>
+                    <Button 
+                      onClick={() => setView("new")} 
+                      className="h-20 w-full rounded-[2rem] shadow-xl shadow-primary/30 text-xl font-black uppercase tracking-widest gap-4 transform active:scale-95 transition-all"
+                    >
+                      <Plus className="h-8 w-8" /> Novo Pedido
+                    </Button>
                   </div>
-                  <Button onClick={() => setView("new")} className="h-20 w-full rounded-3xl shadow-2xl shadow-primary/30 text-xl font-black uppercase tracking-widest gap-4">
-                    <Plus className="h-8 w-8" /> Iniciar Pedido
-                  </Button>
+                  
+                  <div className="grid grid-cols-2 gap-4 w-full px-2">
+                    <Button variant="outline" onClick={() => setView("products")} className="h-24 rounded-3xl border-border/40 bg-card flex-col gap-2 font-black uppercase text-[10px] tracking-widest">
+                      <Package className="h-6 w-6 opacity-40" /> Produtos
+                    </Button>
+                    <Button variant="outline" onClick={() => setView("customers")} className="h-24 rounded-3xl border-border/40 bg-card flex-col gap-2 font-black uppercase text-[10px] tracking-widest">
+                      <Users className="h-6 w-6 opacity-40" /> Clientes
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="flex gap-6 overflow-x-auto pb-8 custom-scrollbar-h justify-center">
@@ -468,21 +482,27 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Mobile Floating Action Buttons (FAB) */}
+      {/* Mobile Bottom Navigation Bar */}
       {isMobile && !isHistoryView && view === "list" && (
-        <div className="fixed bottom-6 right-6 flex flex-col gap-3 items-end z-50">
-          <FAB icon={Clock} color="bg-warning" title="Pendentes" status="pending" count={todayOrders.filter(o => o.status === 'pending').length} />
-          <FAB icon={UtensilsCrossed} color="bg-primary" title="Em Produção" status="preparing" count={todayOrders.filter(o => o.status === 'preparing').length} />
-          <FAB icon={Truck} color="bg-blue-500" title="Em Entrega" status="delivering" count={todayOrders.filter(o => o.status === 'delivering').length} />
-          <FAB icon={CheckCircle2} color="bg-success" title="Finalizados" status="completed" count={todayOrders.filter(o => o.status === 'completed').length} />
-          <Button 
-            size="icon" 
-            variant="outline" 
-            onClick={() => setIsHistoryView(true)}
-            className="h-14 w-14 rounded-full shadow-lg bg-card border-border/60"
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl border-t border-border/40 px-4 py-2 flex items-center justify-between shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
+          <div className="flex items-center gap-1 justify-around flex-1">
+            <BottomNavItem icon={Clock} color="text-warning" count={todayOrders.filter(o => o.status === 'pending').length} status="pending" title="Pendentes" />
+            <BottomNavItem icon={UtensilsCrossed} color="text-primary" count={todayOrders.filter(o => o.status === 'preparing').length} status="preparing" title="Produção" />
+            <BottomNavItem icon={Truck} color="text-blue-500" count={todayOrders.filter(o => o.status === 'delivering').length} status="delivering" title="Entrega" />
+            <BottomNavItem icon={CheckCircle2} color="text-success" count={todayOrders.filter(o => o.status === 'completed').length} status="completed" title="Finalizados" />
+          </div>
+          
+          <div className="h-8 w-px bg-border/40 mx-2" />
+          
+          <button 
+            onClick={() => setShowRevenue(!showRevenue)}
+            className="flex flex-col items-end pr-2 min-w-[80px]"
           >
-            <CalendarIcon className="h-6 w-6" />
-          </Button>
+            <span className="text-[8px] font-black uppercase opacity-40 tracking-widest">Balanço</span>
+            <span className={`text-[13px] font-black text-primary leading-tight transition-all ${!showRevenue ? "blur-sm opacity-20" : ""}`}>
+               R$ {todayRevenue.toFixed(2)}
+            </span>
+          </button>
         </div>
       )}
       
@@ -496,6 +516,67 @@ const Index = () => {
             <LayoutDashboard className="h-8 w-8" />
           </Button>
         </div>
+      )}
+    </div>
+  );
+};
+
+const BottomNavItem = ({ icon: Icon, color, count, status, title }: { icon: any, color: string, count: number, status: Order["status"], title: string }) => (
+  <Drawer>
+    <DrawerTrigger asChild>
+      <button className="flex flex-col items-center gap-0.5 relative px-2 py-1 transform active:scale-90 transition-transform">
+        <Icon className={`h-6 w-6 ${color}`} />
+        <span className="text-[8px] font-black uppercase tracking-tighter opacity-70">{title}</span>
+        {count > 0 && (
+          <span className={`absolute -top-1 right-2 w-4 h-4 rounded-full ${color.replace('text-', 'bg-')} text-white text-[8px] font-black flex items-center justify-center border-2 border-background`}>
+            {count}
+          </span>
+        )}
+      </button>
+    </DrawerTrigger>
+    <DrawerContent className="h-[90vh] p-4 pt-0">
+      <DrawerHeader className="px-0">
+        <DrawerTitle className="text-xl font-black uppercase tracking-tighter text-center">{title}</DrawerTitle>
+      </DrawerHeader>
+      <div className="flex-1 overflow-hidden">
+        <DrawerKanbanColumn status={status} title={title} colorClass={color} />
+      </div>
+    </DrawerContent>
+  </Drawer>
+);
+
+const DrawerKanbanColumn = ({ status, title, colorClass }: { status: any, title: string, colorClass: string }) => {
+  const { data: orders = [] } = useOrders();
+  const columnOrders = orders.filter(o => o.status === status);
+  const updateStatusMutation = useUpdateOrderStatus();
+  const cancelOrderMutation = useCancelOrder();
+  const { user } = useAuth();
+
+  return (
+    <div className="h-full flex flex-col space-y-4 overflow-y-auto pb-10 custom-scrollbar">
+      {columnOrders.length === 0 ? (
+        <div className="h-60 flex flex-col items-center justify-center opacity-10">
+          <Package className="h-12 w-12 mb-2" />
+          <p className="text-xs font-black uppercase tracking-tighter">Nenhum pedido aqui</p>
+        </div>
+      ) : (
+        columnOrders.map((order) => (
+          <ContextMenu key={order.id}>
+            <ContextMenuTrigger>
+              <OrderCard
+                order={order}
+                onClick={() => {}} // Could open details if needed
+              />
+            </ContextMenuTrigger>
+            <ContextMenuContent className="w-56 rounded-xl shadow-xl">
+              <ContextMenuLabel className="text-[10px] uppercase font-black opacity-50">Pedido #{order.number}</ContextMenuLabel>
+              <ContextMenuSeparator />
+              <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "completed", employeeName: user?.name || '' })}>Concluir Pedido</ContextMenuItem>
+              <ContextMenuSeparator />
+              <ContextMenuItem className="text-destructive font-bold rounded-lg m-1" onClick={() => cancelOrderMutation.mutate({ id: order.id, employeeName: user?.name || '' })}>Cancelar Pedido</ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
+        ))
       )}
     </div>
   );
