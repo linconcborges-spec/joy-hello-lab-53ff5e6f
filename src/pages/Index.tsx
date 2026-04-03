@@ -349,21 +349,22 @@ const Index = () => {
           </div>
           
           {/* Stats & Search Central Container */}
-          <div className="flex flex-col md:flex-row items-center gap-4 bg-card p-3 rounded-3xl border border-border/40 shadow-sm flex-1 max-w-2xl mx-auto lg:mx-0">
-            <div className="relative flex-1 w-full">
+          <div className="flex flex-col md:flex-row items-center gap-3 bg-card p-2 rounded-3xl border border-border/40 shadow-sm flex-1 max-w-xl mx-auto lg:mx-0">
+            <div className="relative flex-1 w-full max-w-[280px]">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
               <Input
-                placeholder="Busca centralizada..."
+                placeholder="Busca..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-11 bg-background border-none h-11 rounded-2xl shadow-inner text-sm font-medium"
               />
             </div>
+            
             {isHistoryView && (
-              <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto px-2">
+              <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto px-1">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-11 rounded-2xl border-border/40 gap-2 shrink-0">
+                    <Button variant="outline" size="sm" className="h-10 rounded-2xl border-border/40 gap-2 shrink-0">
                       <CalendarIcon className="h-3 w-3" />
                       <span className="text-[10px] font-black uppercase">
                         {dateRange.from ? format(dateRange.from, "dd/MM") : "Dê"} - {dateRange.to ? format(dateRange.to, "dd/MM") : "Até"}
@@ -374,26 +375,24 @@ const Index = () => {
                     <Calendar mode="range" selected={dateRange as any} onSelect={(r: any) => setDateRange(r || { from: undefined, to: undefined })} numberOfMonths={2} locale={ptBR} />
                   </PopoverContent>
                 </Popover>
-                <div className="flex items-center gap-2 bg-secondary/10 px-3 py-2 rounded-2xl border border-border/20 h-11">
-                  <Checkbox checked={showCancelled} onCheckedChange={(c) => setShowCancelled(c as boolean)} className="border-border/60" />
-                  <span className="text-[9px] font-black uppercase opacity-60">Cancelados</span>
-                </div>
               </div>
             )}
-            <div className="hidden md:block h-8 w-px bg-border/40 md:mx-1" />
-            <div className="flex items-center gap-6 px-4 py-2 border-t md:border-t-0 border-border/20 w-full md:w-auto justify-around">
+
+            <div className="hidden md:block h-8 w-px bg-border/20 mx-1" />
+            
+            <div className="flex items-center gap-5 px-3 py-1 w-full md:w-auto justify-around">
               <div className="flex flex-col items-center md:items-end">
-                <span className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">Pedidos</span>
-                <span className="text-lg font-black leading-none">{todayCount}</span>
+                <span className="text-[8px] text-muted-foreground uppercase font-black tracking-tighter opacity-40">Vendas</span>
+                <span className="text-sm font-black leading-none">{todayCount}</span>
               </div>
               <div className="flex flex-col items-center md:items-end">
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">Faturamento</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[8px] text-muted-foreground uppercase font-black tracking-tighter opacity-40">Balanço</span>
                   <button onClick={() => setShowRevenue(!showRevenue)} className="hover:text-primary transition-colors">
                     {showRevenue ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                   </button>
                 </div>
-                <span className={`text-lg font-black text-primary leading-none transition-all duration-500 ${!showRevenue ? "blur-md select-none opacity-20" : ""}`}>
+                <span className={`text-[13px] font-black text-primary leading-none transition-all duration-500 ${!showRevenue ? "blur-sm select-none opacity-20" : ""}`}>
                   R$ {todayRevenue.toFixed(2)}
                 </span>
               </div>
@@ -401,13 +400,50 @@ const Index = () => {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => setView("settings")} className="h-14 w-14 rounded-2xl bg-card border-border/40 shadow-sm hover:shadow-md">
+            {/* Botões de Ícones (Novo Padrão) */}
+            <Button 
+              variant={isHistoryView ? "default" : "outline"} 
+              size="icon" 
+              onClick={() => setIsHistoryView(!isHistoryView)} 
+              title={isHistoryView ? "Painel Operational" : "Histórico"}
+              className="h-12 w-12 rounded-2xl bg-card border-border/40 shadow-sm transition-all active:scale-90"
+            >
+              {isHistoryView ? <LayoutDashboard className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setView("customers")} 
+              title="Clientes"
+              className="h-12 w-12 rounded-2xl bg-card border-border/40 shadow-sm transition-all active:scale-90"
+            >
+              <Users className="h-5 w-5" />
+            </Button>
+
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setView("products")} 
+              title="Produtos"
+              className="h-12 w-12 rounded-2xl bg-card border-border/40 shadow-sm transition-all active:scale-90"
+            >
+              <Package className="h-5 w-5" />
+            </Button>
+
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setView("settings")} 
+              title="Configurações"
+              className="h-12 w-12 rounded-2xl bg-card border-border/40 shadow-sm transition-all active:scale-90"
+            >
               <Settings className="h-5 w-5" />
             </Button>
-            <Button variant="outline" onClick={() => setView("products")} className="h-14 rounded-2xl px-5 border-border/40 bg-card gap-2 text-[11px] font-black uppercase shadow-sm">
-              <Package className="h-4 w-4" /> Produtos
-            </Button>
-            <Button onClick={() => setView("new")} className="hidden lg:flex h-14 rounded-2xl px-8 shadow-xl shadow-primary/20 font-black uppercase text-xs gap-3">
+
+            <div className="hidden lg:block h-10 w-px bg-border/20 mx-1" />
+
+            <Button onClick={() => setView("new")} className="hidden lg:flex h-14 rounded-2xl px-8 shadow-xl shadow-primary/20 font-black uppercase text-xs gap-3 transform hover:-translate-y-0.5 transition-transform">
               <Plus className="h-5 w-5" /> Novo Pedido
             </Button>
           </div>
