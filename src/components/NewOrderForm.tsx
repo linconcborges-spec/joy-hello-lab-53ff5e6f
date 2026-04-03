@@ -29,6 +29,22 @@ function calcTotal(item: OrderItem): number {
   return item.quantity * item.unitPrice + addonsTotal;
 }
 
+const formatCpfCnpj = (value: string) => {
+  const v = value.replace(/\D/g, "");
+  if (v.length <= 11) {
+    return v
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  }
+  return v
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2")
+    .slice(0, 18);
+};
+
 function OrderItemRow({ 
   item, 
   items, 
@@ -349,8 +365,8 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
               <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Endereço de entrega" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cnpj">CNPJ</Label>
-              <Input id="cnpj" value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="Opcional" />
+              <Label htmlFor="cnpj">CPF/CNPJ</Label>
+              <Input id="cnpj" value={cnpj} onChange={(e) => setCnpj(formatCpfCnpj(e.target.value))} placeholder="Opcional" />
             </div>
             <div className="flex items-end pt-1">
               <Button type="button" onClick={handleQuickRegister} disabled={addCustomer.isPending || !customerName.trim()} variant="outline" className="gap-1.5 w-full border-primary/50 hover:bg-primary/10">
