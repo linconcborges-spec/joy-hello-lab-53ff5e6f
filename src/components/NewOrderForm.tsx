@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import type { Order, OrderItem } from "@/types/order";
 import { toast } from "sonner";
-import { useCustomers } from "@/hooks/useCustomers";
+import { useCustomers, useAddCustomer } from "@/hooks/useCustomers";
 import { useProducts } from "@/hooks/useProducts";
 import { useAddons } from "@/hooks/useAddons";
 
@@ -196,6 +196,7 @@ function OrderItemRow({
 
 export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
   const { data: customers = [] } = useCustomers();
+  const addCustomer = useAddCustomer();
   const { data: products = [] } = useProducts();
   const { data: addons = [] } = useAddons();
   const [customerCode, setCustomerCode] = useState("");
@@ -219,6 +220,22 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
     } else {
       toast.error("Cliente não encontrado com esse código");
     }
+  };
+
+  const handleQuickRegister = () => {
+    if (!customerName.trim()) {
+      toast.error("Preencha o nome do cliente para cadastrar");
+      return;
+    }
+    
+    addCustomer.mutate(
+      { name: customerName.trim(), address: address.trim(), phone: phone.trim() },
+      { 
+        onSuccess: (newCustomer) => {
+          setCustomerCode(newCustomer.code.toString());
+        }
+      }
+    );
   };
 
   const updateItem = (id: string, field: keyof OrderItem, value: string | number) => {
@@ -334,6 +351,11 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
             <div className="space-y-1.5">
               <Label htmlFor="cnpj">CNPJ</Label>
               <Input id="cnpj" value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="Opcional" />
+            </div>
+            <div className="flex items-end pt-1">
+              <Button type="button" onClick={handleQuickRegister} disabled={addCustomer.isPending || !customerName.trim()} variant="outline" className="gap-1.5 w-full border-primary/50 hover:bg-primary/10">
+                <Plus className="h-4 w-4" /> Salvar Cliente no Sistema
+              </Button>
             </div>
           </div>
         </CardContent>
