@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Search, UtensilsCrossed, Users, Package } from "lucide-react";
+import { Plus, Search, UtensilsCrossed, Users, Package, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,17 +8,35 @@ import { OrderDetail } from "@/components/OrderDetail";
 import { NewOrderForm } from "@/components/NewOrderForm";
 import { CustomersPage } from "@/components/CustomersPage";
 import { ProductsPage } from "@/components/ProductsPage";
+import { SettingsPage } from "@/components/SettingsPage";
+import { LoginPage } from "@/components/LoginPage";
 import { useOrders } from "@/hooks/useOrders";
+import { useAuth } from "@/hooks/useAuth";
 import type { Order } from "@/types/order";
 
-type View = "list" | "new" | "detail" | "customers" | "products";
+type View = "list" | "new" | "detail" | "customers" | "products" | "settings";
 
 const Index = () => {
-  const { orders, addOrder, updateStatus, deleteOrder } = useOrders();
+  const { user, isAdmin, logout, isLoading: authLoading } = useAuth();
+  const { orders, addOrder, updateStatus, cancelOrder, deleteOrder } = useOrders();
   const [view, setView] = useState<View>("list");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  // Enquanto carrega a sessão, mostra nada
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  // Sem login -> tela de login
+  if (!user) {
+    return <LoginPage />;
+  }
 
   const selectedOrder = orders.find((o) => o.id === selectedOrderId);
 
@@ -68,6 +86,10 @@ const Index = () => {
     return <ProductsPage onBack={() => setView("list")} />;
   }
 
+  if (view === "settings") {
+    return <SettingsPage onBack={() => setView("list")} />;
+  }
+
   if (view === "detail" && selectedOrder) {
     return (
       <div className="min-h-screen bg-background">
@@ -75,10 +97,13 @@ const Index = () => {
           <OrderDetail
             order={selectedOrder}
             onBack={() => setView("list")}
-            onUpdateStatus={(id, status) => updateStatus(id, status)}
+            onUpdateStatus={(id, status) => updateStatus(id, status, user.name)}
             onDelete={(id) => {
               deleteOrder(id);
               setView("list");
+            }}
+            onCancel={(id) => {
+              cancelOrder(id, user.name);
             }}
           />
         </div>
@@ -97,10 +122,17 @@ const Index = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-foreground">Império Chiclets</h1>
-              <p className="text-xs text-muted-foreground">Gerenciador de Pedidos</p>
+              <p className="text-xs text-muted-foreground">
+                Olá, {user.name} · <button onClick={logout} className="underline hover:text-foreground transition-colors">Sair</button>
+              </p>
             </div>
           </div>
           <div className="flex gap-2">
+            {isAdmin && (
+              <Button variant="outline" size="icon" onClick={() => setView("settings")} title="Configurações">
+                <Settings className="h-4 w-4" />
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setView("products")} className="gap-1.5">
               <Package className="h-4 w-4" /> Produtos
             </Button>
@@ -143,6 +175,7 @@ const Index = () => {
               <TabsTrigger value="preparing">Preparando</TabsTrigger>
               <TabsTrigger value="delivering">Entrega</TabsTrigger>
               <TabsTrigger value="completed">Concluídos</TabsTrigger>
+              <TabsTrigger value="cancelled" className="text-destructive">Cancelados</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>

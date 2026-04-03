@@ -36,13 +36,42 @@ export function useOrders() {
     });
   }, []);
 
-  const updateStatus = useCallback((id: string, status: Order["status"]) => {
-    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+  const updateStatus = useCallback((id: string, status: Order["status"], employeeName?: string) => {
+    setOrders((prev) =>
+      prev.map((o) => {
+        if (o.id !== id) return o;
+        const updated = { ...o, status };
+        if (employeeName) {
+          updated.lastEditedBy = employeeName;
+          updated.lastEditedAt = new Date().toISOString();
+        }
+        return updated;
+      })
+    );
+  }, []);
+
+  const cancelOrder = useCallback((id: string, employeeName: string) => {
+    setOrders((prev) =>
+      prev.map((o) => {
+        if (o.id !== id) return o;
+        return {
+          ...o,
+          status: "cancelled" as const,
+          cancelledBy: employeeName,
+          cancelledAt: new Date().toISOString(),
+        };
+      })
+    );
   }, []);
 
   const deleteOrder = useCallback((id: string) => {
-    setOrders((prev) => prev.filter((o) => o.id !== id));
+    setOrders((prev) => {
+      const order = prev.find((o) => o.id === id);
+      // Só permite excluir pedidos pendentes
+      if (order && order.status !== "pending") return prev;
+      return prev.filter((o) => o.id !== id);
+    });
   }, []);
 
-  return { orders, addOrder, updateStatus, deleteOrder };
+  return { orders, addOrder, updateStatus, cancelOrder, deleteOrder };
 }

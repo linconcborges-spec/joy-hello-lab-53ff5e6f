@@ -29,6 +29,10 @@ export interface Order {
   status: "pending" | "preparing" | "delivering" | "completed" | "cancelled";
   createdAt: string;
   paymentMethod: "cash" | "card" | "pix";
+  cancelledBy?: string;
+  cancelledAt?: string;
+  lastEditedBy?: string;
+  lastEditedAt?: string;
 }
 
 export const STATUS_LABELS: Record<Order["status"], string> = {
