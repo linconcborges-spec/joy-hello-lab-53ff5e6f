@@ -25,8 +25,21 @@ const Index = () => {
   const [view, setView] = useState<View>("list");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [showRevenue, setShowRevenue] = useState(true);
+  const [showRevenue, setShowRevenue] = useState(false);
   const [isHistoryView, setIsHistoryView] = useState(false);
+
+  // Auto-hide revenue after 10 seconds
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    if (showRevenue) {
+      timeout = setTimeout(() => {
+        setShowRevenue(false);
+      }, 10000);
+    }
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [showRevenue]);
 
   // Novos Hooks do Supabase
   const { data: orders = [], isLoading: ordersLoading } = useOrders(isHistoryView ? "2000-01-01" : undefined);
