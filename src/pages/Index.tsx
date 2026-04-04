@@ -380,19 +380,19 @@ const Index = () => {
 
             <div className="hidden md:block h-8 w-px bg-border/20 mx-1" />
             
-            <div className="flex items-center gap-5 px-3 py-1 w-full md:w-auto justify-around">
-              <div className="flex flex-col items-center md:items-end">
-                <span className="text-[8px] text-muted-foreground uppercase font-black tracking-tighter opacity-40">Vendas</span>
-                <span className="text-sm font-black leading-none">{todayCount}</span>
+            <div className="flex items-center gap-6 px-4 py-2 w-full md:w-auto justify-around">
+              <div className="flex flex-col items-center md:items-end gap-0.5">
+                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wide opacity-50">Vendas</span>
+                <span className="text-2xl font-black leading-none tabular-nums">{todayCount}</span>
               </div>
-              <div className="flex flex-col items-center md:items-end">
+              <div className="flex flex-col items-center md:items-end gap-0.5">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[8px] text-muted-foreground uppercase font-black tracking-tighter opacity-40">Balanço</span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wide opacity-50">Balanço</span>
                   <button onClick={() => setShowRevenue(!showRevenue)} className="hover:text-primary transition-colors">
                     {showRevenue ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                   </button>
                 </div>
-                <span className={`text-[13px] font-black text-primary leading-none transition-all duration-500 ${!showRevenue ? "blur-sm select-none opacity-20" : ""}`}>
+                <span className={`text-lg font-black text-primary leading-none transition-all duration-500 tabular-nums ${!showRevenue ? "blur-sm select-none opacity-20" : ""}`}>
                   R$ {todayRevenue.toFixed(2)}
                 </span>
               </div>
