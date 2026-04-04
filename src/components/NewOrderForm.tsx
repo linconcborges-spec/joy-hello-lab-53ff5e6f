@@ -653,7 +653,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
         <CardHeader className="pb-3">
           <CardTitle>Pagamento</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <CardContent className={cn("grid grid-cols-1 gap-3", isPickup ? "sm:grid-cols-2" : "sm:grid-cols-3")}>
           <div className="space-y-1.5">
             <Label>Forma de pagamento</Label>
             <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as Order["paymentMethod"])}>
@@ -665,10 +665,12 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="delivery">Taxa de entrega (R$)</Label>
-            <Input id="delivery" type="number" step="0.01" min={0} value={deliveryFee || ""} onChange={(e) => setDeliveryFee(parseFloat(e.target.value) || 0)} />
-          </div>
+          {!isPickup && (
+            <div className="space-y-1.5">
+              <Label htmlFor="delivery">Taxa de entrega (R$)</Label>
+              <Input id="delivery" type="number" step="0.01" min={0} value={deliveryFee || ""} onChange={(e) => setDeliveryFee(parseFloat(e.target.value) || 0)} />
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="change">Troco para (R$)</Label>
             <Input id="change" type="number" step="0.01" min={0} value={changeFor || ""} onChange={(e) => setChangeFor(parseFloat(e.target.value) || 0)} />
