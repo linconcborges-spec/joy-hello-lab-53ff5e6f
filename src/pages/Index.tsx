@@ -380,14 +380,17 @@ const Index = () => {
 
             <div className="hidden md:block h-8 w-px bg-border/20 mx-1" />
             
-            <div className="flex items-center gap-6 px-4 py-2 w-full md:w-auto justify-around">
-              <div className="flex flex-col items-center md:items-end gap-0.5">
+            <div className="flex items-center gap-5 px-4 py-2 w-full md:w-auto justify-around">
+              <div className="flex flex-col items-center gap-0.5">
                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wide opacity-50">Vendas</span>
                 <span className="text-2xl font-black leading-none tabular-nums">{todayCount}</span>
               </div>
-              <div className="flex flex-col items-center md:items-end gap-0.5">
+
+              <div className="h-8 w-px bg-border/30" />
+
+              <div className="flex flex-col items-center gap-0.5">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wide opacity-50">Balanço</span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wide opacity-50">Total</span>
                   <button onClick={() => setShowRevenue(!showRevenue)} className="hover:text-primary transition-colors">
                     {showRevenue ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                   </button>
