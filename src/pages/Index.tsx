@@ -389,15 +389,15 @@ const Index = () => {
               <div className="h-8 w-px bg-border/30" />
 
               <div className="flex flex-col items-center gap-0.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wide opacity-50">Total</span>
-                  <button onClick={() => setShowRevenue(!showRevenue)} className="hover:text-primary transition-colors">
+                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wide opacity-50">Total</span>
+                <div className="flex items-center gap-1">
+                  <span className={`text-lg font-black text-primary leading-none transition-all duration-500 tabular-nums ${!showRevenue ? "blur-sm select-none opacity-20" : ""}`}>
+                    R$ {todayRevenue.toFixed(2)}
+                  </span>
+                  <button onClick={() => setShowRevenue(!showRevenue)} className="hover:text-primary transition-colors opacity-40 hover:opacity-100">
                     {showRevenue ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                   </button>
                 </div>
-                <span className={`text-lg font-black text-primary leading-none transition-all duration-500 tabular-nums ${!showRevenue ? "blur-sm select-none opacity-20" : ""}`}>
-                  R$ {todayRevenue.toFixed(2)}
-                </span>
               </div>
             </div>
           </div>
