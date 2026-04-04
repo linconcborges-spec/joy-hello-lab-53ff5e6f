@@ -256,14 +256,14 @@ function OrderItemRow({
       </div>
 
       {/* Adicionais com quebra de linha garantida */}
-      <div className="space-y-2 bg-background/30 p-4 rounded-2xl border border-border/10">
+      <div className="space-y-3 bg-background/30 p-4 rounded-2xl border border-border/10">
         <div className="flex items-center justify-between">
-          <Label className="text-[10px] font-black uppercase opacity-40 tracking-widest">Adicionais Extras</Label>
+          <Label className="text-xs font-black uppercase opacity-50 tracking-widest">Adicionais Extras</Label>
           {item.addons.length > 0 && (
-            <span className="text-[10px] font-black text-primary uppercase">+ R$ {item.addons.reduce((s: any, a: any) => s + a.price, 0).toFixed(2)}</span>
+            <span className="text-xs font-black text-primary uppercase">+ R$ {item.addons.reduce((s: any, a: any) => s + a.price, 0).toFixed(2)}</span>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2.5">
           {addons
             .filter((addon: any) => !addon.category_id || addon.category_id === item.categoryId)
             .map((addon: any) => {
@@ -273,19 +273,19 @@ function OrderItemRow({
                 key={addon.id}
                 variant={selected ? "success" : "outline"}
                 className={cn(
-                  "cursor-pointer select-none py-2 px-3 rounded-xl border-none transition-all active:scale-95",
-                  selected ? "shadow-md shadow-success/20 ring-2 ring-success/20" : "bg-background/50 opacity-60 hover:opacity-100"
+                  "cursor-pointer select-none py-2.5 px-4 rounded-xl border-none transition-all active:scale-95 h-auto",
+                  selected ? "shadow-md shadow-success/20 ring-2 ring-success/20" : "bg-background/50 opacity-70 hover:opacity-100"
                 )}
                 onClick={() => toggleAddon(item.id, { name: addon.name, price: Number(addon.price) })}
               >
-                <span className="text-[10px] font-bold">{addon.name}</span>
-                <span className="text-[10px] ml-1.5 font-black opacity-40">R${Number(addon.price).toFixed(0)}</span>
-                {selected && <Check className="h-3 w-3 ml-2" />}
+                <span className="text-xs font-bold uppercase">{addon.name}</span>
+                <span className="text-xs ml-2 font-black opacity-50">R${Number(addon.price).toFixed(0)}</span>
+                {selected && <Check className="h-4 w-4 ml-2" />}
               </Badge>
             );
           })}
           {addons.filter((addon: any) => !addon.category_id || addon.category_id === item.categoryId).length === 0 && (
-            <span className="text-[10px] text-muted-foreground uppercase font-black opacity-20">Nenhum adicional p/ esta categoria</span>
+            <span className="text-xs text-muted-foreground uppercase font-black opacity-20">Nenhum adicional p/ esta categoria</span>
           )}
         </div>
       </div>
@@ -474,13 +474,13 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <Button type="button" variant="ghost" size="sm" onClick={onCancel} className="gap-1.5">
+      <Button type="button" variant="ghost" size="sm" onClick={onCancel} className="gap-1.5 uppercase font-black text-xs">
         <ArrowLeft className="h-4 w-4" /> Voltar
       </Button>
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Dados do Cliente</CardTitle>
+          <CardTitle className="uppercase">Dados do Cliente</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {/* Toggle Retirada */}
@@ -504,8 +504,8 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
           >
             <PackageCheck className={cn("h-5 w-5 shrink-0", isPickup ? "text-primary" : "text-muted-foreground")} />
             <div className="flex-1">
-              <span className="font-bold text-sm">Retirada no Local</span>
-              <p className="text-[10px] text-muted-foreground">Marque se o cliente vai retirar o pedido</p>
+              <span className="font-bold text-sm uppercase">Retirada no Local</span>
+              <p className="text-[10px] text-muted-foreground uppercase">Marque se o cliente vai retirar o pedido</p>
             </div>
             <div className={cn(
               "h-6 w-11 rounded-full transition-colors relative",
@@ -521,7 +521,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
           {!isPickup && (
             <div className="flex gap-2 items-end">
               <div className="space-y-1.5 flex-1">
-                <Label htmlFor="phone-search">Buscar por Telefone</Label>
+                <Label htmlFor="phone-search" className="uppercase font-black text-xs">Buscar por Telefone</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
                   <Input
@@ -534,7 +534,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
                   />
                 </div>
               </div>
-              <Button type="button" variant="secondary" onClick={handlePhoneSearch} className="gap-1.5 h-10">
+              <Button type="button" variant="secondary" onClick={handlePhoneSearch} className="gap-1.5 h-10 uppercase font-black text-xs">
                 <Search className="h-4 w-4" /> Buscar
               </Button>
             </div>
@@ -542,13 +542,13 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="name">Nome do Cliente {isPickup && <span className="text-muted-foreground text-[10px]">(opcional)</span>}</Label>
-              <Input id="name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Nome completo" />
+              <Label htmlFor="name" className="uppercase font-black text-xs">Nome do Cliente {isPickup && <span className="text-muted-foreground text-[10px] normal-case">(opcional)</span>}</Label>
+              <Input id="name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="NOME COMPLETO" className="uppercase placeholder:normal-case" />
             </div>
 
             {isPickup ? (
               <div className="space-y-1.5">
-                <Label htmlFor="phone-pickup">Telefone <span className="text-muted-foreground text-[10px]">(opcional)</span></Label>
+                <Label htmlFor="phone-pickup" className="uppercase font-black text-xs">Telefone <span className="text-muted-foreground text-[10px] normal-case">(opcional)</span></Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
                   <Input
@@ -562,14 +562,14 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
               </div>
             ) : (
               <div className="space-y-1.5">
-                <Label htmlFor="cnpj">CPF/CNPJ (Opcional)</Label>
+                <Label htmlFor="cnpj" className="uppercase font-black text-xs">CPF/CNPJ (Opcional)</Label>
                 <Input id="cnpj" value={cnpj} onChange={(e) => setCnpj(formatCpfCnpj(e.target.value))} placeholder="000.000.000-00" />
               </div>
             )}
 
             {!isPickup && customerAddresses.length > 0 && (
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Endereços Salvos</Label>
+                <Label className="uppercase font-black text-xs">Endereços Salvos</Label>
                 <Select value={address} onValueChange={setAddress}>
                   <SelectTrigger className="bg-muted/30">
                     <SelectValue placeholder="Selecione um endereço salvo" />
@@ -578,7 +578,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
                     {customerAddresses.map((addr, idx) => (
                       <SelectItem key={idx} value={addr}>{addr}</SelectItem>
                     ))}
-                    <SelectItem value="new_address">+ Usar outro endereço...</SelectItem>
+                    <SelectItem value="new_address" className="uppercase font-bold">+ Usar outro endereço...</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -586,7 +586,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
 
             {!isPickup && (customerAddresses.length === 0 || address === "new_address") && (
               <div className="space-y-1.5 sm:col-span-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                <Label htmlFor="address">Endereço de Entrega</Label>
+                <Label htmlFor="address" className="uppercase font-black text-xs">Endereço de Entrega</Label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
                   <Input 
@@ -602,7 +602,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
 
             {!isPickup && (
               <div className="flex items-end pt-1 sm:col-span-2">
-                <Button type="button" onClick={handleQuickRegister} disabled={addCustomer.isPending || !customerName.trim() || !phone.trim() || !address.trim()} className="gap-1.5 w-full bg-orange-500 text-white hover:bg-orange-600 border-none transition-colors">
+                <Button type="button" onClick={handleQuickRegister} disabled={addCustomer.isPending || !customerName.trim() || !phone.trim() || !address.trim()} className="gap-1.5 w-full bg-orange-500 text-white hover:bg-orange-600 border-none transition-colors uppercase font-black text-xs">
                   <Plus className="h-4 w-4" /> Salvar/Atualizar Cliente no Sistema
                 </Button>
               </div>
@@ -613,8 +613,8 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Itens do Pedido</CardTitle>
-          <p className="text-xs text-muted-foreground">Digite o código do produto e pressione Enter para preencher automaticamente</p>
+          <CardTitle className="uppercase">Itens do Pedido</CardTitle>
+          <p className="text-xs text-muted-foreground uppercase">Digite o código do produto e pressione Enter para preencher automaticamente</p>
         </CardHeader>
         <CardContent className="space-y-3">
           {items.map((item) => (
@@ -642,45 +642,45 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
                 document.getElementById(`code-${newItem.id}`)?.focus();
               }, 50);
             }} 
-            className="gap-1.5"
+            className="gap-1.5 uppercase font-black text-xs"
           >
-            <Plus className="h-4 w-4" /> Adicionar item
+            <Plus className="h-4 w-4" /> Adicionar Item
           </Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Pagamento</CardTitle>
+          <CardTitle className="uppercase">Pagamento</CardTitle>
         </CardHeader>
         <CardContent className={cn("grid grid-cols-1 gap-3", isPickup ? "sm:grid-cols-2" : "sm:grid-cols-3")}>
           <div className="space-y-1.5">
-            <Label>Forma de pagamento</Label>
+            <Label className="uppercase font-black text-xs">Forma de Pagamento</Label>
             <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as Order["paymentMethod"])}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="cash">Dinheiro</SelectItem>
-                <SelectItem value="card">Cartão</SelectItem>
-                <SelectItem value="pix">PIX</SelectItem>
+                <SelectItem value="cash" className="uppercase font-bold">Dinheiro</SelectItem>
+                <SelectItem value="card" className="uppercase font-bold">Cartão</SelectItem>
+                <SelectItem value="pix" className="uppercase font-bold">PIX</SelectItem>
               </SelectContent>
             </Select>
           </div>
           {!isPickup && (
             <div className="space-y-1.5">
-              <Label htmlFor="delivery">Taxa de entrega (R$)</Label>
+              <Label htmlFor="delivery" className="uppercase font-black text-xs">Taxa de Entrega (R$)</Label>
               <Input id="delivery" type="number" step="0.01" min={0} value={deliveryFee || ""} onChange={(e) => setDeliveryFee(parseFloat(e.target.value) || 0)} />
             </div>
           )}
           <div className="space-y-1.5">
-            <Label htmlFor="change">Troco para (R$)</Label>
+            <Label htmlFor="change" className="uppercase font-black text-xs">Troco Para (R$)</Label>
             <Input id="change" type="number" step="0.01" min={0} value={changeFor || ""} onChange={(e) => setChangeFor(parseFloat(e.target.value) || 0)} />
           </div>
         </CardContent>
       </Card>
 
       <div className="flex items-center justify-between bg-card rounded-xl p-4 border">
-        <span className="text-lg font-bold">Total: R$ {totalAmount.toFixed(2)}</span>
-        <Button type="submit" size="lg" className="px-8">Criar Pedido</Button>
+        <span className="text-lg font-black uppercase">Total: R$ {totalAmount.toFixed(2)}</span>
+        <Button type="submit" size="lg" className="px-8 uppercase font-black">Criar Pedido</Button>
       </div>
 
       <AlertDialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
