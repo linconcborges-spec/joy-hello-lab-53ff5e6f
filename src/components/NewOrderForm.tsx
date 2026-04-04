@@ -306,6 +306,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
   const [customerAddresses, setCustomerAddresses] = useState<string[]>([]);
   const [cnpj, setCnpj] = useState("");
   const [items, setItems] = useState<OrderItem[]>([createEmptyItem()]);
+  const [isPickup, setIsPickup] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState(settings.defaultDeliveryFee);
   const [changeFor, setChangeFor] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<Order["paymentMethod"]>("cash");
