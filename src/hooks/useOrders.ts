@@ -63,6 +63,8 @@ export function useOrders(startDate?: string, endDate?: string) {
         lastEditedAt: order.last_edited_at,
         items: (order.items || []).map((item: any) => ({
           id: item.id,
+          productCode: item.product_code ?? "",
+          categoryId: item.category_id ?? null,
           product: item.product_name,
           quantity: item.quantity,
           unitPrice: Number(item.unit_price),
@@ -86,15 +88,14 @@ export function useAddOrder() {
       const cycleStart = getCycleStart();
       
       // 1. Buscar o próximo número do pedido para o ciclo atual
-      const { data: lastOrder } = await supabase
+      const { data: lastOrders } = await supabase
         .from("orders")
         .select("number")
         .gte("created_at", cycleStart)
         .order("number", { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
 
-      const nextNumber = lastOrder ? lastOrder.number + 1 : 1;
+      const nextNumber = (lastOrders && lastOrders.length > 0) ? lastOrders[0].number + 1 : 1;
 
       // 2. Inserir o cabeçalho do pedido
       const { data: order, error: orderError } = await supabase
@@ -104,11 +105,13 @@ export function useAddOrder() {
           customer_name: orderData.customerName,
           address: orderData.address,
           phone: orderData.phone,
+          cnpj: orderData.cnpj || null,
           delivery_fee: orderData.deliveryFee,
           total_amount: orderData.totalAmount,
           change_for: orderData.changeFor,
           status: orderData.status,
           payment_method: orderData.paymentMethod,
+          is_printed: orderData.isPrinted ?? false,
         })
         .select()
         .single();
@@ -121,11 +124,13 @@ export function useAddOrder() {
           .from("order_items")
           .insert({
             order_id: order.id,
+            product_code: item.productCode || null,
+            category_id: item.categoryId || null,
             product_name: item.product,
             quantity: item.quantity,
             unit_price: item.unitPrice,
             total: item.total,
-            observation: item.observation,
+            observation: item.observation || null,
           })
           .select()
           .single();

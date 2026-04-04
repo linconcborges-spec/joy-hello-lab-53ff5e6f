@@ -38,7 +38,7 @@ function createEmptyItem(): OrderItem {
 
 function calcTotal(item: OrderItem): number {
   const addonsTotal = item.addons.reduce((s, a) => s + a.price, 0);
-  return item.quantity * item.unitPrice + addonsTotal;
+  return item.quantity * (item.unitPrice + addonsTotal);
 }
 
 const formatCpfCnpj = (value: string) => {
