@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { 
   Plus, Search, UtensilsCrossed, Users, Package, Settings, 
-  Eye, EyeOff, Calendar as CalendarIcon, Printer, FileText, ChevronDown,
+  Calendar as CalendarIcon, Printer, FileText, ChevronDown,
   LayoutDashboard, Truck, CheckCircle2, Clock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -340,7 +340,7 @@ const Index = () => {
               <UtensilsCrossed className="h-8 w-8 text-primary-foreground" />
             </div>
             <div className="space-y-1">
-              <h1 className="text-3xl font-black text-foreground tracking-tight italic uppercase">{settings.storeName}</h1>
+              <h1 className="text-3xl font-bold text-foreground">{settings.storeName}</h1>
               <div className="flex items-center justify-center lg:justify-start gap-3">
                 <Badge variant="outline" className="text-[9px] uppercase font-black tracking-widest px-2">{user.name}</Badge>
                 <button onClick={logout} className="text-primary hover:text-primary/70 text-[10px] font-bold uppercase underline underline-offset-4 decoration-2">Sair do Sistema</button>
@@ -388,16 +388,15 @@ const Index = () => {
 
               <div className="h-8 w-px bg-border/30" />
 
+
               <div className="flex flex-col items-center gap-0.5">
                 <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wide opacity-50">Total</span>
-                <div className="flex items-center gap-1">
-                  <span className={`text-lg font-black text-primary leading-none transition-all duration-500 tabular-nums ${!showRevenue ? "blur-sm select-none opacity-20" : ""}`}>
-                    R$ {todayRevenue.toFixed(2)}
-                  </span>
-                  <button onClick={() => setShowRevenue(!showRevenue)} className="hover:text-primary transition-colors opacity-40 hover:opacity-100">
-                    {showRevenue ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                  </button>
-                </div>
+                <span
+                  onClick={() => setShowRevenue(!showRevenue)}
+                  className={`text-lg font-black text-primary leading-none transition-all duration-500 tabular-nums cursor-pointer select-none ${!showRevenue ? "blur-sm opacity-20" : ""}`}
+                >
+                  R$ {todayRevenue.toFixed(2)}
+                </span>
               </div>
             </div>
           </div>
