@@ -119,6 +119,7 @@ export function printOrder(order: Order, settings: AppSettings) {
         <div class="container">
           <div class="header">
             <div class="store-name">${settings.storeName}</div>
+            ${order.isPickup ? '<div style="font-size:1.4em;font-weight:900;background:#000;color:#fff;padding:4px 10px;margin:6px 0;letter-spacing:2px;">★ RETIRADA ★</div>' : ''}
             <div class="order-number">Pedido #${order.number}</div>
             <div>${date}</div>
           </div>
@@ -127,7 +128,7 @@ export function printOrder(order: Order, settings: AppSettings) {
             <div class="section-title">Cliente</div>
             <div>${order.customerName || "Não informado"}</div>
             <div>${order.phone || ""}</div>
-            <div>${order.address || "Retirada"}</div>
+            <div>${order.isPickup ? "RETIRADA NO LOCAL" : (order.address || "Retirada")}</div>
           </div>
 
           <div class="section">

@@ -70,7 +70,7 @@ export type Database = {
       customers: {
         Row: {
           address: string
-          code: number
+          addresses: Json | null
           created_at: string
           id: string
           name: string
@@ -79,7 +79,7 @@ export type Database = {
         }
         Insert: {
           address?: string
-          code?: number
+          addresses?: Json | null
           created_at?: string
           id?: string
           name: string
@@ -88,7 +88,7 @@ export type Database = {
         }
         Update: {
           address?: string
-          code?: number
+          addresses?: Json | null
           created_at?: string
           id?: string
           name?: string
@@ -291,6 +291,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          value?: string
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
       }
     }
     Views: {

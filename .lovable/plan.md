@@ -1,21 +1,30 @@
 
 
-## Plano: Aplicar migration de Categorias
+## Plano: Persistir Configurações no Banco de Dados + Corrigir erro de build
 
-O código já está sincronizado do GitHub (hooks, componentes, etc.), mas a migration SQL ainda não foi executada no banco de dados.
+### Problema atual
+1. As configurações (nome da loja, taxa de entrega, impressão) estão salvas apenas no `localStorage`, podendo ser perdidas ao trocar de navegador/dispositivo.
+2. Erro de build: `useCustomers.ts` referencia a coluna `addresses` que não existe nos tipos gerados (a tabela no DB já tem essa coluna jsonb, mas os tipos estão desatualizados).
 
 ### O que será feito
 
-Aplicar a migration `20260403000000_categories_init.sql` que:
+**1. Criar tabela `settings` no banco de dados**
+- Migration SQL criando `public.settings` com colunas: `id`, `key` (TEXT UNIQUE), `value` (TEXT), `updated_at`
+- RLS com acesso público (mesmo padrão do projeto)
+- Cada configuração será uma linha (key-value): `store_name`, `default_delivery_fee`, `print_paper_width`, `print_margin_top`, `print_margin`, `print_font_size`
 
-1. **Cria a tabela `categories`** com campos `id` (UUID), `name` (TEXT UNIQUE) e `created_at`
-2. **Adiciona coluna `category_id`** na tabela `products` (FK para `categories`)
-3. **Adiciona coluna `category_id`** na tabela `addons` (FK para `categories`)
-4. **Configura RLS** com acesso público (mesmo padrão das outras tabelas)
+**2. Atualizar `useSettings.ts`**
+- Trocar localStorage por queries ao banco de dados (Supabase)
+- Usar `useQuery` para carregar e `useMutation` para salvar
+- Manter fallback para valores padrão caso a tabela esteja vazia
+
+**3. Corrigir erro de build em `useCustomers.ts`**
+- O código seleciona `addresses` mas os tipos gerados não reconhecem essa coluna
+- Adicionar cast `as unknown as Customer[]` para contornar até os tipos serem regenerados
 
 ### Detalhes técnicos
 
-A migration será executada via ferramenta de migração do banco de dados com o SQL exato que já está no arquivo `supabase/migrations/20260403000000_categories_init.sql`.
-
-Nenhuma alteração de código é necessária — os arquivos já vieram atualizados do GitHub (`useCategories.ts`, `ProductsPage.tsx`, `NewOrderForm.tsx`, etc.).
+- Tabela `settings` usa padrão key-value (flexível para adicionar novas configs no futuro sem migrations)
+- Hook `useSettings` passa a usar `@tanstack/react-query` + Supabase SDK, consistente com o restante do projeto
+- Os valores são serializados como TEXT no banco (parseados no hook)
 
