@@ -32,14 +32,14 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
     <HoverCard openDelay={1500}>
       <HoverCardTrigger asChild>
         <Card
-          className="cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5 border-border/60 overflow-hidden"
+          className="cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 border-border/60 overflow-hidden"
           onClick={onClick}
         >
-          <CardContent className="p-3">
-            <div className="flex items-start justify-between mb-2">
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between mb-3">
               <div>
-                <p className="font-bold text-foreground text-sm uppercase">#{order.number}</p>
-                <p className="text-sm font-semibold text-foreground truncate max-w-[120px]">{order.customerName || "Avulso"}</p>
+                <p className="font-black text-foreground text-base uppercase tracking-tight leading-none">#{order.number}</p>
+                <p className="text-sm font-semibold text-foreground truncate max-w-[160px] mt-1">{order.customerName || "Avulso"}</p>
               </div>
               <div className="flex items-center gap-1.5">
                 {order.isPrinted && (
@@ -51,7 +51,7 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
               </div>
             </div>
 
-            <div className="space-y-1 text-xs text-muted-foreground mb-2">
+            <div className="space-y-1.5 text-xs text-muted-foreground mb-3">
               {order.address && (
                 <div className="flex items-center gap-1.5">
                   <MapPin className="h-3 w-3 shrink-0" />
@@ -64,7 +64,7 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
               </div>
             </div>
 
-            <div className="pt-2 border-t border-border/50 flex items-center justify-between">
+            <div className="pt-3 border-t border-border/50 flex items-center justify-between">
               <span className="text-[10px] font-medium text-muted-foreground uppercase flex items-center gap-1">
                 <ListOrdered className="h-3 w-3" /> {order.items.length} {order.items.length === 1 ? "item" : "itens"}
               </span>

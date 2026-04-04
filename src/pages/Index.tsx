@@ -131,8 +131,8 @@ const Index = () => {
   const KanbanColumn = ({ title, status, orders, colorClass, compact = false }: { title: string; status: Order["status"]; orders: Order[]; colorClass: string; compact?: boolean }) => {
     const columnOrders = orders.filter(o => o.status === status);
     return (
-      <div className={`flex flex-col ${compact ? 'h-full' : 'h-[700px] min-w-[300px]'} bg-card rounded-3xl border border-border/40 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300`}>
-        <div className={`p-4 border-b border-border/40 flex items-center justify-between ${colorClass} bg-opacity-5`}>
+      <div className={`flex flex-col ${compact ? 'h-full' : 'h-[820px] min-w-[340px]'} bg-card rounded-3xl border border-border/40 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300`}>
+        <div className={`px-6 py-5 border-b border-border/40 flex items-center justify-between ${colorClass} bg-opacity-5`}>
           <h2 className="text-sm font-black uppercase tracking-tighter flex items-center gap-3">
             <span className={`h-2 w-2 rounded-full ${colorClass.replace('bg-', 'bg-').split(' ')[0]}`} />
             {title}
@@ -141,7 +141,7 @@ const Index = () => {
             </span>
           </h2>
         </div>
-        <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
           {columnOrders.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center opacity-10 py-10">
               <Package className="h-10 w-10 mb-2" />
@@ -332,7 +332,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background selection:bg-primary/20 selection:text-primary overflow-x-hidden w-full max-w-full">
-      <div className="max-w-[1500px] mx-auto px-4 sm:px-10 py-6 space-y-10">
+      <div className="max-w-[1600px] mx-auto px-6 sm:px-14 py-8 space-y-12">
         {/* Superior Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 text-center lg:text-left">
           <div className="flex flex-col lg:flex-row items-center gap-4">
@@ -490,7 +490,7 @@ const Index = () => {
                   </div>
                 </div>
               ) : (
-                <div className="flex gap-6 overflow-x-auto pb-8 custom-scrollbar-h justify-center">
+                <div className="flex gap-8 overflow-x-auto pb-8 custom-scrollbar-h justify-center">
                   <KanbanColumn title="Pendentes" status="pending" orders={todayOrders} colorClass="text-warning" />
                   <KanbanColumn title="Produção" status="preparing" orders={todayOrders} colorClass="text-primary" />
                   <KanbanColumn title="Entrega" status="delivering" orders={todayOrders} colorClass="text-blue-500" />
