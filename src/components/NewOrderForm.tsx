@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, ArrowLeft, Search, X, Check, ChevronsUpDown, Phone, MapPin } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Search, X, Check, ChevronsUpDown, Phone, MapPin, PackageCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -306,6 +306,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
   const [customerAddresses, setCustomerAddresses] = useState<string[]>([]);
   const [cnpj, setCnpj] = useState("");
   const [items, setItems] = useState<OrderItem[]>([createEmptyItem()]);
+  const [isPickup, setIsPickup] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState(settings.defaultDeliveryFee);
   const [changeFor, setChangeFor] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<Order["paymentMethod"]>("cash");
@@ -417,7 +418,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
   };
 
   const subtotal = items.reduce((sum, i) => sum + i.total, 0);
-  const totalAmount = subtotal + deliveryFee;
+  const totalAmount = subtotal + (isPickup ? 0 : deliveryFee);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -429,16 +430,17 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
 
     const orderData: Omit<Order, "id" | "number" | "createdAt"> = {
       customerName: customerName.trim(),
-      address: address.trim(),
+      address: isPickup ? "" : address.trim(),
       phone: phone.trim(),
       cnpj: cnpj.trim(),
       items: validItems,
-      deliveryFee,
-      totalAmount,
+      deliveryFee: isPickup ? 0 : deliveryFee,
+      totalAmount: isPickup ? subtotal : totalAmount,
       changeFor,
       status: "pending",
       paymentMethod,
       isPrinted: false,
+      isPickup,
     };
 
     setPendingOrder(orderData);
@@ -481,36 +483,91 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
           <CardTitle>Dados do Cliente</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="flex gap-2 items-end">
-            <div className="space-y-1.5 flex-1">
-              <Label htmlFor="phone-search">Buscar por Telefone</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
-                <Input
-                  id="phone-search"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="(00) 00000-0000"
-                  className="pl-10"
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePhoneSearch(); } }}
-                />
-              </div>
+          {/* Toggle Retirada */}
+          <div
+            className={cn(
+              "flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all select-none",
+              isPickup
+                ? "bg-primary/10 border-primary/30 ring-2 ring-primary/20"
+                : "bg-secondary/40 border-border/20 hover:bg-secondary/60"
+            )}
+            onClick={() => {
+              setIsPickup(!isPickup);
+              if (!isPickup) {
+                setAddress("");
+                setDeliveryFee(0);
+                setCustomerAddresses([]);
+              } else {
+                setDeliveryFee(settings.defaultDeliveryFee);
+              }
+            }}
+          >
+            <PackageCheck className={cn("h-5 w-5 shrink-0", isPickup ? "text-primary" : "text-muted-foreground")} />
+            <div className="flex-1">
+              <span className="font-bold text-sm">Retirada no Local</span>
+              <p className="text-[10px] text-muted-foreground">Marque se o cliente vai retirar o pedido</p>
             </div>
-            <Button type="button" variant="secondary" onClick={handlePhoneSearch} className="gap-1.5 h-10">
-              <Search className="h-4 w-4" /> Buscar
-            </Button>
+            <div className={cn(
+              "h-6 w-11 rounded-full transition-colors relative",
+              isPickup ? "bg-primary" : "bg-muted"
+            )}>
+              <div className={cn(
+                "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
+                isPickup ? "translate-x-5" : "translate-x-0.5"
+              )} />
+            </div>
           </div>
+
+          {!isPickup && (
+            <div className="flex gap-2 items-end">
+              <div className="space-y-1.5 flex-1">
+                <Label htmlFor="phone-search">Buscar por Telefone</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
+                  <Input
+                    id="phone-search"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="(00) 00000-0000"
+                    className="pl-10"
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePhoneSearch(); } }}
+                  />
+                </div>
+              </div>
+              <Button type="button" variant="secondary" onClick={handlePhoneSearch} className="gap-1.5 h-10">
+                <Search className="h-4 w-4" /> Buscar
+              </Button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="name">Nome do Cliente</Label>
+              <Label htmlFor="name">Nome do Cliente {isPickup && <span className="text-muted-foreground text-[10px]">(opcional)</span>}</Label>
               <Input id="name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Nome completo" />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="cnpj">CPF/CNPJ (Opcional)</Label>
-              <Input id="cnpj" value={cnpj} onChange={(e) => setCnpj(formatCpfCnpj(e.target.value))} placeholder="000.000.000-00" />
-            </div>
 
-            {customerAddresses.length > 0 && (
+            {isPickup ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="phone-pickup">Telefone <span className="text-muted-foreground text-[10px]">(opcional)</span></Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
+                  <Input
+                    id="phone-pickup"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="(00) 00000-0000"
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <Label htmlFor="cnpj">CPF/CNPJ (Opcional)</Label>
+                <Input id="cnpj" value={cnpj} onChange={(e) => setCnpj(formatCpfCnpj(e.target.value))} placeholder="000.000.000-00" />
+              </div>
+            )}
+
+            {!isPickup && customerAddresses.length > 0 && (
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>Endereços Salvos</Label>
                 <Select value={address} onValueChange={setAddress}>
@@ -527,7 +584,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
               </div>
             )}
 
-            {(customerAddresses.length === 0 || address === "new_address") && (
+            {!isPickup && (customerAddresses.length === 0 || address === "new_address") && (
               <div className="space-y-1.5 sm:col-span-2 animate-in fade-in slide-in-from-top-1 duration-200">
                 <Label htmlFor="address">Endereço de Entrega</Label>
                 <div className="relative">
@@ -542,11 +599,14 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
                 </div>
               </div>
             )}
-            <div className="flex items-end pt-1 sm:col-span-2">
-              <Button type="button" onClick={handleQuickRegister} disabled={addCustomer.isPending || !customerName.trim() || !phone.trim() || !address.trim()} className="gap-1.5 w-full bg-orange-500 text-white hover:bg-orange-600 border-none transition-colors">
-                <Plus className="h-4 w-4" /> Salvar/Atualizar Cliente no Sistema
-              </Button>
-            </div>
+
+            {!isPickup && (
+              <div className="flex items-end pt-1 sm:col-span-2">
+                <Button type="button" onClick={handleQuickRegister} disabled={addCustomer.isPending || !customerName.trim() || !phone.trim() || !address.trim()} className="gap-1.5 w-full bg-orange-500 text-white hover:bg-orange-600 border-none transition-colors">
+                  <Plus className="h-4 w-4" /> Salvar/Atualizar Cliente no Sistema
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -593,7 +653,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
         <CardHeader className="pb-3">
           <CardTitle>Pagamento</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <CardContent className={cn("grid grid-cols-1 gap-3", isPickup ? "sm:grid-cols-2" : "sm:grid-cols-3")}>
           <div className="space-y-1.5">
             <Label>Forma de pagamento</Label>
             <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as Order["paymentMethod"])}>
@@ -605,10 +665,12 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="delivery">Taxa de entrega (R$)</Label>
-            <Input id="delivery" type="number" step="0.01" min={0} value={deliveryFee || ""} onChange={(e) => setDeliveryFee(parseFloat(e.target.value) || 0)} />
-          </div>
+          {!isPickup && (
+            <div className="space-y-1.5">
+              <Label htmlFor="delivery">Taxa de entrega (R$)</Label>
+              <Input id="delivery" type="number" step="0.01" min={0} value={deliveryFee || ""} onChange={(e) => setDeliveryFee(parseFloat(e.target.value) || 0)} />
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor="change">Troco para (R$)</Label>
             <Input id="change" type="number" step="0.01" min={0} value={changeFor || ""} onChange={(e) => setChangeFor(parseFloat(e.target.value) || 0)} />
