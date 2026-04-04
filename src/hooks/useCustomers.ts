@@ -4,10 +4,23 @@ import { toast } from "sonner";
 
 export interface Customer {
   id: string;
-  code: number;
   name: string;
-  address: string;
+  addresses: string[];
   phone: string;
+}
+
+/**
+ * Normaliza o telefone para busca e salvamento:
+ * 1. Remove tudo que não é número
+ * 2. Se começar com 55 e tiver mais de 11 dígitos total, remove o 55
+ *    (útil se o usuário colar +55 11 99999-9999)
+ */
+export function normalizePhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("55") && digits.length > 10) {
+    return digits.substring(2);
+  }
+  return digits;
 }
 
 export function useCustomers() {
@@ -16,8 +29,8 @@ export function useCustomers() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("customers")
-        .select("id, code, name, address, phone")
-        .order("code", { ascending: true });
+        .select("id, name, addresses, phone")
+        .order("name", { ascending: true });
       if (error) throw error;
       return data as Customer[];
     },
@@ -27,11 +40,15 @@ export function useCustomers() {
 export function useAddCustomer() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (customer: { name: string; address: string; phone: string }) => {
+    mutationFn: async (customer: { name: string; addresses: string[]; phone: string }) => {
+      const normalizedPhone = normalizePhone(customer.phone);
       const { data, error } = await supabase
         .from("customers")
-        .insert(customer)
-        .select("id, code, name, address, phone")
+        .insert({
+          ...customer,
+          phone: normalizedPhone
+        })
+        .select("id, name, addresses, phone")
         .single();
       if (error) throw error;
       return data as Customer;
@@ -40,15 +57,22 @@ export function useAddCustomer() {
       qc.invalidateQueries({ queryKey: ["customers"] });
       toast.success("Cliente cadastrado!");
     },
-    onError: () => toast.error("Erro ao cadastrar cliente"),
+    onError: () => toast.error("Erro ao cadastrar cliente. Verifique se o telefone já existe."),
   });
 }
 
 export function useUpdateCustomer() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; name: string; address: string; phone: string }) => {
-      const { error } = await supabase.from("customers").update(data).eq("id", id);
+    mutationFn: async ({ id, ...customer }: { id: string; name: string; addresses: string[]; phone: string }) => {
+      const normalizedPhone = normalizePhone(customer.phone);
+      const { error } = await supabase
+        .from("customers")
+        .update({
+          ...customer,
+          phone: normalizedPhone
+        })
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

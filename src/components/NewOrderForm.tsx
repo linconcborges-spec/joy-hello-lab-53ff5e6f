@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, ArrowLeft, Search, X, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Search, X, Check, ChevronsUpDown, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import type { Order, OrderItem } from "@/types/order";
 import { toast } from "sonner";
-import { useCustomers, useAddCustomer } from "@/hooks/useCustomers";
+import { useCustomers, useAddCustomer, useUpdateCustomer, normalizePhone } from "@/hooks/useCustomers";
 import { useProducts } from "@/hooks/useProducts";
 import { useAddons } from "@/hooks/useAddons";
 import { useSettings } from "@/hooks/useSettings";
@@ -297,12 +297,13 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
   const { settings } = useSettings();
   const { data: customers = [] } = useCustomers();
   const addCustomer = useAddCustomer();
+  const updateCustomer = useUpdateCustomer();
   const { data: products = [] } = useProducts();
   const { data: addons = [] } = useAddons();
-  const [customerCode, setCustomerCode] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
+  const [customerAddresses, setCustomerAddresses] = useState<string[]>([]);
   const [cnpj, setCnpj] = useState("");
   const [items, setItems] = useState<OrderItem[]>([createEmptyItem()]);
   const [deliveryFee, setDeliveryFee] = useState(settings.defaultDeliveryFee);
@@ -311,16 +312,24 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [pendingOrder, setPendingOrder] = useState<Omit<Order, "id" | "number" | "createdAt"> | null>(null);
 
-  const handleCustomerCodeSearch = () => {
-    const code = parseInt(customerCode);
-    const customer = customers.find((c) => c.code === code);
+  const handlePhoneSearch = () => {
+    const normalizedSearch = normalizePhone(phone);
+    if (!normalizedSearch) {
+      toast.error("Digite um telefone para buscar");
+      return;
+    }
+
+    const customer = customers.find((c) => normalizePhone(c.phone) === normalizedSearch);
     if (customer) {
       setCustomerName(customer.name);
-      setAddress(customer.address);
       setPhone(customer.phone);
+      setCustomerAddresses(customer.addresses || []);
+      if (customer.addresses && customer.addresses.length > 0) {
+        setAddress(customer.addresses[0]);
+      }
       toast.success(`Cliente "${customer.name}" encontrado!`);
     } else {
-      toast.error("Cliente não encontrado com esse código");
+      toast.error("Cliente não encontrado com este telefone");
     }
   };
 
@@ -330,14 +339,35 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
       return;
     }
     
-    addCustomer.mutate(
-      { name: customerName.trim(), address: address.trim(), phone: phone.trim() },
-      { 
-        onSuccess: (newCustomer) => {
-          setCustomerCode(newCustomer.code.toString());
-        }
+    if (!phone.trim()) {
+      toast.error("Preencha o telefone");
+      return;
+    }
+
+    const normalized = normalizePhone(phone);
+    const existing = customers.find(c => normalizePhone(c.phone) === normalized);
+
+    if (existing) {
+      // Adiciona o endereço atual se ele não estiver na lista
+      const newAddress = address.trim();
+      const currentAddresses = existing.addresses || [];
+      if (newAddress && !currentAddresses.includes(newAddress)) {
+        const updatedAddresses = [...currentAddresses, newAddress];
+        updateCustomer.mutate({
+          id: existing.id,
+          name: customerName.trim(),
+          phone: existing.phone, // Mantém o original para evitar conflito de normalização redundante
+          addresses: updatedAddresses
+        });
+        setCustomerAddresses(updatedAddresses);
+      } else {
+        toast.info("Cliente e endereço já estão no sistema.");
       }
-    );
+    } else {
+      addCustomer.mutate(
+        { name: customerName.trim(), addresses: [address.trim()], phone: phone.trim() }
+      );
+    }
   };
 
   const updateItem = (id: string, field: keyof OrderItem, value: string | number) => {
@@ -453,39 +483,68 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
         <CardContent className="space-y-3">
           <div className="flex gap-2 items-end">
             <div className="space-y-1.5 flex-1">
-              <Label htmlFor="code">Código do Cliente</Label>
-              <Input
-                id="code"
-                value={customerCode}
-                onChange={(e) => setCustomerCode(e.target.value)}
-                placeholder="Ex: 1, 2, 3..."
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleCustomerCodeSearch(); } }}
-              />
+              <Label htmlFor="phone-search">Buscar por Telefone</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
+                <Input
+                  id="phone-search"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="(00) 00000-0000"
+                  className="pl-10"
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePhoneSearch(); } }}
+                />
+              </div>
             </div>
-            <Button type="button" variant="secondary" onClick={handleCustomerCodeSearch} className="gap-1.5">
+            <Button type="button" variant="secondary" onClick={handlePhoneSearch} className="gap-1.5 h-10">
               <Search className="h-4 w-4" /> Buscar
             </Button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="name">Nome</Label>
-              <Input id="name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Nome do cliente" />
+              <Label htmlFor="name">Nome do Cliente</Label>
+              <Input id="name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Nome completo" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="phone">Telefone</Label>
-              <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(00) 00000-0000" />
+              <Label htmlFor="cnpj">CPF/CNPJ (Opcional)</Label>
+              <Input id="cnpj" value={cnpj} onChange={(e) => setCnpj(formatCpfCnpj(e.target.value))} placeholder="000.000.000-00" />
             </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="address">Endereço</Label>
-              <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Endereço de entrega" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="cnpj">CPF/CNPJ</Label>
-              <Input id="cnpj" value={cnpj} onChange={(e) => setCnpj(formatCpfCnpj(e.target.value))} placeholder="Opcional" />
-            </div>
-            <div className="flex items-end pt-1">
-              <Button type="button" onClick={handleQuickRegister} disabled={addCustomer.isPending || !customerName.trim()} className="gap-1.5 w-full bg-orange-500 text-white hover:bg-orange-600 border-none transition-colors">
-                <Plus className="h-4 w-4" /> Salvar Cliente no Sistema
+
+            {customerAddresses.length > 0 && (
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Endereços Salvos</Label>
+                <Select value={address} onValueChange={setAddress}>
+                  <SelectTrigger className="bg-muted/30">
+                    <SelectValue placeholder="Selecione um endereço salvo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customerAddresses.map((addr, idx) => (
+                      <SelectItem key={idx} value={addr}>{addr}</SelectItem>
+                    ))}
+                    <SelectItem value="new_address">+ Usar outro endereço...</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {(customerAddresses.length === 0 || address === "new_address") && (
+              <div className="space-y-1.5 sm:col-span-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                <Label htmlFor="address">Endereço de Entrega</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
+                  <Input 
+                    id="address" 
+                    value={address === "new_address" ? "" : address} 
+                    onChange={(e) => setAddress(e.target.value)} 
+                    placeholder="Rua, número, bairro..." 
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            )}
+            <div className="flex items-end pt-1 sm:col-span-2">
+              <Button type="button" onClick={handleQuickRegister} disabled={addCustomer.isPending || !customerName.trim() || !phone.trim() || !address.trim()} className="gap-1.5 w-full bg-orange-500 text-white hover:bg-orange-600 border-none transition-colors">
+                <Plus className="h-4 w-4" /> Salvar/Atualizar Cliente no Sistema
               </Button>
             </div>
           </div>

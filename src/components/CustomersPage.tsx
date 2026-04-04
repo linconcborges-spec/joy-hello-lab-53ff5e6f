@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Users, Search, ArrowLeft } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, Search, ArrowLeft, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,103 +31,146 @@ export function CustomersPage({ onBack }: CustomersPageProps) {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
-  const [form, setForm] = useState({ name: "", address: "", phone: "" });
+  const [form, setForm] = useState({ name: "", addresses: [""] as string[], phone: "" });
 
   const filtered = customers.filter(
     (c) =>
       !search ||
       c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.code.toString().includes(search) ||
       c.phone.includes(search)
   );
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name: "", address: "", phone: "" });
+    setForm({ name: "", addresses: [""], phone: "" });
     setDialogOpen(true);
   };
 
   const openEdit = (c: Customer) => {
     setEditing(c);
-    setForm({ name: c.name, address: c.address, phone: c.phone });
+    setForm({ 
+      name: c.name, 
+      addresses: c.addresses && c.addresses.length > 0 ? c.addresses : [""], 
+      phone: c.phone 
+    });
     setDialogOpen(true);
+  };
+
+  const updateAddress = (index: number, val: string) => {
+    const newAddresses = [...form.addresses];
+    newAddresses[index] = val;
+    setForm({ ...form, addresses: newAddresses });
+  };
+
+  const addAddressField = () => {
+    setForm({ ...form, addresses: [...form.addresses, ""] });
+  };
+
+  const removeAddressField = (index: number) => {
+    if (form.addresses.length <= 1) return;
+    setForm({ ...form, addresses: form.addresses.filter((_, i) => i !== index) });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return;
+    
+    // Filtra endereços vazios
+    const validAddresses = form.addresses.filter(a => a.trim() !== "");
+    const finalForm = { ...form, addresses: validAddresses };
+
     if (editing) {
-      await updateCustomer.mutateAsync({ id: editing.id, ...form });
+      await updateCustomer.mutateAsync({ id: editing.id, ...finalForm });
     } else {
-      await addCustomer.mutateAsync(form);
+      await addCustomer.mutateAsync(finalForm);
     }
     setDialogOpen(false);
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-5">
+      <div className="max-w-[1200px] mx-auto p-4 sm:p-10 space-y-8">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" onClick={onBack} className="gap-2 rounded-xl">
               <ArrowLeft className="h-4 w-4" /> Voltar
             </Button>
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
-              <h1 className="text-xl font-bold text-foreground">Clientes</h1>
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                <Users className="h-6 w-6" />
+              </div>
+              <h1 className="text-3xl font-black uppercase italic tracking-tighter">Clientes</h1>
             </div>
           </div>
-          <Button onClick={openNew} className="gap-1.5">
+          <Button onClick={openNew} className="gap-2 h-12 px-6 rounded-2xl font-black uppercase text-xs shadow-xl shadow-primary/20">
             <Plus className="h-4 w-4" /> Novo Cliente
           </Button>
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-50" />
           <Input
-            placeholder="Buscar por nome, código ou telefone..."
+            placeholder="Buscar por nome ou telefone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+            className="pl-12 h-14 rounded-2xl border-none bg-card shadow-sm font-medium"
           />
         </div>
 
         {isLoading ? (
-          <p className="text-center text-muted-foreground py-8">Carregando...</p>
+          <p className="text-center text-muted-foreground py-12">Carregando...</p>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">
-            <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">Nenhum cliente encontrado</p>
-            <p className="text-sm mt-1">Cadastre um novo cliente para começar</p>
+          <div className="text-center py-24 text-muted-foreground bg-card rounded-[3rem] border border-dashed border-border/60">
+            <Users className="h-16 w-16 mx-auto mb-4 opacity-10" />
+            <p className="font-black uppercase tracking-tighter opacity-30">Nenhum cliente encontrado</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((c) => (
-              <Card key={c.id} className="border-border/60">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                      {c.code}
+              <Card key={c.id} className="border-border/40 hover:border-primary/40 transition-colors rounded-3xl overflow-hidden shadow-sm group">
+                <CardContent className="p-5 flex flex-col gap-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-secondary flex items-center justify-center text-secondary-foreground">
+                        <Phone className="h-4 w-4 opacity-40" />
+                      </div>
+                      <div>
+                        <p className="font-black uppercase tracking-tight text-foreground leading-tight">{c.name}</p>
+                        <p className="text-xs font-bold text-primary">{c.phone}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-foreground">{c.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {c.phone || "Sem telefone"} {c.address ? `· ${c.address}` : ""}
-                      </p>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl" onClick={() => openEdit(c)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 rounded-xl text-destructive/40 hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          if (confirm(`Remover cliente ${c.name}?`)) {
+                            deleteCustomer.mutate(c.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(c)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => deleteCustomer.mutate(c.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  
+                  <div className="space-y-1.5 pt-2 border-t border-border/40">
+                    <p className="text-[10px] font-black uppercase opacity-30 tracking-widest">Endereços Salvos</p>
+                    <div className="flex flex-wrap gap-2">
+                      {c.addresses && c.addresses.length > 0 ? (
+                        c.addresses.map((addr, idx) => (
+                          <div key={idx} className="bg-muted/50 px-3 py-1 rounded-lg text-[10px] font-bold text-muted-foreground truncate max-w-full">
+                            {addr}
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-[10px] italic opacity-30">Nenhum endereço</p>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -136,25 +179,78 @@ export function CustomersPage({ onBack }: CustomersPageProps) {
         )}
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editing ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
+          <DialogContent className="max-w-xl p-0 overflow-hidden rounded-[2.5rem] border-none shadow-2xl">
+            <DialogHeader className="p-8 pb-4 bg-primary/5">
+              <DialogTitle className="text-2xl font-black uppercase italic tracking-tighter">
+                {editing ? "Editar Cliente" : "Novo Cliente"}
+              </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="cname">Nome *</Label>
-                <Input id="cname" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Nome do cliente" required />
+            <form onSubmit={handleSubmit} className="p-8 pt-4 space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="cname" className="text-[10px] font-black uppercase opacity-50 ml-2">Nome Completo *</Label>
+                  <Input 
+                    id="cname" 
+                    value={form.name} 
+                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} 
+                    placeholder="Ex: João da Silva" 
+                    className="h-12 rounded-xl border-none bg-muted/30 font-bold"
+                    required 
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="cphone" className="text-[10px] font-black uppercase opacity-50 ml-2">Telefone</Label>
+                  <Input 
+                    id="cphone" 
+                    value={form.phone} 
+                    onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} 
+                    placeholder="(00) 00000-0000" 
+                    className="h-12 rounded-xl border-none bg-muted/30 font-bold"
+                  />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="cphone">Telefone</Label>
-                <Input id="cphone" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="(00) 00000-0000" />
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[10px] font-black uppercase opacity-50 ml-2">Endereços de Entrega</Label>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={addAddressField}
+                    className="h-7 text-[10px] font-black uppercase text-primary hover:bg-primary/10 rounded-lg px-2"
+                  >
+                    + Adicionar
+                  </Button>
+                </div>
+                
+                <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                  {form.addresses.map((addr, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <Input 
+                        value={addr} 
+                        onChange={(e) => updateAddress(idx, e.target.value)} 
+                        placeholder={`Endereço ${idx + 1}`} 
+                        className="h-12 rounded-xl border-none bg-muted/30 font-medium flex-1"
+                      />
+                      {form.addresses.length > 1 && (
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => removeAddressField(idx)}
+                          className="h-12 w-12 text-destructive/40 hover:text-destructive hover:bg-destructive/10 rounded-xl"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="caddress">Endereço</Label>
-                <Input id="caddress" value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} placeholder="Endereço completo" />
-              </div>
-              <Button type="submit" className="w-full" disabled={addCustomer.isPending || updateCustomer.isPending}>
-                {editing ? "Salvar" : "Cadastrar"}
+
+              <Button type="submit" className="w-full h-14 rounded-2xl font-black uppercase text-sm shadow-xl shadow-primary/20" disabled={addCustomer.isPending || updateCustomer.isPending}>
+                {editing ? "Salvar Alterações" : "Cadastrar Cliente"}
               </Button>
             </form>
           </DialogContent>
