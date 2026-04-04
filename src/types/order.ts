@@ -30,6 +30,7 @@ export interface Order {
   createdAt: string;
   paymentMethod: "cash" | "card" | "pix";
   isPrinted?: boolean;
+  isPickup?: boolean;
   cancelledBy?: string;
   cancelledAt?: string;
   lastEditedBy?: string;
