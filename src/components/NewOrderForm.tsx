@@ -430,16 +430,17 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
 
     const orderData: Omit<Order, "id" | "number" | "createdAt"> = {
       customerName: customerName.trim(),
-      address: address.trim(),
+      address: isPickup ? "" : address.trim(),
       phone: phone.trim(),
       cnpj: cnpj.trim(),
       items: validItems,
-      deliveryFee,
-      totalAmount,
+      deliveryFee: isPickup ? 0 : deliveryFee,
+      totalAmount: isPickup ? subtotal : totalAmount,
       changeFor,
       status: "pending",
       paymentMethod,
       isPrinted: false,
+      isPickup,
     };
 
     setPendingOrder(orderData);
