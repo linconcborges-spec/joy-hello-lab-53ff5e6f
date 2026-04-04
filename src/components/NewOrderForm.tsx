@@ -418,7 +418,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
   };
 
   const subtotal = items.reduce((sum, i) => sum + i.total, 0);
-  const totalAmount = subtotal + deliveryFee;
+  const totalAmount = subtotal + (isPickup ? 0 : deliveryFee);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
