@@ -51,7 +51,7 @@ export function useAddCustomer() {
         .select("id, name, addresses, phone")
         .single();
       if (error) throw error;
-      return data as Customer;
+      return data as unknown as Customer;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["customers"] });
