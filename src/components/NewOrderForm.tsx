@@ -30,6 +30,7 @@ import {
 interface NewOrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "number" | "createdAt">) => void;
   onCancel: () => void;
+  onOpenCustomers?: () => void;
 }
 
 function createEmptyItem(): OrderItem {
@@ -289,7 +290,7 @@ function OrderItemRow({
   );
 }
 
-export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
+export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers }: NewOrderFormProps) {
   const { settings } = useSettings();
   const { data: customers = [] } = useCustomers();
   const addCustomer = useAddCustomer();
@@ -313,7 +314,12 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
   const handlePhoneSearch = () => {
     const normalizedSearch = normalizePhone(phone);
     if (!normalizedSearch) {
-      toast.error("Digite um telefone para buscar");
+      if (onOpenCustomers) {
+        onOpenCustomers();
+        toast.info("Abrindo lista de clientes para busca por nome...");
+      } else {
+        toast.error("Digite um telefone para buscar");
+      }
       return;
     }
 

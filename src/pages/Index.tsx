@@ -306,6 +306,7 @@ const Index = () => {
               setView("list");
             }}
             onCancel={() => setView("list")}
+            onOpenCustomers={() => setView("customers")}
           />
         </div>
       </div>
