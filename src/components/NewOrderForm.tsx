@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AuthModal } from "./AuthModal";
 
 interface NewOrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "number" | "createdAt">) => void;
@@ -313,6 +314,7 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
   const [globalObservation, setGlobalObservation] = useState(initialOrder?.observation || "");
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
     if (initialOrder) {
@@ -474,7 +476,16 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
       return;
     }
 
-    const orderData: Omit<Order, "id" | "number" | "createdAt"> = {
+    if (initialOrder) {
+      setAuthModalOpen(true);
+    } else {
+      processSubmission();
+    }
+  };
+
+  const processSubmission = (authorizedBy?: string) => {
+    const validItems = items.filter((i) => i.product.trim());
+    const orderData: any = {
       customerName: customerName.trim(),
       address: isPickup ? "" : address.trim(),
       phone: phone.trim(),
@@ -490,11 +501,18 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
       observation: globalObservation.trim(),
     };
 
+    if (authorizedBy) {
+      orderData.lastEditedBy = authorizedBy;
+      if (!initialOrder?.originalSnapshot) {
+        orderData.originalSnapshot = { ...initialOrder };
+      }
+    }
+
     const orderToPrint: Order = {
       ...orderData as any,
-      id: "temp",
-      number: 0,
-      createdAt: new Date().toISOString(),
+      id: initialOrder?.id || "temp",
+      number: initialOrder?.number || 0,
+      createdAt: initialOrder?.createdAt || new Date().toISOString(),
     };
     printOrder(orderToPrint, settings);
 
@@ -786,7 +804,12 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
           </div>
         </DialogContent>
       </Dialog>
-    </form>
 
+      <AuthModal
+        open={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        onAuthorize={(authorizedBy) => processSubmission(authorizedBy)}
+      />
+    </form>
   );
 }

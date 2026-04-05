@@ -241,26 +241,48 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel,
             )}
           </div>
 
-          <div className="border-t pt-4 space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Subtotal</span>
+          <div className="border-t pt-4 font-black">
+            <div className="flex justify-between text-muted-foreground text-[10px] uppercase tracking-widest">
+              <span>Subtotal</span>
               <span>R$ {(order.totalAmount - order.deliveryFee).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Entrega</span>
+            <div className="flex justify-between text-muted-foreground text-[10px] uppercase tracking-widest">
+              <span>Entrega</span>
               <span>R$ {order.deliveryFee.toFixed(2)}</span>
             </div>
-            {order.changeFor > 0 && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Troco para</span>
-                <span>R$ {order.changeFor.toFixed(2)}</span>
+            <div className="flex justify-between text-lg mt-2 pt-2 border-t border-border/20">
+              <span className="uppercase italic tracking-tighter">Total Geral</span>
+              <span className="text-primary tracking-tighter italic">R$ {order.totalAmount.toFixed(2)}</span>
+            </div>
+            {order.changeFor > 0 && order.paymentMethod === 'cash' && (
+              <div className="flex justify-between text-[11px] text-muted-foreground mt-1 uppercase italic border-t border-border/20 pt-1">
+                <span>Troco para R$ {order.changeFor.toFixed(2)}</span>
+                <span className="font-bold">Diferença: R$ {(order.changeFor - order.totalAmount).toFixed(2)}</span>
               </div>
             )}
-            <div className={`flex justify-between text-lg font-bold pt-2 border-t ${isCancelled ? "line-through text-destructive" : ""}`}>
-              <span>Total</span>
-              <span className={isCancelled ? "text-destructive" : "text-primary"}>R$ {order.totalAmount.toFixed(2)}</span>
-            </div>
           </div>
+
+          {order.originalSnapshot && (
+            <div className="mt-8 border-t-4 border-dashed border-muted pt-6 opacity-80 bg-muted/5 p-4 rounded-3xl">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="h-2 w-2 rounded-full bg-muted-foreground" />
+                <h3 className="text-sm font-black uppercase italic tracking-tighter opacity-40">Pedido Original (Antes da Alteração)</h3>
+              </div>
+              
+              <div className="space-y-2 opacity-60 pointer-events-none">
+                {order.originalSnapshot.items?.map((item: any) => (
+                  <div key={item.id} className="flex justify-between text-[10px] font-bold uppercase py-1 border-b border-border/10">
+                    <span>{item.quantity}x {item.product}</span>
+                    <span>R$ {Number(item.total).toFixed(2)}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between font-black text-xs pt-1">
+                  <span>TOTAL ANTERIOR:</span>
+                  <span>R$ {Number(order.originalSnapshot.totalAmount).toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

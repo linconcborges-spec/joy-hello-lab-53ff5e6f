@@ -303,9 +303,13 @@ const Index = () => {
         <div className="max-w-7xl w-full">
           <NewOrderForm
             initialOrder={view === "edit" ? selectedOrder : undefined}
-            onSubmit={(order) => {
+            onSubmit={(order: any) => {
               if (view === "edit" && selectedOrder) {
-                updateOrderMutation.mutate({ id: selectedOrder.id, orderData: { ...order, lastEditedBy: user.name } });
+                updateOrderMutation.mutate({ 
+                  id: selectedOrder.id, 
+                  orderData: order,
+                  originalSnapshot: order.originalSnapshot
+                });
               } else {
                 addOrderMutation.mutate(order);
               }

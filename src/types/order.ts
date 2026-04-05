@@ -36,6 +36,7 @@ export interface Order {
   lastEditedBy?: string;
   lastEditedAt?: string;
   observation?: string;
+  originalSnapshot?: any;
 }
 
 export const STATUS_LABELS: Record<Order["status"], string> = {

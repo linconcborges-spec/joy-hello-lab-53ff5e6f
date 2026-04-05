@@ -62,6 +62,7 @@ export function useOrders(startDate?: string, endDate?: string) {
         lastEditedBy: order.last_edited_by,
         lastEditedAt: order.last_edited_at,
         observation: order.observation,
+        originalSnapshot: order.original_snapshot,
         items: (order.items || []).map((item: any) => ({
           id: item.id,
           productCode: item.product_code ?? "",
@@ -173,25 +174,31 @@ export function useUpdateOrder() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, orderData }: { id: string; orderData: Omit<Order, "id" | "number" | "createdAt"> }) => {
+    mutationFn: async ({ id, orderData, originalSnapshot }: { id: string; orderData: Omit<Order, "id" | "number" | "createdAt">; originalSnapshot?: any }) => {
       // 1. Update order metadata
+      const updateData: any = {
+        customer_name: orderData.customerName,
+        address: orderData.address,
+        phone: orderData.phone,
+        cnpj: orderData.cnpj || null,
+        delivery_fee: orderData.deliveryFee,
+        total_amount: orderData.totalAmount,
+        change_for: orderData.changeFor,
+        status: orderData.status,
+        payment_method: orderData.paymentMethod,
+        is_printed: orderData.isPrinted ?? false,
+        observation: orderData.observation || null,
+        last_edited_by: orderData.lastEditedBy || null,
+        last_edited_at: new Date().toISOString(),
+      };
+
+      if (originalSnapshot) {
+        updateData.original_snapshot = originalSnapshot;
+      }
+
       const { error: orderError } = await supabase
         .from("orders")
-        .update({
-          customer_name: orderData.customerName,
-          address: orderData.address,
-          phone: orderData.phone,
-          cnpj: orderData.cnpj || null,
-          delivery_fee: orderData.deliveryFee,
-          total_amount: orderData.totalAmount,
-          change_for: orderData.changeFor,
-          status: orderData.status,
-          payment_method: orderData.paymentMethod,
-          is_printed: orderData.isPrinted ?? false,
-          observation: orderData.observation || null,
-          last_edited_by: orderData.lastEditedBy || null,
-          last_edited_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("id", id);
 
       if (orderError) throw orderError;
