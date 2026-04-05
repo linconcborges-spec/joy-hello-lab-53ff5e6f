@@ -681,24 +681,43 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
           )}
           <div className="space-y-1.5">
             <Label htmlFor="change" className="uppercase font-black text-xs">Troco Para (R$)</Label>
-            <Input id="change" type="number" step="0.01" min={0} value={changeFor || ""} onChange={(e) => setChangeFor(parseFloat(e.target.value) || 0)} />
+            <Input 
+              id="change" 
+              type="number" 
+              step="0.01" 
+              min={0} 
+              value={changeFor || ""} 
+              onChange={(e) => setChangeFor(parseFloat(e.target.value) || 0)} 
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  document.getElementById("global-obs")?.focus();
+                }
+              }}
+            />
           </div>
         </CardContent>
       </Card>
       
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="uppercase">Observação da Comanda</CardTitle>
+          <CardTitle className="uppercase tracking-widest text-sm">Observações</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-1.5">
-            <Label htmlFor="global-obs" className="uppercase font-black text-xs">Observações Gerais (Horário, avisos, etc.)</Label>
+            <Label htmlFor="global-obs" className="uppercase font-black text-xs">Informações adicionais (Horário, avisos, etc.)</Label>
             <Input 
               id="global-obs" 
               value={globalObservation} 
               onChange={(e) => setGlobalObservation(e.target.value)} 
               placeholder="EX: ENTREGAR APÓS AS 20H / PORTÃO VERMELHO" 
               className="uppercase font-medium"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  document.getElementById("submit-order")?.focus();
+                }
+              }}
             />
           </div>
         </CardContent>
@@ -706,7 +725,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
 
       <div className="flex items-center justify-between bg-card rounded-xl p-4 border">
         <span className="text-lg font-black uppercase">Total: R$ {totalAmount.toFixed(2)}</span>
-        <Button type="submit" size="lg" className="px-8 uppercase font-black">Criar Pedido</Button>
+        <Button id="submit-order" type="submit" size="lg" className="px-8 uppercase font-black">Criar Pedido</Button>
       </div>
 
       <AlertDialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
