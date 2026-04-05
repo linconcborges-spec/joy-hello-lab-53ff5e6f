@@ -18,7 +18,7 @@ export function printOrder(order: Order, settings: AppSettings) {
             size: ${settings.printPaperWidth} auto;
           }
           body {
-            font-family: "Courier New", Courier, monospace, sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             font-size: ${settings.printFontSize || '14px'};
             width: ${settings.printPaperWidth};
             margin: 0;
