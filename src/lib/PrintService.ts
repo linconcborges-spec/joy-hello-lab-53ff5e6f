@@ -26,6 +26,7 @@ export function printOrder(order: Order, settings: AppSettings) {
             color: #000;
             line-height: 1.3;
             text-transform: uppercase;
+            font-weight: 600;
           }
           .container {
             padding: 2px 5px;
