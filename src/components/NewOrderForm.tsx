@@ -554,7 +554,7 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
               type="button" 
               variant="outline" 
               size="icon"
-              onClick={handleClearCustomer} 
+              onClick={() => { setCustomerName(""); setPhone(""); setAddress(""); setCustomerAddresses([]); setCnpj(""); }} 
               className="h-10 w-10 border-destructive/20 text-destructive hover:bg-destructive/10 shrink-0"
               title="Limpar Cliente"
             >
