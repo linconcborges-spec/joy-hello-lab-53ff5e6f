@@ -308,8 +308,6 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers }: NewOrderFo
   const [deliveryFee, setDeliveryFee] = useState(settings.defaultDeliveryFee);
   const [changeFor, setChangeFor] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<Order["paymentMethod"]>("cash");
-  const [showPrintDialog, setShowPrintDialog] = useState(false);
-  const [pendingOrder, setPendingOrder] = useState<Omit<Order, "id" | "number" | "createdAt"> | null>(null);
   const [globalObservation, setGlobalObservation] = useState("");
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
@@ -468,40 +466,23 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers }: NewOrderFo
       deliveryFee: isPickup ? 0 : deliveryFee,
       totalAmount: isPickup ? subtotal : totalAmount,
       changeFor,
-      status: "pending",
+      status: "preparing" as Order["status"],
       paymentMethod,
-      isPrinted: false,
+      isPrinted: true,
       isPickup,
       observation: globalObservation.trim(),
     };
 
-    setPendingOrder(orderData);
-    setShowPrintDialog(true);
-  };
-
-  const handleConfirmPrint = (shouldPrint: boolean) => {
-    if (!pendingOrder) return;
-
-    const finalOrder = {
-      ...pendingOrder,
-      status: (shouldPrint ? "preparing" : "pending") as Order["status"],
-      isPrinted: shouldPrint,
+    const orderToPrint: Order = {
+      ...orderData as any,
+      id: "temp",
+      number: 0,
+      createdAt: new Date().toISOString(),
     };
+    printOrder(orderToPrint, settings);
 
-    // Para o print real, precisamos de um objeto que pareça com a Order (com number e id fake para o PrintService)
-    if (shouldPrint) {
-      const orderToPrint: Order = {
-        ...finalOrder,
-        id: "temp",
-        number: 0, // O número real será gerado pelo hook, mas para o print imediato usamos 0 ou buscamos depois
-        createdAt: new Date().toISOString(),
-      };
-      printOrder(orderToPrint, settings);
-    }
-
-    onSubmit(finalOrder);
-    setShowPrintDialog(false);
-    toast.success(shouldPrint ? "Pedido enviado para preparação e impresso!" : "Pedido criado com sucesso!");
+    onSubmit(orderData as any);
+    toast.success("Pedido impresso com sucesso!");
   };
 
   return (
@@ -749,22 +730,6 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers }: NewOrderFo
         <span className="text-lg font-black uppercase">Total: R$ {totalAmount.toFixed(2)}</span>
         <Button id="submit-order" type="submit" size="lg" className="px-8 uppercase font-black">Criar Pedido</Button>
       </div>
-
-      <AlertDialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Deseja imprimir o pedido?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se SIM: O pedido será marcado como impresso e mudará para o status "Preparando".<br/>
-              Se NÃO: O pedido ficará com o status "Pendente" e sem marcação de impresso.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => handleConfirmPrint(false)}>Não</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleConfirmPrint(true)}>Sim, imprimir</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <Dialog open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
         <DialogContent className="max-w-2xl rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
