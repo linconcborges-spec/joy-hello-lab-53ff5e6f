@@ -26,6 +26,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface NewOrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "number" | "createdAt">) => void;
@@ -310,6 +312,26 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers }: NewOrderFo
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [pendingOrder, setPendingOrder] = useState<Omit<Order, "id" | "number" | "createdAt"> | null>(null);
   const [globalObservation, setGlobalObservation] = useState("");
+  const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
+  const [customerSearchQuery, setCustomerSearchQuery] = useState("");
+
+  const handleSelectCustomer = (c: any) => {
+    setCustomerName(c.name);
+    setPhone(c.phone || "");
+    setCnpj("");
+    if (c.addresses && c.addresses.length > 0) {
+      setCustomerAddresses(c.addresses);
+      setAddress(c.addresses[0]);
+    } else {
+      setCustomerAddresses([]);
+      setAddress("");
+    }
+    setCustomerSearchOpen(false);
+    toast.success("Cliente preenchido!");
+    setTimeout(() => {
+      document.getElementById("code-" + items[0]?.id)?.focus();
+    }, 100);
+  };
 
   const handlePhoneSearch = () => {
     const normalizedSearch = normalizePhone(phone);
@@ -749,6 +771,44 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers }: NewOrderFo
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
+        <DialogContent className="max-w-2xl rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
+          <DialogHeader className="p-6 bg-muted/30 border-b border-border/40">
+            <DialogTitle className="uppercase font-black text-xl italic tracking-tighter">Buscar Cliente</DialogTitle>
+          </DialogHeader>
+          <div className="p-6 space-y-4">
+            <input
+              placeholder="Digite o nome ou telefone..."
+              value={customerSearchQuery}
+              onChange={(e) => setCustomerSearchQuery(e.target.value)}
+              className="w-full h-14 px-4 rounded-xl border border-border/50 bg-background font-medium text-lg outline-none focus:border-primary transition-colors"
+              autoFocus
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-2">
+              {customers
+                .filter(
+                  (c) =>
+                    !customerSearchQuery ||
+                    c.name.toLowerCase().includes(customerSearchQuery.toLowerCase()) ||
+                    (c.phone && c.phone.includes(customerSearchQuery))
+                )
+                .slice(0, 30)
+                .map((c) => (
+                  <div
+                    key={c.id}
+                    onClick={() => handleSelectCustomer(c)}
+                    className="flex flex-col p-4 bg-card border border-border/40 rounded-xl hover:border-primary/50 cursor-pointer active:scale-95 transition-all"
+                  >
+                    <span className="font-black text-sm uppercase">{c.name}</span>
+                    {c.phone && <span className="text-xs font-bold text-primary mt-1">{c.phone}</span>}
+                  </div>
+                ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </form>
+
   );
 }
