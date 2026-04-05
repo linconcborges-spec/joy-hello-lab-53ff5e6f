@@ -256,18 +256,8 @@ function OrderItemRow({
       </div>
 
       <div className="space-y-3 bg-background/30 p-4 rounded-2xl border border-border/10">
-        <div className="grid grid-cols-1 md:grid-cols-[4.5rem_4.5rem_2.5fr_6.5rem_1.5fr_6.5rem_auto] gap-4 items-center">
-          <div className="md:col-span-5">
-            <Label className="text-xs font-black uppercase opacity-50 tracking-widest">Adicionais Extras</Label>
-          </div>
-          <div className="text-right">
-            <div className="md:h-11 h-12 flex items-center justify-end">
-              {item.addons.length > 0 && (
-                <span className="text-sm font-black text-primary uppercase text-right">+ R$ {(item.quantity * item.addons.reduce((s: any, a: any) => s + a.price, 0)).toFixed(2)}</span>
-              )}
-            </div>
-          </div>
-          <div className="md:block hidden"></div>
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-black uppercase opacity-50 tracking-widest">Adicionais Extras</Label>
         </div>
         <div className="flex flex-wrap gap-2.5">
           {addons
