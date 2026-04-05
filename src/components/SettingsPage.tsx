@@ -51,9 +51,12 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
 
   useEffect(() => {
     // Try fetching printers from Tauri if available
-    if (window.__TAURI_INTERNALS__) {
-      invoke<string[]>("get_printers").then((res) => {
-        setAvailablePrinters(res);
+    const win = window as any;
+    if (win.__TAURI_INTERNALS__) {
+      import("@tauri-apps/api/core").then(({ invoke: tauriInvoke }) => {
+        tauriInvoke<string[]>("get_printers").then((res) => {
+          setAvailablePrinters(res);
+        }).catch(console.error);
       }).catch(console.error);
     }
   }, []);
