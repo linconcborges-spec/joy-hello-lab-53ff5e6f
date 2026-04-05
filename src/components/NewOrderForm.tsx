@@ -335,12 +335,7 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers }: NewOrderFo
   const handlePhoneSearch = () => {
     const normalizedSearch = normalizePhone(phone);
     if (!normalizedSearch) {
-      if (onOpenCustomers) {
-        onOpenCustomers();
-        toast.info("Abrindo lista de clientes para busca por nome...");
-      } else {
-        toast.error("Digite um telefone para buscar");
-      }
+      setCustomerSearchOpen(true);
       return;
     }
 
