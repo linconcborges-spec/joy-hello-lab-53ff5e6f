@@ -112,7 +112,7 @@ export function printOrder(order: Order, settings: AppSettings) {
           <div>
             ${order.items.map(item => `
               <div class="item-row">
-                <div class="item-title">X ${item.quantity} *** ${item.product}</div>
+                <div class="item-title">X ${item.quantity}${item.addons && item.addons.length > 0 ? ' *** ' : ' '}${item.product}</div>
                 <div class="item-price">${item.total.toFixed(2).replace('.', ',')}</div>
               </div>
               ${item.addons && item.addons.length > 0 ? `
