@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth.tsx";
 import { toast } from "sonner";
 import { ShieldCheck } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface AuthModalProps {
   open: boolean;
@@ -30,16 +29,15 @@ export function AuthModal({ open, onOpenChange, onAuthorize, title = "Autorizaç
 
     setIsVerifying(true);
     try {
-      // Verificação direta no Supabase para não deslogar o usuário atual
-      const { data, error } = await supabase
-        .from("employees" as any)
-        .select("name")
-        .eq("username", username)
-        .eq("password", password)
-        .single();
-
-      if (data && !error) {
-        onAuthorize(data.name);
+      // Usamos a função de login apenas para validar as credenciais sem necessariamente trocar o usuário logado permanentemente
+      // No entanto, para simplificar e garantir que pegamos o nome correto, vamos buscar o funcionário
+      const success = await login(username, password);
+      if (success) {
+        // Buscamos o usuário no sessionStorage para pegar o NOME completo (ex: João Silva)
+        const stored = sessionStorage.getItem("imperio-auth-user");
+        const authorizedName = stored ? JSON.parse(stored).name : username;
+        
+        onAuthorize(authorizedName);
         onOpenChange(false);
         setUsername("");
         setPassword("");

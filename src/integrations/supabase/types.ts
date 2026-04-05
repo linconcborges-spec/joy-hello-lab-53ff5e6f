@@ -158,12 +158,10 @@ export type Database = {
       }
       order_items: {
         Row: {
-          category_id: string | null
           created_at: string | null
           id: string
           observation: string | null
           order_id: string | null
-          product_code: string | null
           product_id: string | null
           product_name: string
           quantity: number
@@ -171,12 +169,10 @@ export type Database = {
           unit_price: number
         }
         Insert: {
-          category_id?: string | null
           created_at?: string | null
           id?: string
           observation?: string | null
           order_id?: string | null
-          product_code?: string | null
           product_id?: string | null
           product_name: string
           quantity: number
@@ -184,12 +180,10 @@ export type Database = {
           unit_price: number
         }
         Update: {
-          category_id?: string | null
           created_at?: string | null
           id?: string
           observation?: string | null
           order_id?: string | null
-          product_code?: string | null
           product_id?: string | null
           product_name?: string
           quantity?: number
@@ -212,7 +206,6 @@ export type Database = {
           cancelled_at: string | null
           cancelled_by: string | null
           change_for: number | null
-          cnpj: string | null
           created_at: string | null
           customer_name: string | null
           delivery_fee: number | null
@@ -221,8 +214,6 @@ export type Database = {
           last_edited_at: string | null
           last_edited_by: string | null
           number: number
-          observation: string | null
-          original_snapshot: Json | null
           payment_method: string
           phone: string | null
           status: string
@@ -233,7 +224,6 @@ export type Database = {
           cancelled_at?: string | null
           cancelled_by?: string | null
           change_for?: number | null
-          cnpj?: string | null
           created_at?: string | null
           customer_name?: string | null
           delivery_fee?: number | null
@@ -242,8 +232,6 @@ export type Database = {
           last_edited_at?: string | null
           last_edited_by?: string | null
           number: number
-          observation?: string | null
-          original_snapshot?: Json | null
           payment_method: string
           phone?: string | null
           status?: string
@@ -254,7 +242,6 @@ export type Database = {
           cancelled_at?: string | null
           cancelled_by?: string | null
           change_for?: number | null
-          cnpj?: string | null
           created_at?: string | null
           customer_name?: string | null
           delivery_fee?: number | null
@@ -263,8 +250,6 @@ export type Database = {
           last_edited_at?: string | null
           last_edited_by?: string | null
           number?: number
-          observation?: string | null
-          original_snapshot?: Json | null
           payment_method?: string
           phone?: string | null
           status?: string

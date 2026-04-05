@@ -349,14 +349,6 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
     }, 100);
   };
 
-  const handleClearCustomer = () => {
-    setCustomerName("");
-    setPhone("");
-    setAddress("");
-    setCnpj("");
-    setCustomerAddresses([]);
-  };
-
   const handlePhoneSearch = () => {
     const normalizedSearch = normalizePhone(phone);
     if (!normalizedSearch) {
@@ -384,16 +376,6 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
         toast.info("Por favor, preencha o nome e finalize o cadastro no botão laranja abaixo.");
       }
     }
-  };
-
-  const handleClearCustomer = () => {
-    setCustomerName("");
-    setPhone("");
-    setAddress("");
-    setCustomerAddresses([]);
-    setCnpj("");
-    toast.info("Dados do cliente limpos");
-    document.getElementById("phone-search")?.focus();
   };
 
   const handleQuickRegister = () => {
