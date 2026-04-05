@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Trash2, ArrowLeft, Search, X, Check, ChevronsUpDown, Phone, MapPin, PackageCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,7 @@ interface NewOrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "number" | "createdAt">) => void;
   onCancel: () => void;
   onOpenCustomers?: () => void;
+  initialOrder?: Order;
 }
 
 function createEmptyItem(): OrderItem {
@@ -291,26 +292,42 @@ function OrderItemRow({
   );
 }
 
-export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers }: NewOrderFormProps) {
-  const { settings } = useSettings();
+export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder }: NewOrderFormProps) {
   const { data: customers = [] } = useCustomers();
   const addCustomer = useAddCustomer();
   const updateCustomer = useUpdateCustomer();
   const { data: products = [] } = useProducts();
+  const { settings } = useSettings();
   const { data: addons = [] } = useAddons();
-  const [customerName, setCustomerName] = useState("");
-  const [address, setAddress] = useState("");
-  const [phone, setPhone] = useState("");
+
+  const [customerName, setCustomerName] = useState(initialOrder?.customerName || "");
+  const [address, setAddress] = useState(initialOrder?.address || "");
+  const [phone, setPhone] = useState(initialOrder?.phone || "");
   const [customerAddresses, setCustomerAddresses] = useState<string[]>([]);
-  const [cnpj, setCnpj] = useState("");
-  const [items, setItems] = useState<OrderItem[]>([createEmptyItem()]);
-  const [isPickup, setIsPickup] = useState(false);
-  const [deliveryFee, setDeliveryFee] = useState(settings.defaultDeliveryFee);
-  const [changeFor, setChangeFor] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState<Order["paymentMethod"]>("cash");
-  const [globalObservation, setGlobalObservation] = useState("");
+  const [cnpj, setCnpj] = useState(initialOrder?.cnpj || "");
+  const [items, setItems] = useState<OrderItem[]>(initialOrder?.items || [createEmptyItem()]);
+  const [isPickup, setIsPickup] = useState(initialOrder?.isPickup || false);
+  const [deliveryFee, setDeliveryFee] = useState(initialOrder?.deliveryFee ?? settings.defaultDeliveryFee);
+  const [changeFor, setChangeFor] = useState(initialOrder?.changeFor || 0);
+  const [paymentMethod, setPaymentMethod] = useState<Order["paymentMethod"]>(initialOrder?.paymentMethod || "cash");
+  const [globalObservation, setGlobalObservation] = useState(initialOrder?.observation || "");
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
+
+  useEffect(() => {
+    if (initialOrder) {
+      setCustomerName(initialOrder.customerName);
+      setAddress(initialOrder.address);
+      setPhone(initialOrder.phone);
+      setCnpj(initialOrder.cnpj || "");
+      setItems(JSON.parse(JSON.stringify(initialOrder.items))); // Deep clone items
+      setIsPickup(!!initialOrder.isPickup);
+      setDeliveryFee(initialOrder.deliveryFee);
+      setChangeFor(initialOrder.changeFor);
+      setPaymentMethod(initialOrder.paymentMethod);
+      setGlobalObservation(initialOrder.observation || "");
+    }
+  }, [initialOrder]);
 
   const handleSelectCustomer = (c: any) => {
     setCustomerName(c.name);
@@ -466,9 +483,9 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers }: NewOrderFo
       deliveryFee: isPickup ? 0 : deliveryFee,
       totalAmount: isPickup ? subtotal : totalAmount,
       changeFor,
-      status: "preparing" as Order["status"],
+      status: initialOrder?.status || ("preparing" as Order["status"]),
       paymentMethod,
-      isPrinted: true,
+      isPrinted: initialOrder?.isPrinted ?? true,
       isPickup,
       observation: globalObservation.trim(),
     };
@@ -728,7 +745,9 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers }: NewOrderFo
 
       <div className="flex items-center justify-between bg-card rounded-xl p-4 border">
         <span className="text-lg font-black uppercase">Total: R$ {totalAmount.toFixed(2)}</span>
-        <Button id="submit-order" type="submit" size="lg" className="px-8 uppercase font-black">Criar Pedido</Button>
+        <Button id="submit-order" type="submit" size="lg" className="px-8 uppercase font-black">
+          {initialOrder ? "Salvar Alterações" : "Criar Pedido"}
+        </Button>
       </div>
 
       <Dialog open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>

@@ -1,4 +1,4 @@
-import { ArrowLeft, Trash2, Ban, Printer } from "lucide-react";
+import { ArrowLeft, Trash2, Ban, Printer, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,9 +25,10 @@ interface OrderDetailProps {
   onDelete: (id: string) => void;
   onCancel: (id: string) => void;
   onPrint?: (order: Order) => void;
+  onEdit?: (order: Order) => void;
 }
 
-export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel, onPrint }: OrderDetailProps) {
+export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel, onPrint, onEdit }: OrderDetailProps) {
   const date = new Date(order.createdAt).toLocaleString("pt-BR");
   const isPending = order.status === "pending";
   const isCancelled = order.status === "cancelled";
@@ -39,6 +40,16 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel,
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Button>
         <div className="flex gap-2">
+          {!isCancelled && (
+             <Button
+               variant="secondary"
+               size="sm"
+               className="gap-1.5 bg-primary/10 text-primary hover:bg-primary/20"
+               onClick={() => onEdit?.(order)}
+             >
+               <Pencil className="h-4 w-4" /> Editar
+             </Button>
+          )}
           {/* Excluir: só em pedidos pendentes */}
           {isPending && (
             <AlertDialog>

@@ -14,7 +14,7 @@ import { ProductsPage } from "@/components/ProductsPage";
 import { SettingsPage } from "@/components/SettingsPage";
 import { LoginPage } from "@/components/LoginPage";
 import { 
-  useOrders, useAddOrder, useUpdateOrderStatus, 
+  useOrders, useAddOrder, useUpdateOrder, useUpdateOrderStatus, 
   useCancelOrder, useMarkAsPrinted 
 } from "@/hooks/useOrders";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,7 +40,7 @@ import {
   ContextMenuLabel
 } from "@/components/ui/context-menu";
 
-type View = "list" | "new" | "detail" | "customers" | "products" | "settings";
+type View = "list" | "new" | "edit" | "detail" | "customers" | "products" | "settings";
 
 const Index = () => {
   const { user, isAdmin, logout, isLoading: authLoading } = useAuth();
@@ -87,6 +87,7 @@ const Index = () => {
   );
   
   const addOrderMutation = useAddOrder();
+  const updateOrderMutation = useUpdateOrder();
   const updateStatusMutation = useUpdateOrderStatus();
   const cancelOrderMutation = useCancelOrder();
   const markAsPrintedMutation = useMarkAsPrinted();
@@ -296,13 +297,18 @@ const Index = () => {
     </Drawer>
   );
 
-  if (view === "new") {
+  if (view === "new" || (view === "edit" && selectedOrder)) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-10 flex items-center justify-center">
         <div className="max-w-7xl w-full">
           <NewOrderForm
+            initialOrder={view === "edit" ? selectedOrder : undefined}
             onSubmit={(order) => {
-              addOrderMutation.mutate(order);
+              if (view === "edit" && selectedOrder) {
+                updateOrderMutation.mutate({ id: selectedOrder.id, orderData: { ...order, lastEditedBy: user.name } });
+              } else {
+                addOrderMutation.mutate(order);
+              }
               setView("list");
             }}
             onCancel={() => setView("list")}
@@ -328,6 +334,7 @@ const Index = () => {
             onDelete={(id) => setView("list")}
             onCancel={(id) => cancelOrderMutation.mutate({ id, employeeName: user.name })}
             onPrint={(order) => { printOrder(order, settings); markAsPrintedMutation.mutate(order.id); }}
+            onEdit={(order) => setView("edit")}
           />
         </div>
       </div>

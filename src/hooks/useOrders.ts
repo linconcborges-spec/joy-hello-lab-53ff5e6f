@@ -169,6 +169,86 @@ export function useAddOrder() {
   });
 }
 
+export function useUpdateOrder() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, orderData }: { id: string; orderData: Omit<Order, "id" | "number" | "createdAt"> }) => {
+      // 1. Update order metadata
+      const { error: orderError } = await supabase
+        .from("orders")
+        .update({
+          customer_name: orderData.customerName,
+          address: orderData.address,
+          phone: orderData.phone,
+          cnpj: orderData.cnpj || null,
+          delivery_fee: orderData.deliveryFee,
+          total_amount: orderData.totalAmount,
+          change_for: orderData.changeFor,
+          status: orderData.status,
+          payment_method: orderData.paymentMethod,
+          is_printed: orderData.isPrinted ?? false,
+          observation: orderData.observation || null,
+          last_edited_by: orderData.lastEditedBy || null,
+          last_edited_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+
+      if (orderError) throw orderError;
+
+      // 2. Delete existing items (cascading will handle addons if setup, but let's be sure)
+      const { error: deleteError } = await supabase
+        .from("order_items")
+        .delete()
+        .eq("order_id", id);
+
+      if (deleteError) throw deleteError;
+
+      // 3. Insert updated items and their addons
+      for (const item of orderData.items) {
+        const { data: insertedItem, error: itemError } = await supabase
+          .from("order_items")
+          .insert({
+            order_id: id,
+            product_code: item.productCode || null,
+            category_id: item.categoryId || null,
+            product_name: item.product,
+            quantity: item.quantity,
+            unit_price: item.unitPrice,
+            total: item.total,
+            observation: item.observation || null,
+          })
+          .select()
+          .single();
+
+        if (itemError) throw itemError;
+
+        if (item.addons && item.addons.length > 0) {
+          const addonsToInsert = item.addons.map(addon => ({
+            order_item_id: insertedItem.id,
+            name: addon.name,
+            price: addon.price,
+          }));
+
+          const { error: addonsError } = await supabase
+            .from("order_addons")
+            .insert(addonsToInsert);
+          
+          if (addonsError) throw addonsError;
+        }
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      toast.success("Pedido atualizado!");
+    },
+    onError: (error) => {
+      console.error(error);
+      toast.error("Erro ao atualizar pedido");
+    }
+  });
+}
+
 export function useUpdateOrderStatus() {
   const qc = useQueryClient();
   return useMutation({
