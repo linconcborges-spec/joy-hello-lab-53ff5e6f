@@ -301,7 +301,10 @@ const Index = () => {
       <div className="min-h-screen bg-background p-4 sm:p-10 flex items-center justify-center">
         <div className="max-w-7xl w-full">
           <NewOrderForm
-            onSubmit={(order) => addOrderMutation.mutate(order, { onSuccess: () => setView("list") })}
+            onSubmit={(order) => {
+              addOrderMutation.mutate(order);
+              setView("list");
+            }}
             onCancel={() => setView("list")}
           />
         </div>

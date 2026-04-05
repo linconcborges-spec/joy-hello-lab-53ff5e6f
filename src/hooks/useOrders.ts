@@ -158,7 +158,6 @@ export function useAddOrder() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["orders"] });
-      toast.success("Pedido criado com sucesso!");
     },
     onError: (error) => {
       console.error(error);
