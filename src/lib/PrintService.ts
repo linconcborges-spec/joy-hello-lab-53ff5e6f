@@ -84,6 +84,7 @@ export function printOrder(order: Order, settings: AppSettings) {
             background: #eee;
             padding: 2px 5px;
             margin-top: 2px;
+            text-transform: uppercase;
           }
           .totals {
             margin-top: 15px;
