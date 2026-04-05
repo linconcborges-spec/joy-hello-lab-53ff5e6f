@@ -386,6 +386,16 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
     }
   };
 
+  const handleClearCustomer = () => {
+    setCustomerName("");
+    setPhone("");
+    setAddress("");
+    setCustomerAddresses([]);
+    setCnpj("");
+    toast.info("Dados do cliente limpos");
+    document.getElementById("phone-search")?.focus();
+  };
+
   const handleQuickRegister = () => {
     if (!customerName.trim()) {
       toast.error("Preencha o nome do cliente para cadastrar");
