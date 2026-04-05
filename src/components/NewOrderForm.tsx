@@ -230,8 +230,8 @@ function OrderItemRow({
 
         {/* 6. Total do Item */}
         <div className="space-y-1.5 flex flex-col text-right">
-          <Label className="text-[10px] font-black uppercase opacity-60 mr-2">Subtotal</Label>
-          <div className="md:h-11 h-12 flex items-center justify-end px-2">
+          <Label className="text-[10px] font-black uppercase opacity-60">Subtotal</Label>
+          <div className="md:h-11 h-12 flex items-center justify-end">
             <span className="text-sm font-black text-primary">R$ {item.total.toFixed(2)}</span>
           </div>
         </div>
@@ -261,9 +261,11 @@ function OrderItemRow({
             <Label className="text-xs font-black uppercase opacity-50 tracking-widest">Adicionais Extras</Label>
           </div>
           <div className="text-right">
-            {item.addons.length > 0 && (
-              <span className="text-sm font-black text-primary uppercase">+ R$ {(item.quantity * item.addons.reduce((s: any, a: any) => s + a.price, 0)).toFixed(2)}</span>
-            )}
+            <div className="md:h-11 h-12 flex items-center justify-end">
+              {item.addons.length > 0 && (
+                <span className="text-sm font-black text-primary uppercase text-right">+ R$ {(item.quantity * item.addons.reduce((s: any, a: any) => s + a.price, 0)).toFixed(2)}</span>
+              )}
+            </div>
           </div>
           <div className="md:block hidden"></div>
         </div>
