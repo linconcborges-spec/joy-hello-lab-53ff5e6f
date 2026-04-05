@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, ArrowLeft, Search, X, Check, ChevronsUpDown, Phone, MapPin, PackageCheck } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Search, X, Check, ChevronsUpDown, Phone, MapPin, PackageCheck, Eraser } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -549,6 +549,16 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
             </div>
             <Button type="button" variant="secondary" onClick={handlePhoneSearch} className="gap-1.5 h-10 uppercase font-black text-xs">
               <Search className="h-4 w-4" /> Buscar
+            </Button>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="icon"
+              onClick={handleClearCustomer} 
+              className="h-10 w-10 border-destructive/20 text-destructive hover:bg-destructive/10 shrink-0"
+              title="Limpar Cliente"
+            >
+              <Eraser className="h-4 w-4" />
             </Button>
           </div>
 
