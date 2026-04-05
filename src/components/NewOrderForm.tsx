@@ -349,6 +349,14 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
     }, 100);
   };
 
+  const handleClearCustomer = () => {
+    setCustomerName("");
+    setPhone("");
+    setAddress("");
+    setCnpj("");
+    setCustomerAddresses([]);
+  };
+
   const handlePhoneSearch = () => {
     const normalizedSearch = normalizePhone(phone);
     if (!normalizedSearch) {
