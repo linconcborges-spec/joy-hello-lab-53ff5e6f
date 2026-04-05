@@ -35,6 +35,7 @@ export interface Order {
   cancelledAt?: string;
   lastEditedBy?: string;
   lastEditedAt?: string;
+  observation?: string;
 }
 
 export const STATUS_LABELS: Record<Order["status"], string> = {

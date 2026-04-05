@@ -61,6 +61,7 @@ export function useOrders(startDate?: string, endDate?: string) {
         cancelledAt: order.cancelled_at,
         lastEditedBy: order.last_edited_by,
         lastEditedAt: order.last_edited_at,
+        observation: order.observation,
         items: (order.items || []).map((item: any) => ({
           id: item.id,
           productCode: item.product_code ?? "",
@@ -112,6 +113,7 @@ export function useAddOrder() {
           status: orderData.status,
           payment_method: orderData.paymentMethod,
           is_printed: orderData.isPrinted ?? false,
+          observation: orderData.observation || null,
         })
         .select()
         .single();

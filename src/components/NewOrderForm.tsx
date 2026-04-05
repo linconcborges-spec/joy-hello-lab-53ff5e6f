@@ -308,6 +308,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
   const [paymentMethod, setPaymentMethod] = useState<Order["paymentMethod"]>("cash");
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [pendingOrder, setPendingOrder] = useState<Omit<Order, "id" | "number" | "createdAt"> | null>(null);
+  const [globalObservation, setGlobalObservation] = useState("");
 
   const handlePhoneSearch = () => {
     const normalizedSearch = normalizePhone(phone);
@@ -437,6 +438,7 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
       paymentMethod,
       isPrinted: false,
       isPickup,
+      observation: globalObservation.trim(),
     };
 
     setPendingOrder(orderData);
@@ -670,6 +672,24 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
           <div className="space-y-1.5">
             <Label htmlFor="change" className="uppercase font-black text-xs">Troco Para (R$)</Label>
             <Input id="change" type="number" step="0.01" min={0} value={changeFor || ""} onChange={(e) => setChangeFor(parseFloat(e.target.value) || 0)} />
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="uppercase">Observação da Comanda</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-1.5">
+            <Label htmlFor="global-obs" className="uppercase font-black text-xs">Observações Gerais (Horário, avisos, etc.)</Label>
+            <Input 
+              id="global-obs" 
+              value={globalObservation} 
+              onChange={(e) => setGlobalObservation(e.target.value)} 
+              placeholder="EX: ENTREGAR APÓS AS 20H / PORTÃO VERMELHO" 
+              className="uppercase font-medium"
+            />
           </div>
         </CardContent>
       </Card>
