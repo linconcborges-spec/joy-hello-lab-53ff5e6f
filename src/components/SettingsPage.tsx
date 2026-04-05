@@ -46,6 +46,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const [printMargin, setPrintMargin] = useState(settings.printMargin);
   const [printMarginTop, setPrintMarginTop] = useState(settings.printMarginTop || "0mm");
   const [printFontSize, setPrintFontSize] = useState(settings.printFontSize);
+  const [targetPrinter, setTargetPrinter] = useState(settings.targetPrinter || "");
 
   // New employee form
   const [showNew, setShowNew] = useState(false);
@@ -82,7 +83,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   };
 
   const handleSaveGeneral = () => {
-    updateSettings({ storeName, defaultDeliveryFee, printPaperWidth, printMargin, printMarginTop, printFontSize });
+    updateSettings({ storeName, defaultDeliveryFee, printPaperWidth, printMargin, printMarginTop, printFontSize, targetPrinter });
     toast.success("Configurações atualizadas com sucesso!");
   };
 
@@ -198,7 +199,19 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                 placeholder="14px" 
               />
             </div>
-            <div className="sm:col-span-3 flex justify-end">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label className="text-xs font-bold text-primary">Nome da Impressora de Destino (Modo Offline / Executável)</Label>
+              <Input 
+                value={targetPrinter} 
+                onChange={(e) => setTargetPrinter(e.target.value)} 
+                placeholder="Ex: POS-58 ou XP-80C (ID exato no Windows)" 
+                className="border-primary/20 bg-primary/5"
+              />
+              <p className="text-[9px] text-muted-foreground leading-tight pt-1">
+                *Preencha o nome exato da impressora no Windows para forçar a impressão direta quando rodando o executável local (fora da internet).
+              </p>
+            </div>
+            <div className="sm:col-span-3 flex justify-end pt-2">
               <Button onClick={handleSaveGeneral} className="gap-1.5">
                 <Save className="h-4 w-4" /> Salvar Configurações
               </Button>

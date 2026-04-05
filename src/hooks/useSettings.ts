@@ -9,6 +9,7 @@ export interface AppSettings {
   printMarginTop: string;
   printMargin: string;
   printFontSize: string;
+  targetPrinter: string;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -18,6 +19,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   printMarginTop: "0mm",
   printMargin: "0px",
   printFontSize: "14px",
+  targetPrinter: "",
 };
 
 const KEY_MAP: Record<string, keyof AppSettings> = {
@@ -27,6 +29,7 @@ const KEY_MAP: Record<string, keyof AppSettings> = {
   print_margin_top: "printMarginTop",
   print_margin: "printMargin",
   print_font_size: "printFontSize",
+  target_printer: "targetPrinter",
 };
 
 const REVERSE_KEY_MAP: Record<keyof AppSettings, string> = Object.fromEntries(
