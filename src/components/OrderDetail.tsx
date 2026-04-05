@@ -182,6 +182,12 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel,
               <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">Pagamento</p>
               <Badge variant="secondary">{PAYMENT_LABELS[order.paymentMethod]}</Badge>
             </div>
+            {order.observation && (
+              <div className="sm:col-span-2 bg-orange-500/5 p-3 rounded-2xl border border-orange-500/10 border-dashed">
+                <p className="text-orange-600 text-[10px] uppercase font-black tracking-widest mb-1 italic">Observação da Comanda</p>
+                <p className="font-bold text-sm text-orange-700 uppercase italic leading-relaxed">"{order.observation}"</p>
+              </div>
+            )}
           </div>
 
           <div className="border-t pt-4">

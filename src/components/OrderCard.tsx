@@ -62,6 +62,13 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
                 <Clock className="h-3 w-3 shrink-0" />
                 <span>{time}</span>
               </div>
+              {order.observation && (
+                <div className="flex items-start gap-1.5 mt-2 bg-orange-500/5 px-2 py-1 rounded-lg border border-orange-500/10">
+                  <span className="text-[10px] font-black uppercase text-orange-600 line-clamp-2 italic">
+                    OBS: {order.observation}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="pt-3 border-t border-border/50 flex items-center justify-between">
