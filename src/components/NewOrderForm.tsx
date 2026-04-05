@@ -255,13 +255,15 @@ function OrderItemRow({
         </div>
       </div>
 
-      {/* Adicionais com quebra de linha garantida */}
       <div className="space-y-3 bg-background/30 p-4 rounded-2xl border border-border/10">
-        <div className="flex items-center justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_6.5rem_auto] gap-4 items-center">
           <Label className="text-xs font-black uppercase opacity-50 tracking-widest">Adicionais Extras</Label>
-          {item.addons.length > 0 && (
-            <span className="text-xs font-black text-primary uppercase">+ R$ {item.addons.reduce((s: any, a: any) => s + a.price, 0).toFixed(2)}</span>
-          )}
+          <div className="text-right px-2">
+            {item.addons.length > 0 && (
+              <span className="text-sm font-black text-primary uppercase">+ R$ {(item.quantity * item.addons.reduce((s: any, a: any) => s + a.price, 0)).toFixed(2)}</span>
+            )}
+          </div>
+          <div className="w-10 md:block hidden"></div>
         </div>
         <div className="flex flex-wrap gap-2.5">
           {addons
