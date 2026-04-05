@@ -153,10 +153,10 @@ function OrderItemRow({
                     setSearchQuery(v);
                     handleCustomProductName(v);
                   }}
-                  className="h-14 font-bold"
+                  className="h-14 font-bold uppercase"
                 />
                 <CommandList className="max-h-[300px]">
-                  <CommandEmpty className="py-6 text-center text-xs font-black uppercase opacity-30">Enter para usar "{searchQuery}"</CommandEmpty>
+                  <CommandEmpty className="py-6 text-center text-xs font-black uppercase opacity-30">ENTER PARA USAR "{searchQuery.toUpperCase()}"</CommandEmpty>
                   <CommandGroup>
                     {products.filter((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase())).map((produto: any) => (
                       <CommandItem
@@ -223,8 +223,8 @@ function OrderItemRow({
                 document.getElementById("btn-add-item")?.click();
               }
             }}
-            placeholder="Ex: sem cebola"
-            className="md:h-11 h-12 font-medium rounded-xl bg-background border-none shadow-sm px-4"
+            placeholder="EX: SEM CEBOLA"
+            className="md:h-11 h-12 font-medium rounded-xl bg-background border-none shadow-sm px-4 uppercase"
           />
         </div>
 
@@ -593,8 +593,8 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
                     id="address" 
                     value={address === "new_address" ? "" : address} 
                     onChange={(e) => setAddress(e.target.value)} 
-                    placeholder="Rua, número, bairro..." 
-                    className="pl-10"
+                    placeholder="RUA, NÚMERO, BAIRRO..." 
+                    className="pl-10 uppercase"
                   />
                 </div>
               </div>
