@@ -44,7 +44,7 @@ export function useOrders(startDate?: string, endDate?: string) {
       if (error) throw error;
       
       // Mapear snake_case do banco para camelCase do TS
-      return (data as any[]).map(order => ({
+      const mappedOrders = (data as any[]).map(order => ({
         id: order.id,
         number: order.number,
         customerName: order.customer_name,
@@ -77,6 +77,9 @@ export function useOrders(startDate?: string, endDate?: string) {
           }))
         }))
       })) as Order[];
+      
+      // Garante explicitamente no frontend que o maior número (mais novo) ficará no index 0 (topo)
+      return mappedOrders.sort((a, b) => b.number - a.number);
     },
   });
 }
