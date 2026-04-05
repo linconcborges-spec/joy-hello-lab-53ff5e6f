@@ -325,9 +325,17 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
       if (customer.addresses && customer.addresses.length > 0) {
         setAddress(customer.addresses[0]);
       }
-      toast.success(`Cliente "${customer.name}" encontrado!`);
+      toast.success(`Cliente "${customer.name.toUpperCase()}" identificado!`);
     } else {
-      toast.error("Cliente não encontrado com este telefone");
+      // Lógica de cadastro curinga sugerida
+      const useCuringa = window.confirm("CLIENTE NÃO ENCONTRADO. DESEJA CADASTRAR AGORA?\n\nSe clicar em CANCELAR, os dados serão salvos em um registro avulso para não perder a venda.");
+      
+      if (!useCuringa) {
+        setCustomerName("CLIENTE NÃO CADASTRADO");
+        toast.info("Usando cadastro curinga. O nome e telefone serão salvos individualmente neste pedido.");
+      } else {
+        toast.info("Por favor, preencha o nome e finalize o cadastro no botão laranja abaixo.");
+      }
     }
   };
 
@@ -346,24 +354,28 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
     const existing = customers.find(c => normalizePhone(c.phone) === normalized);
 
     if (existing) {
-      // Adiciona o endereço atual se ele não estiver na lista
+      // Adiciona o endereço atual se ele não estiver na lista (apenas se houver endereço)
       const newAddress = address.trim();
       const currentAddresses = existing.addresses || [];
-      if (newAddress && !currentAddresses.includes(newAddress)) {
+      if (!isPickup && newAddress && !currentAddresses.includes(newAddress)) {
         const updatedAddresses = [...currentAddresses, newAddress];
         updateCustomer.mutate({
           id: existing.id,
           name: customerName.trim(),
-          phone: existing.phone, // Mantém o original para evitar conflito de normalização redundante
+          phone: existing.phone,
           addresses: updatedAddresses
         });
         setCustomerAddresses(updatedAddresses);
       } else {
-        toast.info("Cliente e endereço já estão no sistema.");
+        toast.info("Identificação concluída!");
       }
     } else {
       addCustomer.mutate(
-        { name: customerName.trim(), addresses: [address.trim()], phone: phone.trim() }
+        { 
+          name: customerName.trim() || (isPickup ? "CLIENTE AVULSO (RETIRADA)" : "CLIENTE AVULSO"), 
+          addresses: isPickup ? [] : [address.trim()], 
+          phone: phone.trim() 
+        }
       );
     }
   };
@@ -481,84 +493,34 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
           <CardTitle className="uppercase">Dados do Cliente</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {/* Toggle Retirada */}
-          <div
-            className={cn(
-              "flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all select-none",
-              isPickup
-                ? "bg-primary/10 border-primary/30 ring-2 ring-primary/20"
-                : "bg-secondary/40 border-border/20 hover:bg-secondary/60"
-            )}
-            onClick={() => {
-              setIsPickup(!isPickup);
-              if (!isPickup) {
-                setAddress("");
-                setDeliveryFee(0);
-                setCustomerAddresses([]);
-              } else {
-                setDeliveryFee(settings.defaultDeliveryFee);
-              }
-            }}
-          >
-            <PackageCheck className={cn("h-5 w-5 shrink-0", isPickup ? "text-primary" : "text-muted-foreground")} />
-            <div className="flex-1">
-              <span className="font-bold text-sm uppercase">Retirada no Local</span>
-              <p className="text-[10px] text-muted-foreground uppercase">Marque se o cliente vai retirar o pedido</p>
+          {/* Busca por Telefone - Primeiro Campo SEMPRE */}
+          <div className="flex gap-2 items-end sticky top-0 bg-background/80 backdrop-blur-sm z-10 py-1">
+            <div className="space-y-1.5 flex-1">
+              <Label htmlFor="phone-search" className="uppercase font-black text-xs">Telefone / Identificação</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
+                <Input
+                  id="phone-search"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="(00) 00000-0000"
+                  className="pl-10 uppercase"
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePhoneSearch(); } }}
+                />
+              </div>
             </div>
-            <div className={cn(
-              "h-6 w-11 rounded-full transition-colors relative",
-              isPickup ? "bg-primary" : "bg-muted"
-            )}>
-              <div className={cn(
-                "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
-                isPickup ? "translate-x-5" : "translate-x-0.5"
-              )} />
-            </div>
+            <Button type="button" variant="secondary" onClick={handlePhoneSearch} className="gap-1.5 h-10 uppercase font-black text-xs">
+              <Search className="h-4 w-4" /> Buscar
+            </Button>
           </div>
 
-          {!isPickup && (
-            <div className="flex gap-2 items-end">
-              <div className="space-y-1.5 flex-1">
-                <Label htmlFor="phone-search" className="uppercase font-black text-xs">Buscar por Telefone</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
-                  <Input
-                    id="phone-search"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="(00) 00000-0000"
-                    className="pl-10"
-                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handlePhoneSearch(); } }}
-                  />
-                </div>
-              </div>
-              <Button type="button" variant="secondary" onClick={handlePhoneSearch} className="gap-1.5 h-10 uppercase font-black text-xs">
-                <Search className="h-4 w-4" /> Buscar
-              </Button>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
             <div className="space-y-1.5">
-              <Label htmlFor="name" className="uppercase font-black text-xs">Nome do Cliente {isPickup && <span className="text-muted-foreground text-[10px] normal-case">(opcional)</span>}</Label>
+              <Label htmlFor="name" className="uppercase font-black text-xs">Nome do Cliente</Label>
               <Input id="name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="NOME COMPLETO" className="uppercase placeholder:normal-case" />
             </div>
 
-            {isPickup ? (
-              <div className="space-y-1.5">
-                <Label htmlFor="phone-pickup" className="uppercase font-black text-xs">Telefone <span className="text-muted-foreground text-[10px] normal-case">(opcional)</span></Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
-                  <Input
-                    id="phone-pickup"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="(00) 00000-0000"
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-            ) : (
+            {!isPickup && (
               <div className="space-y-1.5">
                 <Label htmlFor="cnpj" className="uppercase font-black text-xs">CPF/CNPJ (Opcional)</Label>
                 <Input id="cnpj" value={cnpj} onChange={(e) => setCnpj(formatCpfCnpj(e.target.value))} placeholder="000.000.000-00" />
@@ -591,20 +553,58 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
                     id="address" 
                     value={address === "new_address" ? "" : address} 
                     onChange={(e) => setAddress(e.target.value)} 
-                    placeholder="RUA, NÚMERO, BAIRRO..." 
+                    placeholder="RUA, NÚMERO, BARRIO..." 
                     className="pl-10 uppercase"
                   />
                 </div>
               </div>
             )}
 
-            {!isPickup && (
-              <div className="flex items-end pt-1 sm:col-span-2">
-                <Button type="button" onClick={handleQuickRegister} disabled={addCustomer.isPending || !customerName.trim() || !phone.trim() || !address.trim()} className="gap-1.5 w-full bg-orange-500 text-white hover:bg-orange-600 border-none transition-colors uppercase font-black text-xs">
-                  <Plus className="h-4 w-4" /> Salvar/Atualizar Cliente no Sistema
-                </Button>
-              </div>
+            <div className="flex items-end pt-1 sm:col-span-2">
+              <Button 
+                type="button" 
+                onClick={handleQuickRegister} 
+                disabled={addCustomer.isPending || !customerName.trim() || !phone.trim() || (!isPickup && !address.trim())} 
+                className="gap-1.5 w-full bg-orange-500 text-white hover:bg-orange-600 border-none transition-colors uppercase font-black text-xs"
+              >
+                <Plus className="h-4 w-4" /> {isPickup ? "Cadastrar para Retirada" : "Salvar/Atualizar Cliente no Sistema"}
+              </Button>
+            </div>
+          </div>
+
+          {/* Toggle Retirada - Agora fica aqui embaixo para não atrapalhar a busca */}
+          <div
+            className={cn(
+              "flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all select-none mt-4",
+              isPickup
+                ? "bg-primary/10 border-primary/30 ring-2 ring-primary/20"
+                : "bg-secondary/40 border-border/20 hover:bg-secondary/60"
             )}
+            onClick={() => {
+              setIsPickup(!isPickup);
+              if (!isPickup) {
+                setAddress("");
+                setDeliveryFee(settings.defaultDeliveryFee);
+              } else {
+                setDeliveryFee(0);
+                setCustomerAddresses([]);
+              }
+            }}
+          >
+            <PackageCheck className={cn("h-5 w-5 shrink-0", isPickup ? "text-primary" : "text-muted-foreground")} />
+            <div className="flex-1">
+              <span className="font-bold text-sm uppercase">Retirada no Local</span>
+              <p className="text-[10px] text-muted-foreground uppercase">Marque se o cliente vai retirar o pedido</p>
+            </div>
+            <div className={cn(
+              "h-6 w-11 rounded-full transition-colors relative",
+              isPickup ? "bg-primary" : "bg-muted"
+            )}>
+              <div className={cn(
+                "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
+                isPickup ? "translate-x-5" : "translate-x-0.5"
+              )} />
+            </div>
           </div>
         </CardContent>
       </Card>
