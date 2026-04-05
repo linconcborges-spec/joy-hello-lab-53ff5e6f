@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Plus, Pencil, Trash2, Save, X, Eye, EyeOff, Shield, User, Moon, Sun, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,16 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const [printMarginTop, setPrintMarginTop] = useState(settings.printMarginTop || "0mm");
   const [printFontSize, setPrintFontSize] = useState(settings.printFontSize);
   const [targetPrinter, setTargetPrinter] = useState(settings.targetPrinter || "");
+  const [availablePrinters, setAvailablePrinters] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Try fetching printers from Tauri if available
+    if (window.__TAURI_INTERNALS__) {
+      invoke<string[]>("get_printers").then((res) => {
+        setAvailablePrinters(res);
+      }).catch(console.error);
+    }
+  }, []);
 
   // New employee form
   const [showNew, setShowNew] = useState(false);
@@ -201,14 +211,28 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label className="text-xs font-bold text-primary">Nome da Impressora de Destino (Modo Offline / Executável)</Label>
-              <Input 
-                value={targetPrinter} 
-                onChange={(e) => setTargetPrinter(e.target.value)} 
-                placeholder="Ex: POS-58 ou XP-80C (ID exato no Windows)" 
-                className="border-primary/20 bg-primary/5"
-              />
+              {availablePrinters.length > 0 ? (
+                <Select value={targetPrinter || "default"} onValueChange={(v) => setTargetPrinter(v === "default" ? "" : v)}>
+                  <SelectTrigger className="border-primary/20 bg-primary/5 font-medium">
+                    <SelectValue placeholder="Selecione a impressora..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default" className="italic font-bold text-muted-foreground">- IMPRESSORA PADRÃO DO WINDOWS -</SelectItem>
+                    {availablePrinters.map(p => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input 
+                  value={targetPrinter} 
+                  onChange={(e) => setTargetPrinter(e.target.value)} 
+                  placeholder="Ex: POS-58 ou XP-80C (Apenas visível via Tauri App)" 
+                  className="border-primary/20 bg-primary/5"
+                />
+              )}
               <p className="text-[9px] text-muted-foreground leading-tight pt-1">
-                *Preencha o nome exato da impressora no Windows para forçar a impressão direta quando rodando o executável local (fora da internet).
+                *Para visualizar a lista de impressoras do Windows magicamente aqui, use o executável offline em vez do navegador.
               </p>
             </div>
             <div className="sm:col-span-3 flex justify-end pt-2">
