@@ -530,30 +530,40 @@ export function NewOrderForm({ onSubmit, onCancel }: NewOrderFormProps) {
             {!isPickup && customerAddresses.length > 0 && (
               <div className="space-y-1.5 sm:col-span-2">
                 <Label className="uppercase font-black text-xs">Endereços Salvos</Label>
-                <Select value={address} onValueChange={setAddress}>
+                <Select 
+                  value={customerAddresses.includes(address) ? address : (address === "" ? "" : "new_address")} 
+                  onValueChange={(val) => {
+                    if (val === "new_address") {
+                      setAddress("");
+                      setTimeout(() => document.getElementById("address")?.focus(), 50);
+                    } else {
+                      setAddress(val);
+                    }
+                  }}
+                >
                   <SelectTrigger className="bg-muted/30">
-                    <SelectValue placeholder="Selecione um endereço salvo" />
+                    <SelectValue placeholder="SELECIONE UM ENDEREÇO SALVO OU ADICIONE..." />
                   </SelectTrigger>
                   <SelectContent>
                     {customerAddresses.map((addr, idx) => (
-                      <SelectItem key={idx} value={addr}>{addr}</SelectItem>
+                      <SelectItem key={idx} value={addr} className="uppercase">{addr}</SelectItem>
                     ))}
-                    <SelectItem value="new_address" className="uppercase font-bold">+ Usar outro endereço...</SelectItem>
+                    <SelectItem value="new_address" className="uppercase font-bold text-primary">+ ADICIONAR NOVO ENDEREÇO...</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             )}
 
-            {!isPickup && (customerAddresses.length === 0 || address === "new_address") && (
+            {!isPickup && (customerAddresses.length === 0 || !customerAddresses.includes(address)) && (
               <div className="space-y-1.5 sm:col-span-2 animate-in fade-in slide-in-from-top-1 duration-200">
                 <Label htmlFor="address" className="uppercase font-black text-xs">Endereço de Entrega</Label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-50" />
                   <Input 
                     id="address" 
-                    value={address === "new_address" ? "" : address} 
+                    value={address} 
                     onChange={(e) => setAddress(e.target.value)} 
-                    placeholder="RUA, NÚMERO, BARRIO..." 
+                    placeholder="RUA, NÚMERO, BAIRRO..." 
                     className="pl-10 uppercase"
                   />
                 </div>
