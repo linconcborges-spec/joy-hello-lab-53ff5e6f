@@ -380,20 +380,19 @@ const Index = () => {
 
             <div className="hidden md:block h-8 w-px bg-border/20 mx-1" />
             
-            <div className="flex items-center gap-5 px-4 py-2 w-full md:w-auto justify-around">
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wide opacity-50">Vendas</span>
-                <span className="text-2xl font-black leading-none tabular-nums">{todayCount}</span>
+            <div className="flex items-center gap-8 px-6 py-2 w-full md:w-auto justify-around">
+              <div className="flex flex-col items-center gap-1.5">
+                <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">Vendas</span>
+                <span className="text-xl font-black leading-none tabular-nums">{todayCount}</span>
               </div>
 
               <div className="h-8 w-px bg-border/30" />
 
-
-              <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wide opacity-50">Total</span>
+              <div className="flex flex-col items-center gap-1.5">
+                <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">Total</span>
                 <span
                   onClick={() => setShowRevenue(!showRevenue)}
-                  className={`text-lg font-black text-primary leading-none transition-all duration-500 tabular-nums cursor-pointer select-none ${!showRevenue ? "blur-sm opacity-20" : ""}`}
+                  className={`text-xl font-black text-primary leading-none transition-all duration-500 tabular-nums cursor-pointer select-none ${!showRevenue ? "blur-sm opacity-20" : ""}`}
                 >
                   R$ {todayRevenue.toFixed(2)}
                 </span>
