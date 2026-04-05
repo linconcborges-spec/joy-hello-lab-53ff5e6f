@@ -131,6 +131,15 @@ export function printOrder(order: Order, settings: AppSettings) {
             <div>${order.isPickup ? "RETIRADA NO LOCAL" : (order.address || "Retirada")}</div>
           </div>
 
+          ${order.observation ? `
+          <div class="section" style="background:#eee; padding:5px; border:2px dashed #000; margin-bottom:12px;">
+            <div class="section-title" style="border:none; margin:0;">Observação da Comanda</div>
+            <div style="font-weight: 900; font-style: italic; font-size: 1.1em; text-transform: uppercase;">
+              ${order.observation}
+            </div>
+          </div>
+          ` : ''}
+
           <div class="section">
             <div class="section-title">Itens</div>
             ${order.items.map(item => `
