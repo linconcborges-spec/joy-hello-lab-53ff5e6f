@@ -18,178 +18,146 @@ export function printOrder(order: Order, settings: AppSettings) {
             size: ${settings.printPaperWidth} auto;
           }
           body {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: ${settings.printFontSize};
+            font-family: "Courier New", Courier, monospace, sans-serif;
+            font-size: ${settings.printFontSize || '14px'};
             width: ${settings.printPaperWidth};
             margin: 0;
             padding: 0;
             color: #000;
-            line-height: 1.2;
+            line-height: 1.3;
+            text-transform: uppercase;
           }
           .container {
-            padding: 5px;
+            padding: 2px 5px;
           }
-          .header {
-            text-align: center;
-            border-bottom: 2px solid #000;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
+          .text-center { text-align: center; }
+          .bold { font-weight: bold; }
+          
+          .dashed-line {
+            border-top: 1px dashed #000;
+            margin: 10px 0;
           }
+          
           .store-name {
-            font-size: 1.5em;
-            font-weight: 900;
+            font-size: 1.1em;
             margin-bottom: 5px;
-            text-transform: uppercase;
+          }
+          .datetime {
+            margin-bottom: 5px;
+          }
+          .delivery-type {
+            font-size: 1.25em;
+            margin-bottom: 5px;
           }
           .order-number {
-            font-size: 1.3em;
-            font-weight: 900;
-          }
-          .section {
-            margin-bottom: 12px;
-            border-bottom: 1px solid #000;
-            padding-bottom: 8px;
-          }
-          .section-title {
-            font-weight: 900;
-            margin-bottom: 4px;
-            text-transform: uppercase;
             font-size: 1em;
-            text-decoration: underline;
           }
-          .item {
+          
+          .item-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 4px;
-            font-weight: bold;
-            font-size: 1.1em;
+            align-items: flex-start;
           }
-          .item-details {
+          .item-title {
             flex: 1;
             padding-right: 5px;
           }
           .item-price {
-            margin-left: 10px;
-            font-weight: 900;
+            text-align: right;
+            white-space: nowrap;
           }
           .addon {
-            font-size: 1em;
             margin-left: 15px;
-            font-weight: bold;
           }
           .obs {
-            font-size: 1em;
             margin-left: 15px;
-            font-weight: 900;
-            background: #eee;
-            padding: 2px 5px;
-            margin-top: 2px;
-            text-transform: uppercase;
           }
-          .totals {
-            margin-top: 15px;
-          }
-          .total-line {
+          
+          .totals-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 4px;
             font-weight: bold;
+            font-size: 1.1em;
+            margin-top: 4px;
           }
-          .grand-total {
-            font-weight: 900;
-            font-size: 1.4em;
-            margin-top: 8px;
-            border-top: 2px solid #000;
-            padding-top: 8px;
-          }
-          .footer {
-            text-align: center;
-            margin-top: 25px;
-            font-size: 1em;
-            font-weight: bold;
-            border-top: 1px dashed #000;
-            padding-top: 10px;
-          }
-          @media print {
-            body { width: 100%; }
+          .total-big {
+            font-size: 1.2em;
           }
         </style>
       </head>
       <body>
         <div style="height: ${settings.printMarginTop || '0mm'}; width: 100%;"></div>
         <div class="container">
-          <div class="header">
+          <div class="text-center">
             <div class="store-name">${settings.storeName}</div>
-            ${order.isPickup ? '<div style="font-size:1.4em;font-weight:900;background:#000;color:#fff;padding:4px 10px;margin:6px 0;letter-spacing:2px;">★ RETIRADA ★</div>' : ''}
-            <div class="order-number">Pedido #${order.number}</div>
-            <div>${date}</div>
+            <div class="dashed-line"></div>
+            <div class="datetime">${date.replace(',', ' -')}</div>
+            <div class="delivery-type bold">${order.isPickup ? 'RETIRADA' : 'DELIVERY'}</div>
+            <div class="order-number">PEDIDO Nº (${order.number})</div>
           </div>
-
-          <div class="section">
-            <div class="section-title">Cliente</div>
-            <div>${order.customerName || "Não informado"}</div>
+          
+          <div class="dashed-line"></div>
+          
+          <div class="text-center">
+            <div>${order.customerName || "NÃO INFORMADO"}</div>
             <div>${order.phone || ""}</div>
-            <div>${order.isPickup ? "RETIRADA NO LOCAL" : (order.address || "Retirada")}</div>
-          </div>
-
-          ${order.observation ? `
-          <div class="section" style="background:#eee; padding:5px; border:2px dashed #000; margin-bottom:12px; text-align: center;">
-            <div class="section-title" style="border:none; margin:0; text-align: center;">OBSERVAÇÃO</div>
-            <div style="font-weight: 900; font-style: italic; font-size: 1.1em; text-transform: uppercase;">
-              ${order.observation}
+            <div style="font-size: 0.9em; margin-top: 3px;">
+              ${order.isPickup ? "RETIRADA NO LOCAL" : (order.address || "")}
             </div>
           </div>
-          ` : ''}
+          
+          <div class="dashed-line"></div>
 
-          <div class="section">
-            <div class="section-title">Itens</div>
+          <div>
             ${order.items.map(item => `
-              <div class="item">
-                <div class="item-details">
-                  ${item.quantity}x ${item.product}
-                </div>
-                <div class="item-price">R$ ${item.total.toFixed(2)}</div>
+              <div class="item-row">
+                <div class="item-title">X ${item.quantity} *** ${item.product}</div>
+                <div class="item-price">${item.total.toFixed(2).replace('.', ',')}</div>
               </div>
               ${item.addons && item.addons.length > 0 ? `
                 ${item.addons.map(a => `
-                  <div class="addon">+ ${a.name} (R$ ${a.price.toFixed(2)})</div>
+                  <div class="addon">+ ${a.name}</div>
                 `).join('')}
               ` : ''}
-              ${item.observation ? `<div class="obs">Obs: ${item.observation}</div>` : ''}
+              ${item.observation ? `
+                <div class="obs">OBS: ${item.observation}</div>
+              ` : ''}
+              <div style="margin-bottom: 8px;"></div>
             `).join('')}
-          </div>
-
-          <div class="totals text-right">
-            <div class="total-line">
-              <span>Subtotal</span>
-              <span>R$ ${(order.totalAmount - order.deliveryFee).toFixed(2)}</span>
-            </div>
-            <div class="total-line">
-              <span>Taxa de Entrega</span>
-              <span>R$ ${order.deliveryFee.toFixed(2)}</span>
-            </div>
-            <div class="total-line grand-total">
-              <span>TOTAL</span>
-              <span>R$ ${order.totalAmount.toFixed(2)}</span>
-            </div>
-            ${order.changeFor > 0 ? `
-              <div class="total-line">
-                <span>Troco para</span>
-                <span>R$ ${order.changeFor.toFixed(2)}</span>
-              </div>
-              <div class="total-line">
-                <span>Total Troco</span>
-                <span>R$ ${(order.changeFor - order.totalAmount).toFixed(2)}</span>
+            ${order.deliveryFee > 0 ? `
+              <div class="item-row">
+                <div class="item-title">X 1 TAXA DE ENTREGA</div>
+                <div class="item-price">${order.deliveryFee.toFixed(2).replace('.', ',')}</div>
               </div>
             ` : ''}
-            <div class="total-line">
-              <span>Pagamento</span>
-              <span>${order.paymentMethod.toUpperCase()}</span>
-            </div>
           </div>
 
-          <div class="footer">
-            Obrigado pela preferência!
+          <div class="dashed-line"></div>
+
+          <div>
+            <div>FORMA DE PAGAMENTO:</div>
+            <div>1: R$ ${order.totalAmount.toFixed(2).replace('.', ',')} - ${order.paymentMethod === 'cash' ? 'DINHEIRO' : order.paymentMethod === 'card' ? 'CARTÃO' : 'PIX'}</div>
+            ${order.changeFor > 0 ? `
+              <div>VALOR DO TROCO: R$ ${(order.changeFor - order.totalAmount).toFixed(2).replace('.', ',')}</div>
+            ` : ''}
+          </div>
+
+          <div class="dashed-line"></div>
+
+          <div class="totals-row total-big">
+            <span>TOTAL R$</span>
+            <span>${order.totalAmount.toFixed(2).replace('.', ',')}</span>
+          </div>
+
+          <div class="dashed-line"></div>
+
+          <div>
+            <div>STATUS DO PAGAMENTO: NÃO PAGO</div>
+            ${order.observation ? `<div style="margin-top: 6px; font-weight: bold;">OBS: ${order.observation}</div>` : ''}
+          </div>
+
+          <div class="text-center" style="margin-top: 25px; font-size: 0.8em; font-weight: bold;">
+            <div>Este documento não tem valor fiscal.</div>
           </div>
         </div>
         <script>
