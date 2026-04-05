@@ -132,8 +132,8 @@ export function printOrder(order: Order, settings: AppSettings) {
           </div>
 
           ${order.observation ? `
-          <div class="section" style="background:#eee; padding:5px; border:2px dashed #000; margin-bottom:12px;">
-            <div class="section-title" style="border:none; margin:0;">Observação da Comanda</div>
+          <div class="section" style="background:#eee; padding:5px; border:2px dashed #000; margin-bottom:12px; text-align: center;">
+            <div class="section-title" style="border:none; margin:0; text-align: center;">OBSERVAÇÃO</div>
             <div style="font-weight: 900; font-style: italic; font-size: 1.1em; text-transform: uppercase;">
               ${order.observation}
             </div>
