@@ -19,6 +19,7 @@ import {
 import { AuthModal } from "./AuthModal";
 import type { Order } from "@/types/order";
 import { STATUS_LABELS, PAYMENT_LABELS } from "@/types/order";
+import { useAuth } from "@/hooks/useAuth";
 
 interface OrderDetailProps {
   order: Order;
@@ -31,6 +32,7 @@ interface OrderDetailProps {
 }
 
 export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel, onPrint, onEdit }: OrderDetailProps) {
+  const { isAdmin } = useAuth();
   const [cancelAuthOpen, setCancelAuthOpen] = useState(false);
   
   const date = new Date(order.createdAt).toLocaleString("pt-BR");
@@ -245,7 +247,7 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel,
                       )}
                     </div>
                     <div className="flex justify-end items-center mt-3 sm:mt-0 sm:ml-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-border/10">
-                      <span className="font-black text-sm">R$ {item.total.toFixed(2)}</span>
+                      {isAdmin && <span className="font-black text-sm">R$ {item.total.toFixed(2)}</span>}
                     </div>
                   </div>
                 ))}
@@ -253,26 +255,28 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel,
             )}
           </div>
 
-          <div className="border-t pt-4 font-black">
-            <div className="flex justify-between text-muted-foreground text-[10px] uppercase tracking-widest">
-              <span>Subtotal</span>
-              <span>R$ {(order.totalAmount - order.deliveryFee).toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-muted-foreground text-[10px] uppercase tracking-widest">
-              <span>Entrega</span>
-              <span>R$ {order.deliveryFee.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-lg mt-2 pt-2 border-t border-border/20">
-              <span className="uppercase italic tracking-tighter">Total Geral</span>
-              <span className="text-primary tracking-tighter italic">R$ {order.totalAmount.toFixed(2)}</span>
-            </div>
-            {order.changeFor > 0 && order.paymentMethod === 'cash' && (
-              <div className="flex justify-between text-[11px] text-muted-foreground mt-1 uppercase italic border-t border-border/20 pt-1">
-                <span>Troco para R$ {order.changeFor.toFixed(2)}</span>
-                <span className="font-bold">Diferença: R$ {(order.changeFor - order.totalAmount).toFixed(2)}</span>
+          {isAdmin && (
+            <div className="border-t pt-4 font-black">
+              <div className="flex justify-between text-muted-foreground text-[10px] uppercase tracking-widest">
+                <span>Subtotal</span>
+                <span>R$ {(order.totalAmount - order.deliveryFee).toFixed(2)}</span>
               </div>
-            )}
-          </div>
+              <div className="flex justify-between text-muted-foreground text-[10px] uppercase tracking-widest">
+                <span>Entrega</span>
+                <span>R$ {order.deliveryFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-lg mt-2 pt-2 border-t border-border/20">
+                <span className="uppercase italic tracking-tighter">Total Geral</span>
+                <span className="text-primary tracking-tighter italic">R$ {order.totalAmount.toFixed(2)}</span>
+              </div>
+              {order.changeFor > 0 && order.paymentMethod === 'cash' && (
+                <div className="flex justify-between text-[11px] text-muted-foreground mt-1 uppercase italic border-t border-border/20 pt-1">
+                  <span>Troco para R$ {order.changeFor.toFixed(2)}</span>
+                  <span className="font-bold">Diferença: R$ {(order.changeFor - order.totalAmount).toFixed(2)}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {order.originalSnapshot && typeof order.originalSnapshot === 'object' && (
             <div className="mt-8 border-t-4 border-dashed border-muted pt-6 opacity-80 bg-muted/5 p-4 rounded-3xl">
@@ -285,13 +289,15 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel,
                 {Array.isArray(order.originalSnapshot.items) && order.originalSnapshot.items.map((item: any) => (
                   <div key={item.id} className="flex justify-between text-[10px] font-bold uppercase py-1 border-b border-border/10">
                     <span>{item.quantity}x {item.product}</span>
-                    <span>R$ {Number(item.total || 0).toFixed(2)}</span>
+                    {isAdmin && <span>R$ {Number(item.total || 0).toFixed(2)}</span>}
                   </div>
                 ))}
-                <div className="flex justify-between font-black text-xs pt-1">
-                  <span>TOTAL ANTERIOR:</span>
-                  <span>R$ {Number(order.originalSnapshot.totalAmount || 0).toFixed(2)}</span>
-                </div>
+                {isAdmin && (
+                  <div className="flex justify-between font-black text-xs pt-1">
+                    <span>TOTAL ANTERIOR:</span>
+                    <span>R$ {Number(order.originalSnapshot.totalAmount || 0).toFixed(2)}</span>
+                  </div>
+                )}
               </div>
             </div>
           )}

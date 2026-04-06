@@ -203,7 +203,7 @@ const Index = () => {
               <TableHead className="font-black uppercase text-[10px] px-6">Cliente</TableHead>
               <TableHead className="font-black uppercase text-[10px] px-6">Conclusão</TableHead>
               <TableHead className="font-black uppercase text-[10px] px-6">Pagamento</TableHead>
-              <TableHead className="font-black uppercase text-[10px] px-6 text-right">Total</TableHead>
+              {isAdmin && <TableHead className="font-black uppercase text-[10px] px-6 text-right">Total</TableHead>}
               <TableHead className="font-black uppercase text-[10px] px-6 text-center">Status</TableHead>
             </TableRow>
           </TableHeader>
@@ -240,9 +240,11 @@ const Index = () => {
                           {order.paymentMethod === 'cash' ? 'Dinheiro' : order.paymentMethod === 'pix' ? 'PIX' : 'Cartão'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-black text-sm px-6">
-                        R$ {order.totalAmount.toFixed(2)}
-                      </TableCell>
+                      {isAdmin && (
+                        <TableCell className="text-right font-black text-sm px-6">
+                          R$ {order.totalAmount.toFixed(2)}
+                        </TableCell>
+                      )}
                       <TableCell className="text-center px-6">
                         <Badge variant={order.status === 'completed' ? 'success' : 'destructive'} className="text-[9px] uppercase font-black px-2 shadow-sm">
                           {STATUS_LABELS[order.status]}
@@ -407,15 +409,17 @@ const Index = () => {
 
               <div className="h-8 w-px bg-border/30" />
 
-              <div className="flex flex-col items-center gap-1.5">
-                <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">Total</span>
-                <span
-                  onClick={() => setShowRevenue(!showRevenue)}
-                  className={`text-xl font-black text-primary leading-none transition-all duration-500 tabular-nums cursor-pointer select-none ${!showRevenue ? "blur-sm opacity-20" : ""}`}
-                >
-                  R$ {todayRevenue.toFixed(2)}
-                </span>
-              </div>
+              {isAdmin && (
+                <div className="flex flex-col items-center gap-1.5">
+                  <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">Total</span>
+                  <span
+                    onClick={() => setShowRevenue(!showRevenue)}
+                    className={`text-xl font-black text-primary leading-none transition-all duration-500 tabular-nums cursor-pointer select-none ${!showRevenue ? "blur-sm opacity-20" : ""}`}
+                  >
+                    R$ {todayRevenue.toFixed(2)}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -622,17 +626,20 @@ const Index = () => {
             <BottomNavItem icon={CheckCircle2} color="text-success" count={todayOrders.filter(o => o.status === 'completed').length} status="completed" title="Finalizados" />
           </div>
           
-          <div className="h-8 w-px bg-border/40 mx-2" />
-          
-          <button 
-            onClick={() => setShowRevenue(!showRevenue)}
-            className="flex flex-col items-end pr-2 min-w-[80px]"
-          >
-            <span className="text-[8px] font-black uppercase opacity-40 tracking-widest">Balanço</span>
-            <span className={`text-[13px] font-black text-primary leading-tight transition-all ${!showRevenue ? "blur-sm opacity-20" : ""}`}>
-               R$ {todayRevenue.toFixed(2)}
-            </span>
-          </button>
+          {isAdmin && (
+            <>
+              <div className="h-8 w-px bg-border/40 mx-2" />
+              <button 
+                onClick={() => setShowRevenue(!showRevenue)}
+                className="flex flex-col items-end pr-2 min-w-[80px]"
+              >
+                <span className="text-[8px] font-black uppercase opacity-40 tracking-widest">Balanço</span>
+                <span className={`text-[13px] font-black text-primary leading-tight transition-all ${!showRevenue ? "blur-sm opacity-20" : ""}`}>
+                  R$ {todayRevenue.toFixed(2)}
+                </span>
+              </button>
+            </>
+          )}
         </div>
       )}
       {isMobile && isHistoryView && (

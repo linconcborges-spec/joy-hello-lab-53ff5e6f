@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AuthModal } from "./AuthModal";
+import { useAuth } from "@/hooks/useAuth";
 
 interface NewOrderFormProps {
   onSubmit: (order: Omit<Order, "id" | "number" | "createdAt">) => void;
@@ -71,6 +72,7 @@ function OrderItemRow({
   toggleAddon, 
   products 
 }: any) {
+  const { isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -233,7 +235,7 @@ function OrderItemRow({
         </div>
 
         {/* 6. Total do Item */}
-        <div className="space-y-1.5 flex flex-col text-right">
+        <div className={cn("space-y-1.5 flex flex-col text-right", !isAdmin && "invisible")}>
           <Label className="text-[10px] font-black uppercase opacity-60">Subtotal</Label>
           <div className="md:h-11 h-12 flex items-center justify-end">
             <span className="text-sm font-black text-primary">R$ {item.total.toFixed(2)}</span>
@@ -294,6 +296,7 @@ function OrderItemRow({
 }
 
 export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder }: NewOrderFormProps) {
+  const { isAdmin } = useAuth();
   const { data: customers = [] } = useCustomers();
   const addCustomer = useAddCustomer();
   const updateCustomer = useUpdateCustomer();
@@ -315,6 +318,7 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [showCuringaDialog, setShowCuringaDialog] = useState(false);
 
   useEffect(() => {
     if (initialOrder) {
@@ -367,16 +371,18 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
       }
       toast.success(`Cliente "${customer.name.toUpperCase()}" identificado!`);
     } else {
-      // Lógica de cadastro curinga sugerida
-      const useCuringa = window.confirm("CLIENTE NÃO ENCONTRADO. DESEJA CADASTRAR AGORA?\n\nSe clicar em CANCELAR, os dados serão salvos em um registro avulso para não perder a venda.");
-      
-      if (!useCuringa) {
-        setCustomerName("CLIENTE NÃO CADASTRADO");
-        toast.info("Usando cadastro curinga. O nome e telefone serão salvos individualmente neste pedido.");
-      } else {
-        toast.info("Por favor, preencha o nome e finalize o cadastro no botão laranja abaixo.");
-      }
+      setShowCuringaDialog(true);
     }
+  };
+
+  const handleCuringaDecision = (useCuringa: boolean) => {
+    if (!useCuringa) {
+      setCustomerName("CLIENTE NÃO CADASTRADO");
+      toast.info("Usando cadastro curinga. O nome e telefone serão salvos individualmente neste pedido.");
+    } else {
+      toast.info("Por favor, preencha o nome e finalize o cadastro no botão laranja abaixo.");
+    }
+    setShowCuringaDialog(false);
   };
 
   const handleQuickRegister = () => {
@@ -773,7 +779,7 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
       </Card>
 
       <div className="flex items-center justify-between bg-card rounded-xl p-4 border">
-        <span className="text-lg font-black uppercase">Total: R$ {totalAmount.toFixed(2)}</span>
+        <span className={cn("text-lg font-black uppercase", !isAdmin && "invisible")}>Total: R$ {totalAmount.toFixed(2)}</span>
         <Button id="submit-order" type="submit" size="lg" className="px-8 uppercase font-black">
           {initialOrder ? "Salvar Alterações" : "Criar Pedido"}
         </Button>
@@ -815,6 +821,33 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={showCuringaDialog} onOpenChange={setShowCuringaDialog}>
+        <AlertDialogContent className="rounded-[2rem]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="uppercase font-black italic">Cliente não encontrado</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              Deseja realizar o cadastramento deste cliente agora?
+              <br /><br />
+              Se clicar em <b>AVULSO</b>, os dados serão salvos apenas neste pedido para não perder a venda.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel 
+              onClick={() => handleCuringaDecision(false)}
+              className="rounded-xl uppercase font-bold text-xs"
+            >
+              Venda Avulsa
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => handleCuringaDecision(true)}
+              className="rounded-xl uppercase font-black text-xs bg-orange-500 hover:bg-orange-600 text-white"
+            >
+              Sim, Cadastrar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AuthModal
         open={authModalOpen}

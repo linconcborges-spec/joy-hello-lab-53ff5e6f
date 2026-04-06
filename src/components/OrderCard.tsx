@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import type { Order } from "@/types/order";
 import { STATUS_LABELS } from "@/types/order";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 const statusVariant: Record<Order["status"], string> = {
   pending: "bg-warning/15 text-warning border-warning/30",
@@ -30,7 +31,9 @@ interface OrderCardProps {
   onClick: () => void;
 }
 
-const OrderItemsSummary = ({ order }: { order: Order }) => (
+const OrderItemsSummary = ({ order }: { order: Order }) => {
+  const { isAdmin } = useAuth();
+  return (
   <div className="flex flex-col h-full overflow-hidden rounded-[1.5rem]">
     <div className="bg-primary/5 p-3 border-b border-primary/10">
       <p className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 italic">
@@ -60,24 +63,28 @@ const OrderItemsSummary = ({ order }: { order: Order }) => (
               </p>
             )}
           </div>
-          <span className="text-[11px] font-black text-foreground ml-2">R$ {item.total.toFixed(2)}</span>
+          {isAdmin && <span className="text-[11px] font-black text-foreground ml-2">R$ {item.total.toFixed(2)}</span>}
         </div>
       ))}
-      {order.deliveryFee > 0 && (
+      {isAdmin && order.deliveryFee > 0 && (
         <div className="flex justify-between items-center text-[10px] pt-2 border-t border-primary/10 font-black uppercase tracking-widest opacity-60">
           <span>Taxa de Entrega</span>
           <span>R$ {order.deliveryFee.toFixed(2)}</span>
         </div>
       )}
     </div>
-    <div className="bg-secondary/30 p-3 flex justify-between items-center mt-auto border-t border-border/10">
-      <span className="text-[10px] font-black uppercase opacity-40 italic">Total Geral</span>
-      <p className="text-base font-black text-primary tracking-tighter italic">R$ {order.totalAmount.toFixed(2)}</p>
-    </div>
+    {isAdmin && (
+      <div className="bg-secondary/30 p-3 flex justify-between items-center mt-auto border-t border-border/10">
+        <span className="text-[10px] font-black uppercase opacity-40 italic">Total Geral</span>
+        <p className="text-base font-black text-primary tracking-tighter italic">R$ {order.totalAmount.toFixed(2)}</p>
+      </div>
+    )}
   </div>
-);
+  );
+};
 
 export function OrderCard({ order, onClick }: OrderCardProps) {
+  const { isAdmin } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
 
@@ -145,9 +152,11 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
           <span className="text-[9px] font-black text-muted-foreground uppercase flex items-center gap-1 opacity-50">
             <ListOrdered className="h-3 w-3" /> {order.items.length} {order.items.length === 1 ? "item" : "itens"}
           </span>
-          <span className="font-black text-primary text-sm whitespace-nowrap italic tracking-tighter">
-            R$ {order.totalAmount.toFixed(2)}
-          </span>
+          {isAdmin && (
+            <span className="font-black text-primary text-sm whitespace-nowrap italic tracking-tighter">
+              R$ {order.totalAmount.toFixed(2)}
+            </span>
+          )}
         </div>
       </CardContent>
     </Card>
