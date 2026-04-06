@@ -51,6 +51,7 @@ const Index = () => {
   const [search, setSearch] = useState("");
   const [showRevenue, setShowRevenue] = useState(false);
   const [isHistoryView, setIsHistoryView] = useState(false);
+  const [kanbanLastCol, setKanbanLastCol] = useState<"completed" | "cancelled">("completed");
   
   // Filtros de Histórico
   const [historyTab, setHistoryTab] = useState<"completed" | "cancelled">("completed");
