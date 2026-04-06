@@ -349,6 +349,7 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
     }, 100);
   };
 
+
   const handlePhoneSearch = () => {
     const normalizedSearch = normalizePhone(phone);
     if (!normalizedSearch) {

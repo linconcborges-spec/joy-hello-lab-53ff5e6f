@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import bcrypt from "bcryptjs";
 
 export interface Employee {
   id: string;
@@ -28,9 +29,12 @@ export function useAddEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (employee: { name: string; username: string; password: string; role: string }) => {
+      // Criptografar senha antes de salvar
+      const hashedPassword = bcrypt.hashSync(employee.password, 10);
+      
       const { data, error } = await supabase
         .from("employees" as any)
-        .insert(employee as any)
+        .insert({ ...employee, password: hashedPassword } as any)
         .select("id, name, username, password, role")
         .single();
       if (error) throw error;
@@ -54,9 +58,16 @@ export function useUpdateEmployee() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string; name?: string; username?: string; password?: string; role?: string }) => {
+      const updateData: any = { ...data };
+      
+      // Se tiver senha, criptografar
+      if (updateData.password) {
+        updateData.password = bcrypt.hashSync(updateData.password, 10);
+      }
+
       const { error } = await supabase
         .from("employees" as any)
-        .update(data as any)
+        .update(updateData)
         .eq("id", id);
       if (error) throw error;
     },

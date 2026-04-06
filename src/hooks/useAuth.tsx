@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import bcrypt from "bcryptjs";
 
 interface AuthUser {
   id: string;
@@ -39,18 +40,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     const { data, error } = await supabase
-      .rpc("verify_employee_login", { p_username: username, p_password: password });
+      .from("employees" as any)
+      .select("id, name, username, role, password")
+      .eq("username", username)
+      .single();
 
-    if (error || !data || (data as any[]).length === 0) {
+    if (error || !data) {
       return false;
     }
 
-    const row = (data as any[])[0];
+    const dbPassword = (data as any).password;
+    let isMatch = false;
+
+    // Se a senha no banco começa com $2a$, ela é uma hash do bcrypt
+    if (dbPassword.startsWith("$2a$")) {
+      isMatch = bcrypt.compareSync(password, dbPassword);
+    } else {
+      // Senha legada (texto simples)
+      isMatch = password === dbPassword;
+      
+      // Auto-migração: atualiza o banco com o hash
+      if (isMatch) {
+        console.log("Migrando senha legada para hash...");
+        const newHash = bcrypt.hashSync(password, 10);
+        await supabase.from("employees" as any).update({ password: newHash }).eq("id", (data as any).id);
+      }
+    }
+
+    if (!isMatch) {
+      return false;
+    }
+
     const authUser: AuthUser = {
-      id: row.id,
-      name: row.name,
-      username: row.username,
-      role: row.role,
+      id: (data as any).id,
+      name: (data as any).name,
+      username: (data as any).username,
+      role: (data as any).role,
     };
 
     setUser(authUser);

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ArrowLeft, Trash2, Ban, Printer, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { AuthModal } from "./AuthModal";
 import type { Order } from "@/types/order";
 import { STATUS_LABELS, PAYMENT_LABELS } from "@/types/order";
 
@@ -23,12 +25,14 @@ interface OrderDetailProps {
   onBack: () => void;
   onUpdateStatus: (id: string, status: Order["status"]) => void;
   onDelete: (id: string) => void;
-  onCancel: (id: string) => void;
+  onCancel: (id: string, employeeName: string) => void;
   onPrint?: (order: Order) => void;
   onEdit?: (order: Order) => void;
 }
 
 export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel, onPrint, onEdit }: OrderDetailProps) {
+  const [cancelAuthOpen, setCancelAuthOpen] = useState(false);
+  
   const date = new Date(order.createdAt).toLocaleString("pt-BR");
   const isPending = order.status === "pending";
   const isCancelled = order.status === "cancelled";
@@ -98,13 +102,13 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel,
                 <AlertDialogHeader>
                   <AlertDialogTitle>Cancelar pedido #{order.number}?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    O pedido será marcado como cancelado e ficará registrado no histórico. Essa ação não pode ser desfeita.
+                    O pedido será marcado como cancelado e ficará registrado no histórico. Essa ação não pode ser desfeita e exige autorização.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Não</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={() => onCancel(order.id)}
+                    onClick={() => setCancelAuthOpen(true)}
                     className="bg-orange-500 text-white hover:bg-orange-600"
                   >
                     Sim, cancelar pedido
@@ -115,6 +119,14 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel,
           )}
         </div>
       </div>
+
+      <AuthModal 
+        open={cancelAuthOpen}
+        onOpenChange={setCancelAuthOpen}
+        onAuthorize={(employeeName) => onCancel(order.id, employeeName)}
+        title="Autorização para Cancelamento"
+        description={`Por favor, confirme sua identidade para cancelar o pedido #${order.number}.`}
+      />
 
       <Card className={isCancelled ? "border-destructive/40 bg-destructive/5" : ""}>
         <CardHeader className="pb-3">
@@ -262,7 +274,7 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel,
             )}
           </div>
 
-          {order.originalSnapshot && (
+          {order.originalSnapshot && typeof order.originalSnapshot === 'object' && (
             <div className="mt-8 border-t-4 border-dashed border-muted pt-6 opacity-80 bg-muted/5 p-4 rounded-3xl">
               <div className="flex items-center gap-2 mb-4">
                 <span className="h-2 w-2 rounded-full bg-muted-foreground" />
@@ -270,15 +282,15 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel,
               </div>
               
               <div className="space-y-2 opacity-60 pointer-events-none">
-                {order.originalSnapshot.items?.map((item: any) => (
+                {Array.isArray(order.originalSnapshot.items) && order.originalSnapshot.items.map((item: any) => (
                   <div key={item.id} className="flex justify-between text-[10px] font-bold uppercase py-1 border-b border-border/10">
                     <span>{item.quantity}x {item.product}</span>
-                    <span>R$ {Number(item.total).toFixed(2)}</span>
+                    <span>R$ {Number(item.total || 0).toFixed(2)}</span>
                   </div>
                 ))}
                 <div className="flex justify-between font-black text-xs pt-1">
                   <span>TOTAL ANTERIOR:</span>
-                  <span>R$ {Number(order.originalSnapshot.totalAmount).toFixed(2)}</span>
+                  <span>R$ {Number(order.originalSnapshot.totalAmount || 0).toFixed(2)}</span>
                 </div>
               </div>
             </div>

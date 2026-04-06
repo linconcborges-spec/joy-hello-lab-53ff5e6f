@@ -13,6 +13,7 @@ import { CustomersPage } from "@/components/CustomersPage";
 import { ProductsPage } from "@/components/ProductsPage";
 import { SettingsPage } from "@/components/SettingsPage";
 import { LoginPage } from "@/components/LoginPage";
+import { AuthModal } from "@/components/AuthModal";
 import { 
   useOrders, useAddOrder, useUpdateOrder, useUpdateOrderStatus, 
   useCancelOrder, useMarkAsPrinted 
@@ -59,6 +60,9 @@ const Index = () => {
     from: new Date(new Date().setDate(new Date().getDate() - 7)),
     to: new Date()
   });
+
+  const [authCancelOpen, setAuthCancelOpen] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
 
   // Responsive state
   const [isMobile, setIsMobile] = useState(false);
@@ -179,7 +183,7 @@ const Index = () => {
                   <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "delivering", employeeName: user.name })}>Entrega</ContextMenuItem>
                   <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "completed", employeeName: user.name })}>Concluído</ContextMenuItem>
                   <ContextMenuSeparator />
-                  <ContextMenuItem className="text-destructive font-bold rounded-lg m-1" onClick={() => cancelOrderMutation.mutate({ id: order.id, employeeName: user.name })}>Cancelar Pedido</ContextMenuItem>
+                  <ContextMenuItem className="text-destructive font-bold rounded-lg m-1" onClick={() => { setOrderToCancel(order.id); setAuthCancelOpen(true); }}>Cancelar Pedido</ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
             ))
@@ -336,7 +340,7 @@ const Index = () => {
             onBack={() => setView("list")}
             onUpdateStatus={(id, status) => updateStatusMutation.mutate({ id, status, employeeName: user.name })}
             onDelete={(id) => setView("list")}
-            onCancel={(id) => cancelOrderMutation.mutate({ id, employeeName: user.name })}
+            onCancel={(id, employeeName) => cancelOrderMutation.mutate({ id, employeeName })}
             onPrint={(order) => { printOrder(order, settings); markAsPrintedMutation.mutate(order.id); }}
             onEdit={(order) => setView("edit")}
           />
@@ -628,7 +632,6 @@ const Index = () => {
           </button>
         </div>
       )}
-      
       {isMobile && isHistoryView && (
         <div className="fixed bottom-6 right-6 z-50">
           <Button 
@@ -640,40 +643,57 @@ const Index = () => {
           </Button>
         </div>
       )}
+
+      <AuthModal 
+        open={authCancelOpen}
+        onOpenChange={setAuthCancelOpen}
+        onAuthorize={(employeeName) => {
+          if (orderToCancel) {
+            cancelOrderMutation.mutate({ id: orderToCancel, employeeName });
+            setOrderToCancel(null);
+          }
+        }}
+        title="Autorização para Cancelamento"
+        description="Por favor, confirme sua identidade para cancelar este pedido."
+      />
     </div>
   );
 };
 
-const BottomNavItem = ({ icon: Icon, color, count, status, title }: { icon: any, color: string, count: number, status: Order["status"], title: string }) => (
-  <Drawer>
-    <DrawerTrigger asChild>
-      <button className="flex flex-col items-center gap-0.5 relative px-2 py-1 transform active:scale-90 transition-transform">
-        <Icon className={`h-6 w-6 ${color}`} />
-        <span className="text-[8px] font-black uppercase tracking-tighter opacity-70">{title}</span>
-        {count > 0 && (
-          <span className={`absolute -top-1 right-2 w-4 h-4 rounded-full ${color.replace('text-', 'bg-')} text-white text-[8px] font-black flex items-center justify-center border-2 border-background`}>
-            {count}
-          </span>
-        )}
-      </button>
-    </DrawerTrigger>
-    <DrawerContent className="h-[90vh] p-4 pt-0">
-      <DrawerHeader className="px-0">
-        <DrawerTitle className="text-xl font-black uppercase tracking-tighter text-center">{title}</DrawerTitle>
-      </DrawerHeader>
-      <div className="flex-1 overflow-hidden">
-        <DrawerKanbanColumn status={status} title={title} colorClass={color} />
-      </div>
-    </DrawerContent>
-  </Drawer>
-);
+function BottomNavItem({ icon: Icon, color, count, status, title }: { icon: any, color: string, count: number, status: Order["status"], title: string }) {
+  return (
+    <Drawer>
+      <DrawerTrigger asChild>
+        <button className="flex flex-col items-center gap-0.5 relative px-2 py-1 transform active:scale-90 transition-transform">
+          <Icon className={`h-6 w-6 ${color}`} />
+          <span className="text-[8px] font-black uppercase tracking-tighter opacity-70">{title}</span>
+          {count > 0 && (
+            <span className={`absolute -top-1 right-2 w-4 h-4 rounded-full ${color.replace('text-', 'bg-')} text-white text-[8px] font-black flex items-center justify-center border-2 border-background`}>
+              {count}
+            </span>
+          )}
+        </button>
+      </DrawerTrigger>
+      <DrawerContent className="h-[90vh] p-4 pt-0">
+        <DrawerHeader className="px-0">
+          <DrawerTitle className="text-xl font-black uppercase tracking-tighter text-center">{title}</DrawerTitle>
+        </DrawerHeader>
+        <div className="flex-1 overflow-hidden">
+          <DrawerKanbanColumn status={status} title={title} colorClass={color} />
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}
 
-const DrawerKanbanColumn = ({ status, title, colorClass }: { status: any, title: string, colorClass: string }) => {
+function DrawerKanbanColumn({ status, title, colorClass }: { status: any, title: string, colorClass: string }) {
   const { data: orders = [] } = useOrders();
   const columnOrders = orders.filter(o => o.status === status);
   const updateStatusMutation = useUpdateOrderStatus();
   const cancelOrderMutation = useCancelOrder();
   const { user } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
 
   return (
     <div className="h-full flex flex-col space-y-4 overflow-y-auto pb-10 custom-scrollbar">
@@ -696,11 +716,24 @@ const DrawerKanbanColumn = ({ status, title, colorClass }: { status: any, title:
               <ContextMenuSeparator />
               <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "completed", employeeName: user?.name || '' })}>Concluir Pedido</ContextMenuItem>
               <ContextMenuSeparator />
-              <ContextMenuItem className="text-destructive font-bold rounded-lg m-1" onClick={() => cancelOrderMutation.mutate({ id: order.id, employeeName: user?.name || '' })}>Cancelar Pedido</ContextMenuItem>
+              <ContextMenuItem className="text-destructive font-bold rounded-lg m-1" onClick={() => { setOrderToCancel(order.id); setAuthOpen(true); }}>Cancelar Pedido</ContextMenuItem>
             </ContextMenuContent>
           </ContextMenu>
         ))
       )}
+
+      <AuthModal 
+        open={authOpen}
+        onOpenChange={setAuthOpen}
+        onAuthorize={(employeeName) => {
+          if (orderToCancel) {
+            cancelOrderMutation.mutate({ id: orderToCancel, employeeName });
+            setOrderToCancel(null);
+          }
+        }}
+        title="Autorização para Cancelamento"
+        description="Por favor, confirme sua identidade para cancelar este pedido."
+      />
     </div>
   );
 };
