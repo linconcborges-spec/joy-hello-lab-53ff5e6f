@@ -50,24 +50,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const dbPassword = (data as any).password;
-    let isMatch = false;
-
-    // Se a senha no banco começa com $2a$, ela é uma hash do bcrypt
-    if (dbPassword.startsWith("$2a$")) {
-      isMatch = bcrypt.compareSync(password, dbPassword);
-    } else {
-      // Senha legada (texto simples)
-      isMatch = password === dbPassword;
+    
+    try {
+      // Aceita vários prefixos comuns de bcrypt ($2a$, $2b$, $2y$)
+      const isHash = dbPassword && /^\$2[ayb]\$/.test(dbPassword);
       
-      // Auto-migração: atualiza o banco com o hash
-      if (isMatch) {
-        console.log("Migrando senha legada para hash...");
+      if (isHash) {
+        const isMatch = bcrypt.compareSync(password, dbPassword);
+        if (!isMatch) return false;
+      } else {
+        // Fallback para texto plano
+        if (dbPassword !== password) return false;
+        
+        // Migrar para hash automaticamente
         const newHash = bcrypt.hashSync(password, 10);
         await supabase.from("employees" as any).update({ password: newHash }).eq("id", (data as any).id);
       }
-    }
-
-    if (!isMatch) {
+    } catch (e) {
       return false;
     }
 
