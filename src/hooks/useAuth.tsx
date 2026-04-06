@@ -39,21 +39,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     const { data, error } = await supabase
-      .from("employees" as any)
-      .select("id, name, username, role")
-      .eq("username", username)
-      .eq("password", password)
-      .single();
+      .rpc("verify_employee_login", { p_username: username, p_password: password });
 
-    if (error || !data) {
+    if (error || !data || (data as any[]).length === 0) {
       return false;
     }
 
+    const row = (data as any[])[0];
     const authUser: AuthUser = {
-      id: (data as any).id,
-      name: (data as any).name,
-      username: (data as any).username,
-      role: (data as any).role,
+      id: row.id,
+      name: row.name,
+      username: row.username,
+      role: row.role,
     };
 
     setUser(authUser);
