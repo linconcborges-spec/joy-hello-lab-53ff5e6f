@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { 
   Plus, Search, UtensilsCrossed, Users, Package, Settings, 
   Calendar as CalendarIcon, Printer, FileText, ChevronDown,
-  LayoutDashboard, Truck, CheckCircle2, Clock
+  LayoutDashboard, Truck, CheckCircle2, Clock, XCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,7 +53,7 @@ const Index = () => {
   const [isHistoryView, setIsHistoryView] = useState(false);
   
   // Filtros de Histórico
-  const [showCancelled, setShowCancelled] = useState(false);
+  const [historyTab, setHistoryTab] = useState<"completed" | "cancelled">("completed");
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
     from: new Date(new Date().setDate(new Date().getDate() - 7)),
     to: new Date()
@@ -115,10 +115,9 @@ const Index = () => {
       o.phone.includes(search);
     
     if (isHistoryView) {
-      const isCompleted = o.status === "completed";
-      const isCancelled = o.status === "cancelled";
-      if (showCancelled) return matchSearch && (isCompleted || isCancelled);
-      return matchSearch && isCompleted;
+      if (historyTab === "completed") return matchSearch && o.status === "completed";
+      if (historyTab === "cancelled") return matchSearch && o.status === "cancelled";
+      return false;
     }
     return matchSearch;
   });
@@ -470,9 +469,32 @@ const Index = () => {
         <div className="flex justify-center w-full pb-20 md:pb-0">
           {isHistoryView ? (
             <div className="w-full flex flex-col items-center space-y-6">
-              <div className="text-center space-y-2">
+              <div className="text-center space-y-4">
                 <h2 className="text-3xl font-black uppercase italic tracking-tighter text-foreground opacity-10">Relatório Geral</h2>
-                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Listagem tabular para análise detalhada de performance</p>
+                <div className="inline-flex items-center gap-1 bg-card border border-border/40 rounded-2xl p-1 shadow-sm">
+                  <button
+                    onClick={() => setHistoryTab("completed")}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                      historyTab === "completed"
+                        ? "bg-primary text-primary-foreground shadow-md"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    }`}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Concluídos
+                  </button>
+                  <button
+                    onClick={() => setHistoryTab("cancelled")}
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                      historyTab === "cancelled"
+                        ? "bg-destructive text-destructive-foreground shadow-md"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    }`}
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                    Cancelados
+                  </button>
+                </div>
               </div>
               <HistoryTable />
             </div>
