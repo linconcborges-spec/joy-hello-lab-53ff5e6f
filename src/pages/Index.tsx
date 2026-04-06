@@ -53,7 +53,7 @@ const Index = () => {
   const [isHistoryView, setIsHistoryView] = useState(false);
   
   // Filtros de Histórico
-  const [showCancelled, setShowCancelled] = useState(false);
+  const [historyTab, setHistoryTab] = useState<"completed" | "cancelled">("completed");
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
     from: new Date(new Date().setDate(new Date().getDate() - 7)),
     to: new Date()
