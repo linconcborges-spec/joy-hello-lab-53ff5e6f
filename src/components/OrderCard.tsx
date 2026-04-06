@@ -160,7 +160,7 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
           {CardUI}
         </HoverCardTrigger>
         {!isMobile && (
-          <HoverCardContent className="w-72 p-0 shadow-2xl border-primary/20 rounded-[1.5rem] overflow-hidden">
+          <HoverCardContent align="center" side="top" className="w-72 p-0 shadow-2xl border-primary/20 rounded-[1.5rem] overflow-hidden">
             <OrderItemsSummary order={order} />
           </HoverCardContent>
         )}

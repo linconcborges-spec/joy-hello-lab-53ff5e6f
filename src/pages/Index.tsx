@@ -539,7 +539,7 @@ const Index = () => {
                   <KanbanColumn title="Entrega" status="delivering" orders={todayOrders} colorClass="text-blue-500" />
                   {/* Última coluna com toggle Concluídos/Cancelados */}
                   <div className="flex flex-col h-[820px] min-w-[340px] bg-card rounded-3xl border border-border/40 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
-                    <div className="px-4 py-3 border-b border-border/40 flex items-center gap-2">
+                    <div className="px-6 py-5 border-b border-border/40 flex items-center gap-3 bg-secondary/5">
                       <button
                         onClick={() => setKanbanLastCol("completed")}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
