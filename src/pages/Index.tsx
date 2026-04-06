@@ -539,35 +539,38 @@ const Index = () => {
                   <KanbanColumn title="Entrega" status="delivering" orders={todayOrders} colorClass="text-blue-500" />
                   {/* Última coluna com toggle Concluídos/Cancelados */}
                   <div className="flex flex-col h-[820px] min-w-[340px] bg-card rounded-3xl border border-border/40 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
-                    <div className="px-6 py-5 border-b border-border/40 flex items-center gap-3 bg-secondary/5">
-                      <button
-                        onClick={() => setKanbanLastCol("completed")}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
-                          kanbanLastCol === "completed"
-                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                            : "text-muted-foreground hover:bg-muted/50"
-                        }`}
-                      >
-                        <CheckCircle2 className="h-3 w-3" />
-                        Concluídos
-                        <span className="bg-foreground/5 px-1.5 py-0.5 rounded-full text-[9px]">
-                          {todayOrders.filter(o => o.status === "completed").length}
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => setKanbanLastCol("cancelled")}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
-                          kanbanLastCol === "cancelled"
-                            ? "bg-destructive/15 text-destructive"
-                            : "text-muted-foreground hover:bg-muted/50"
-                        }`}
-                      >
-                        <XCircle className="h-3 w-3" />
-                        Cancelados
-                        <span className="bg-foreground/5 px-1.5 py-0.5 rounded-full text-[9px]">
-                          {todayOrders.filter(o => o.status === "cancelled").length}
-                        </span>
-                      </button>
+                    <div className="px-6 py-5 border-b border-border/40 flex items-center justify-between bg-secondary/5">
+                      <div className="flex items-center gap-1.5 p-1 bg-background/50 rounded-2xl border border-border/40">
+                        <button
+                          onClick={() => setKanbanLastCol("completed")}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                            kanbanLastCol === "completed"
+                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                              : "text-muted-foreground hover:bg-muted/50"
+                          }`}
+                        >
+                          <CheckCircle2 className="h-3 w-3" />
+                          Concluídos
+                          <span className="bg-foreground/5 px-1.5 py-0.5 rounded-full text-[9px]">
+                            {todayOrders.filter(o => o.status === "completed").length}
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => setKanbanLastCol("cancelled")}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                            kanbanLastCol === "cancelled"
+                              ? "bg-destructive/15 text-destructive"
+                              : "text-muted-foreground hover:bg-muted/50"
+                          }`}
+                        >
+                          <XCircle className="h-3 w-3" />
+                          Cancelados
+                          <span className="bg-foreground/5 px-1.5 py-0.5 rounded-full text-[9px]">
+                            {todayOrders.filter(o => o.status === "cancelled").length}
+                          </span>
+                        </button>
+                      </div>
+                      <span className="h-2 w-2 rounded-full bg-secondary-foreground/20" />
                     </div>
                     <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
                       {todayOrders.filter(o => o.status === kanbanLastCol).length === 0 ? (
