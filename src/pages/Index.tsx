@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { 
   Plus, Search, UtensilsCrossed, Users, Package, Settings, 
   Calendar as CalendarIcon, Printer, FileText, ChevronDown,
-  LayoutDashboard, Truck, CheckCircle2, Clock
+  LayoutDashboard, Truck, CheckCircle2, Clock, XCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
