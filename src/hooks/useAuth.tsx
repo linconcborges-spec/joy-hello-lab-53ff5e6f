@@ -39,13 +39,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
+    // Buscar o funcionário pelo login (case-insensitive)
     const { data, error } = await supabase
       .from("employees" as any)
-      .select("id, name, username, role, password")
-      .eq("username", username)
+      .select("id, name, username, password, role")
+      .eq("username", username.trim().toLowerCase())
       .single();
 
     if (error || !data) {
+      console.error("Erro ao buscar usuário ou usuário não encontrado:", error);
       return false;
     }
 
@@ -55,18 +57,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Aceita vários prefixos comuns de bcrypt ($2a$, $2b$, $2y$)
       const isHash = dbPassword && /^\$2[ayb]\$/.test(dbPassword);
       
+      let isMatch = false;
       if (isHash) {
-        const isMatch = bcrypt.compareSync(password, dbPassword);
-        if (!isMatch) return false;
+        isMatch = bcrypt.compareSync(password, dbPassword);
       } else {
         // Fallback para texto plano
-        if (dbPassword !== password) return false;
+        isMatch = dbPassword === password;
         
-        // Migrar para hash automaticamente
-        const newHash = bcrypt.hashSync(password, 10);
-        await supabase.from("employees" as any).update({ password: newHash }).eq("id", (data as any).id);
+        // Se bateu no texto plano, migrar para hash automaticamente para segurança
+        if (isMatch) {
+          const newHash = bcrypt.hashSync(password, 10);
+          await supabase.from("employees" as any).update({ password: newHash }).eq("id", (data as any).id);
+        }
       }
+
+      if (!isMatch) return false;
     } catch (e) {
+      console.error("Erro na validação de senha:", e);
       return false;
     }
 
