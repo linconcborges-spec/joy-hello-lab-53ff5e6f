@@ -115,10 +115,9 @@ const Index = () => {
       o.phone.includes(search);
     
     if (isHistoryView) {
-      const isCompleted = o.status === "completed";
-      const isCancelled = o.status === "cancelled";
-      if (showCancelled) return matchSearch && (isCompleted || isCancelled);
-      return matchSearch && isCompleted;
+      if (historyTab === "completed") return matchSearch && o.status === "completed";
+      if (historyTab === "cancelled") return matchSearch && o.status === "cancelled";
+      return false;
     }
     return matchSearch;
   });
