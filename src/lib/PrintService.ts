@@ -81,14 +81,28 @@ export function printOrder(order: Order, settings: AppSettings) {
             font-size: 1.1em;
             margin-top: 4px;
           }
-          .total-big {
-            font-size: 1.2em;
+          .watermark {
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: 900;
+            border: 4px solid #000;
+            margin: 10px 0;
+            padding: 10px;
+            letter-spacing: 2px;
+            background: #fff;
           }
         </style>
       </head>
       <body>
         <div style="height: ${settings.printMarginTop || '0mm'}; width: 100%;"></div>
         <div class="container">
+          ${(order.status === 'completed' || order.status === 'cancelled' || new Date(order.createdAt).toDateString() !== new Date().toDateString()) ? `
+            <div class="watermark">
+              ${order.status === 'cancelled' ? 'CANCELADO' : order.status === 'completed' ? 'CONCLUÍDO' : 'REIMPRESSÃO'}
+              <div style="font-size: 0.5em; margin-top: 5px;">${new Date(order.createdAt).toLocaleDateString('pt-BR')}</div>
+            </div>
+          ` : ''}
+
           <div class="text-center">
             <div class="store-name">${settings.storeName}</div>
             <div class="dashed-line"></div>
@@ -156,6 +170,12 @@ export function printOrder(order: Order, settings: AppSettings) {
             <div>STATUS DO PAGAMENTO: NÃO PAGO</div>
             ${order.observation ? `<div style="margin-top: 6px; font-weight: bold;">OBS: ${order.observation}</div>` : ''}
           </div>
+
+          ${(order.status === 'completed' || order.status === 'cancelled') ? `
+             <div class="watermark" style="margin-top: 20px;">
+               ${order.status === 'cancelled' ? 'CANCELADO' : 'CONCLUÍDO'}
+             </div>
+          ` : ''}
 
           <div class="text-center" style="margin-top: 25px; font-size: 0.8em; font-weight: bold;">
             <div>Este documento não tem valor fiscal.</div>
