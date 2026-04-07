@@ -319,6 +319,8 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [showCuringaDialog, setShowCuringaDialog] = useState(false);
+  const [showPrintConfirm, setShowPrintConfirm] = useState(false);
+  const [pendingOrderData, setPendingOrderData] = useState<any>(null);
 
   useEffect(() => {
     if (initialOrder) {
@@ -486,11 +488,13 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
     if (initialOrder) {
       setAuthModalOpen(true);
     } else {
-      processSubmission();
+      const data = prepareOrderData();
+      setPendingOrderData(data);
+      setShowPrintConfirm(true);
     }
   };
 
-  const processSubmission = (authorizedBy?: string) => {
+  const prepareOrderData = (authorizedBy?: string) => {
     const validItems = items.filter((i) => i.product.trim());
     const orderData: any = {
       customerName: customerName.trim(),
@@ -514,17 +518,29 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
         orderData.originalSnapshot = { ...initialOrder };
       }
     }
+    return orderData;
+  };
 
-    const orderToPrint: Order = {
-      ...orderData as any,
-      id: initialOrder?.id || "temp",
-      number: initialOrder?.number || 0,
-      createdAt: initialOrder?.createdAt || new Date().toISOString(),
-    };
-    printOrder(orderToPrint, settings);
+  const processSubmission = (authorizedBy?: string, shouldPrint: boolean = true) => {
+    const orderData = pendingOrderData || prepareOrderData(authorizedBy);
+
+    if (shouldPrint) {
+      const orderToPrint: Order = {
+        ...orderData as any,
+        id: initialOrder?.id || "temp",
+        number: initialOrder?.number || 0,
+        createdAt: initialOrder?.createdAt || new Date().toISOString(),
+      };
+      printOrder(orderToPrint, settings);
+      toast.success("Pedido enviado para a impressora!");
+    }
 
     onSubmit(orderData as any);
-    toast.success("Pedido impresso com sucesso!");
+    if (!shouldPrint) {
+      toast.success("Pedido salvo sem impressão imediata.");
+    }
+    setPendingOrderData(null);
+    setShowPrintConfirm(false);
   };
 
   return (
@@ -844,6 +860,31 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
               className="rounded-xl uppercase font-black text-xs bg-orange-500 hover:bg-orange-600 text-white"
             >
               Sim, Cadastrar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showPrintConfirm} onOpenChange={setShowPrintConfirm}>
+        <AlertDialogContent className="rounded-[2rem]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="uppercase font-black italic">Imprimir Pedido?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm">
+              O pedido foi criado com sucesso. Deseja realizar a impressão agora?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel 
+              onClick={() => processSubmission(undefined, false)}
+              className="rounded-xl uppercase font-bold text-xs"
+            >
+              Não Imprimir
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => processSubmission(undefined, true)}
+              className="rounded-xl uppercase font-black text-xs bg-primary text-white"
+            >
+              Sim, Imprimir Agora
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
