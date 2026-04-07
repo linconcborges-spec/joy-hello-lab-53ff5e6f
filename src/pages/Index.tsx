@@ -181,21 +181,12 @@ const Index = () => {
                 <ContextMenuContent className="w-56 rounded-xl shadow-xl border-border/60">
                   <ContextMenuLabel className="text-[10px] uppercase font-black opacity-50">Pedido #{order.number}</ContextMenuLabel>
                   <ContextMenuSeparator />
-                  {order.status === "pending" && (
-                    <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "preparing", employeeName: user.name })}>Mover para Produção</ContextMenuItem>
-                  )}
                   {order.status === "preparing" && (
                     <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "delivering", employeeName: user.name })}>Mover para Entrega</ContextMenuItem>
                   )}
                   {order.status === "delivering" && (
                     <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "completed", employeeName: user.name })}>Concluir Pedido</ContextMenuItem>
                   )}
-                  <ContextMenuSeparator />
-                  <ContextMenuLabel className="text-[10px] uppercase font-black opacity-50 px-3">Mudar Status</ContextMenuLabel>
-                  <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "pending", employeeName: user.name })}>Pendente</ContextMenuItem>
-                  <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "preparing", employeeName: user.name })}>Produção</ContextMenuItem>
-                  <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "delivering", employeeName: user.name })}>Entrega</ContextMenuItem>
-                  <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "completed", employeeName: user.name })}>Concluído</ContextMenuItem>
                   <ContextMenuSeparator />
                   <ContextMenuItem 
                     className="rounded-lg m-1 font-bold text-primary" 
