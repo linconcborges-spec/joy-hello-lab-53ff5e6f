@@ -32,6 +32,7 @@ interface SettingsPageProps {
 }
 
 export function SettingsPage({ onBack }: SettingsPageProps) {
+  const { theme, setTheme } = useTheme();
   const { user, isAdmin, isLoading: authLoading } = useAuth();
   const { data: employees = [], isLoading: employeesLoading } = useEmployees();
   const { data: orders = [] } = useOrders(); // Pega pedidos do ciclo atual
