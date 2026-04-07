@@ -62,40 +62,44 @@ export function InstallPWA() {
   if (!showPrompt) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-[100] animate-in fade-in slide-in-from-bottom-5 duration-500">
-      <Card className="bg-primary text-primary-foreground p-4 shadow-2xl rounded-2xl border-none flex flex-col gap-3">
-        <div className="flex items-start justify-between">
-          <div className="flex gap-3">
-            <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
-               <Smartphone className="h-6 w-6" />
-            </div>
-            <div className="space-y-0.5">
-              <p className="font-black text-sm uppercase tracking-tight">Instale o Aplicativo</p>
-              <p className="text-[10px] opacity-90 leading-tight">
-                {isIOS 
-                  ? "Toque em compartilhar e depois em 'Adicionar à Tela de Início' para instalar." 
-                  : "Adicione o Império Chiclets à sua tela inicial para acesso rápido e offline."}
-              </p>
-            </div>
+    <div className="fixed bottom-6 left-6 z-[100] animate-in fade-in slide-in-from-bottom-10 duration-700 max-w-sm w-[calc(100vw-3rem)]">
+      <Card className="bg-white text-slate-900 p-5 shadow-2xl rounded-2xl border border-slate-100 flex flex-col gap-4">
+        <div className="flex items-start gap-4">
+          <div className="h-14 w-14 rounded-2xl bg-[#f15a24] p-2 flex items-center justify-center shrink-0 shadow-lg shadow-orange-500/20 overflow-hidden">
+             <img src="/icon.svg" alt="App Icon" className="w-full h-full object-contain" />
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 text-white hover:bg-white/10" 
-            onClick={() => setShowPrompt(false)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="space-y-1">
+            <h3 className="font-bold text-base text-slate-900 leading-none">
+              Instalar <span className="text-[#f15a24]">Império</span>
+            </h3>
+            <p className="text-xs text-slate-500 leading-tight">
+              Instale o app para acesso rápido e a melhor experiência de pedidos.
+            </p>
+          </div>
         </div>
         
-        {!isIOS && deferredPrompt && (
+        <div className="flex items-center gap-2">
+          {!isIOS && deferredPrompt ? (
+            <Button 
+              onClick={handleInstallClick}
+              className="flex-1 bg-[#f15a24] hover:bg-[#d94e1f] text-white font-bold rounded-xl h-11 gap-2"
+            >
+              <Download className="h-4 w-4" /> Instalar
+            </Button>
+          ) : isIOS ? (
+            <div className="flex-1 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 italic text-[10px] text-slate-600 text-center">
+              Toque em compartilhar <span className="font-bold">↑</span> e depois em <span className="font-bold">'Adicionar à Tela de Início'</span>
+            </div>
+          ) : null}
+          
           <Button 
-            onClick={handleInstallClick}
-            className="w-full bg-white text-primary hover:bg-white/90 font-black uppercase text-xs h-11"
+            variant="ghost" 
+            className="flex-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-bold rounded-xl h-11"
+            onClick={() => setShowPrompt(false)}
           >
-            <Download className="h-4 w-4 mr-2" /> Instalar Agora
+            Agora não
           </Button>
-        )}
+        </div>
       </Card>
     </div>
   );
