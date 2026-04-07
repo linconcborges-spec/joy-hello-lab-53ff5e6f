@@ -22,6 +22,7 @@ import {
 import { useEmployees, useAddEmployee, useUpdateEmployee, useDeleteEmployee } from "@/hooks/useEmployees";
 import { useSettings } from "@/hooks/useSettings";
 import { useOrders } from "@/hooks/useOrders";
+import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import { exportOrdersToCSV, exportFullSystemBackup, importFullSystemBackup } from "@/lib/ExportService";
 import { toast } from "sonner";
@@ -32,7 +33,8 @@ interface SettingsPageProps {
 
 export function SettingsPage({ onBack }: SettingsPageProps) {
   const { theme, setTheme } = useTheme();
-  const { data: employees = [], isLoading } = useEmployees();
+  const { user, isAdmin, isLoading: authLoading } = useAuth();
+  const { data: employees = [], isLoading: employeesLoading } = useEmployees();
   const { data: orders = [] } = useOrders(); // Pega pedidos do ciclo atual
   const addEmployee = useAddEmployee();
   const updateEmployee = useUpdateEmployee();
@@ -329,7 +331,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
 
         <Card>
           <CardContent className="p-0">
-            {isLoading ? (
+            {authLoading || employeesLoading ? (
               <p className="text-center py-8 text-muted-foreground">Carregando...</p>
             ) : (
               <Table>
