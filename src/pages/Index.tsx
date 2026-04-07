@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { 
   Plus, Search, UtensilsCrossed, Users, Package, Settings, 
   Calendar as CalendarIcon, Printer, FileText, ChevronDown,
-  LayoutDashboard, Truck, CheckCircle2, Clock, XCircle
+  LayoutDashboard, Truck, CheckCircle2, Clock, XCircle,
+  Sun, Moon
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { OrderCard } from "@/components/OrderCard";
@@ -45,7 +47,21 @@ type View = "list" | "new" | "edit" | "detail" | "customers" | "products" | "set
 
 const Index = () => {
   const { user, isAdmin, logout, isLoading: authLoading } = useAuth();
-  const { settings } = useSettings();
+  const { settings, updateSettings } = useSettings();
+  const { theme, setTheme } = useTheme();
+
+  // Sincronizar tema com configurações do banco
+  useEffect(() => {
+    if (settings.theme) {
+      setTheme(settings.theme);
+    }
+  }, [settings.theme, setTheme]);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    updateSettings({ theme: newTheme });
+  };
   
   const [view, setView] = useState<View>("list");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -362,8 +378,15 @@ const Index = () => {
             </div>
             <div className="space-y-1">
               <h1 className="text-3xl font-bold text-foreground">{settings.storeName}</h1>
-              <div className="flex items-center justify-center lg:justify-start gap-3">
+              <div className="flex items-center justify-center lg:justify-start gap-4">
                 <Badge variant="outline" className="text-[9px] uppercase font-black tracking-widest px-2">{user.name}</Badge>
+                <button 
+                  onClick={toggleTheme} 
+                  className="flex items-center justify-center h-8 w-8 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors"
+                  title={theme === "light" ? "Mudar para modo escuro" : "Mudar para modo claro"}
+                >
+                  {theme === "light" ? <Moon className="h-4 w-4 text-slate-700" /> : <Sun className="h-4 w-4 text-yellow-500" />}
+                </button>
                 <button onClick={logout} className="text-primary hover:text-primary/70 text-[10px] font-bold uppercase underline underline-offset-4 decoration-2">Sair do Sistema</button>
               </div>
             </div>
