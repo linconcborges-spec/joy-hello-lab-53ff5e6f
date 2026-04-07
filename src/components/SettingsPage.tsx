@@ -23,7 +23,7 @@ import { useEmployees, useAddEmployee, useUpdateEmployee, useDeleteEmployee } fr
 import { useSettings } from "@/hooks/useSettings";
 import { useOrders } from "@/hooks/useOrders";
 import { useTheme } from "next-themes";
-import { exportOrdersToCSV } from "@/lib/ExportService";
+import { exportOrdersToCSV, exportFullSystemBackup, importFullSystemBackup } from "@/lib/ExportService";
 import { toast } from "sonner";
 
 interface SettingsPageProps {
@@ -107,6 +107,24 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
     setEditPassword("");
     setEditRole(emp.role);
     setShowEditPass(false);
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        importFullSystemBackup(json);
+      } catch (error) {
+        toast.error("Format de arquivo inválido. Use o backup .json");
+      }
+    };
+    reader.readAsText(file);
+    // Limpar o input para permitir importar o mesmo arquivo se necessário
+    e.target.value = "";
   };
 
   return (
@@ -422,10 +440,41 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             <CardTitle className="text-base text-primary">Backup e Manutenção</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-primary">Backup Completo do Sistema (RESTAURAÇÃO)</p>
+                <p className="text-xs text-muted-foreground">Baixe TODA a base de dados (produtos, categorias, configurações, histórico total) para um arquivo JSON seguro.</p>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <Button 
+                  onClick={() => exportFullSystemBackup()} 
+                  className="gap-2 h-11 bg-primary hover:bg-primary/90"
+                >
+                  <Download className="h-4 w-4" /> Exportar JSON
+                </Button>
+                
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImport}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    title="Importar Backup"
+                  />
+                  <Button 
+                    variant="outline"
+                    className="gap-2 h-11 border-primary/30"
+                  >
+                    <Plus className="h-4 w-4" /> Importar JSON
+                  </Button>
+                </div>
+              </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-secondary/20 border border-border/40">
               <div className="space-y-1">
-                <p className="text-sm font-bold">Resumo do Expediente (Backup)</p>
-                <p className="text-xs text-muted-foreground">Baixe um arquivo CSV com todos os pedidos do ciclo atual para backup local ou análise em Excel.</p>
+                <p className="text-sm font-bold">Relatório de Pedidos (CSV)</p>
+                <p className="text-xs text-muted-foreground">Baixe apenas o resumo dos pedidos atuais para análise manual no Excel.</p>
               </div>
               <Button 
                 variant="outline" 
@@ -433,12 +482,12 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                 disabled={orders.length === 0}
                 className="gap-2 shrink-0 border-primary/20 hover:bg-primary/5 h-11"
               >
-                <Download className="h-4 w-4" /> Exportar Pedidos ({orders.length})
+                <Download className="h-4 w-4" /> Exportar CSV
               </Button>
             </div>
             
             <p className="text-[10px] text-muted-foreground italic text-center">
-              Sistema preparado para integração futura com envio automático por e-mail.
+              * O backup em JSON permite restaurar o sistema em caso de perda total de dados.
             </p>
           </CardContent>
         </Card>

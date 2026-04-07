@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { UtensilsCrossed, LogIn, Eye, EyeOff } from "lucide-react";
+import { UtensilsCrossed, LogIn, Eye, EyeOff, ShieldAlert } from "lucide-react";
+import { importFullSystemBackup } from "@/lib/ExportService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +27,23 @@ export function LoginPage() {
     if (!success) {
       toast.error("Login ou senha incorretos");
     }
+  };
+
+  const handleRestore = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const json = JSON.parse(event.target?.result as string);
+        importFullSystemBackup(json);
+      } catch (error) {
+        toast.error("Formato de arquivo inválido. Use o backup .json");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   };
 
   return (
@@ -87,6 +105,18 @@ export function LoginPage() {
             </form>
           </CardContent>
         </Card>
+
+        {/* Emergency Restore Link */}
+        <div className="text-center">
+          <label className="cursor-pointer group flex flex-col items-center gap-1">
+            <input type="file" accept=".json" onChange={handleRestore} className="hidden" />
+            <div className="p-2 rounded-lg bg-secondary/50 border border-border group-hover:bg-primary/10 group-hover:border-primary/30 transition-all flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+              <span className="text-[10px] font-black uppercase text-muted-foreground group-hover:text-primary">Recuperar Sistema (Backup .json)</span>
+            </div>
+            <p className="text-[8px] text-muted-foreground opacity-40">Use apenas se perder acesso total ao sistema</p>
+          </label>
+        </div>
       </div>
     </div>
   );
