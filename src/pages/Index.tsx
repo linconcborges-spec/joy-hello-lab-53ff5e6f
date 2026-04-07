@@ -77,7 +77,7 @@ const Index = () => {
     to: new Date()
   });
 
-  const [authCancelOpen, setAuthCancelOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
 
   // Responsive state
@@ -199,7 +199,7 @@ const Index = () => {
                   <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "delivering", employeeName: user.name })}>Entrega</ContextMenuItem>
                   <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "completed", employeeName: user.name })}>Concluído</ContextMenuItem>
                   <ContextMenuSeparator />
-                  <ContextMenuItem className="text-destructive font-bold rounded-lg m-1" onClick={() => { setOrderToCancel(order.id); setAuthCancelOpen(true); }}>Cancelar Pedido</ContextMenuItem>
+                  <ContextMenuItem className="text-destructive font-bold rounded-lg m-1" onClick={() => { setOrderToCancel(order.id); setAuthOpen(true); }}>Cancelar Pedido</ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
             ))
@@ -678,8 +678,8 @@ const Index = () => {
       )}
 
       <AuthModal 
-        open={authCancelOpen}
-        onOpenChange={setAuthCancelOpen}
+        open={authOpen}
+        onOpenChange={setAuthOpen}
         onAuthorize={(employeeName) => {
           if (orderToCancel) {
             cancelOrderMutation.mutate({ id: orderToCancel, employeeName });
