@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Plus, Pencil, Trash2, Save, X, Eye, EyeOff, Shield, User, Download } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Save, X, Eye, EyeOff, Shield, User, Download, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +32,7 @@ interface SettingsPageProps {
 }
 
 export function SettingsPage({ onBack }: SettingsPageProps) {
+  const { theme, setTheme } = useTheme();
   const { user, isAdmin, isLoading: authLoading } = useAuth();
   const { data: employees = [], isLoading: employeesLoading } = useEmployees();
   const { data: orders = [] } = useOrders(); // Pega pedidos do ciclo atual
