@@ -142,33 +142,6 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base text-primary">Aparência</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/20 border border-border/40">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-background flex items-center justify-center border border-border/40 text-primary">
-                  {theme === "dark" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-                </div>
-                <div>
-                  <p className="text-sm font-bold">Modo de Cor</p>
-                  <p className="text-[10px] text-muted-foreground uppercase font-medium">Trocar entre tema Claro e Escuro</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[10px] font-black uppercase opacity-50">Claro</span>
-                <Switch 
-                  checked={theme === "dark"} 
-                  onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")} 
-                />
-                <span className="text-[10px] font-black uppercase opacity-50">Escuro</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
             <CardTitle className="text-base text-primary">Estabelecimento</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
