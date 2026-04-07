@@ -146,11 +146,21 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel,
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(STATUS_LABELS)
-                    .filter(([key]) => key !== "cancelled")
-                    .map(([key, label]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
-                    ))}
+                  {(() => {
+                    const statusOrder: Record<string, number> = {
+                      pending: 0,
+                      preparing: 1,
+                      delivering: 2,
+                      completed: 3
+                    };
+                    const currentOrder = statusOrder[order.status] ?? 0;
+                    
+                    return Object.entries(STATUS_LABELS)
+                      .filter(([key]) => key !== "cancelled" && (statusOrder[key] ?? 0) >= currentOrder)
+                      .map(([key, label]) => (
+                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                      ));
+                  })()}
                 </SelectContent>
               </Select>
             ) : (
