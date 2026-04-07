@@ -31,10 +31,6 @@ interface SettingsPageProps {
 }
 
 export function SettingsPage({ onBack }: SettingsPageProps) {
-<<<<<<< HEAD
-=======
-  const { theme, setTheme } = useTheme();
->>>>>>> 811dd1a0c9af11de8d78a123b8d8ce754fcf15d5
   const { user, isAdmin, isLoading: authLoading } = useAuth();
   const { data: employees = [], isLoading: employeesLoading } = useEmployees();
   const { data: orders = [] } = useOrders(); // Pega pedidos do ciclo atual
