@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Download, X, Smartphone } from "lucide-react";
+import { Download, X, Smartphone, Share } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 
@@ -9,27 +9,21 @@ export function InstallPWA() {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // Check if it's already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
       return;
     }
 
-    // iOS detection
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(isIOSDevice);
 
     const handleBeforeInstallPrompt = (e: any) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later.
       setDeferredPrompt(e);
-      // Show the customized installation prompt
       setShowPrompt(true);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
-    // For iOS, we can show instructions if not already standalone
     if (isIOSDevice && !window.matchMedia('(display-mode: standalone)').matches) {
         setShowPrompt(true);
     }
@@ -41,20 +35,8 @@ export function InstallPWA() {
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
-    
-    // Show the install prompt
     deferredPrompt.prompt();
-    
-    // Wait for the user to respond to the prompt
     const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      console.log('User accepted the install prompt');
-    } else {
-      console.log('User dismissed the install prompt');
-    }
-    
-    // We've used the prompt, and can't use it again, so discard it
     setDeferredPrompt(null);
     setShowPrompt(false);
   };
@@ -73,7 +55,9 @@ export function InstallPWA() {
               Instalar <span className="text-[#f15a24]">Império</span>
             </h3>
             <p className="text-xs text-slate-500 leading-tight">
-              Instale o app para acesso rápido e a melhor experiência de pedidos.
+              {isIOS 
+                ? "Adicione o app à sua tela de início para a melhor experiência." 
+                : "Instale o app para acesso rápido e a melhor experiência de pedidos."}
             </p>
           </div>
         </div>
@@ -87,14 +71,19 @@ export function InstallPWA() {
               <Download className="h-4 w-4" /> Instalar
             </Button>
           ) : isIOS ? (
-            <div className="flex-1 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100 italic text-[10px] text-slate-600 text-center">
-              Toque em compartilhar <span className="font-bold">↑</span> e depois em <span className="font-bold">'Adicionar à Tela de Início'</span>
+            <div className="flex-1 flex flex-col gap-2 p-3 bg-orange-50 rounded-xl border border-orange-100 text-center">
+              <div className="flex items-center justify-center gap-2 text-[#f15a24] font-bold text-xs uppercase tracking-tight">
+                <Share className="h-4 w-4" /> Toque em Compartilhar
+              </div>
+              <p className="text-[10px] text-slate-600 leading-tight">
+                Em seguida, selecione <span className="font-bold">'Adicionar à Tela de Início'</span> para instalar.
+              </p>
             </div>
           ) : null}
           
           <Button 
             variant="ghost" 
-            className="flex-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-bold rounded-xl h-11"
+            className="flex-none px-4 text-slate-400 hover:bg-slate-100 hover:text-slate-900 font-bold rounded-xl h-11"
             onClick={() => setShowPrompt(false)}
           >
             Agora não
