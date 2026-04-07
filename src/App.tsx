@@ -7,6 +7,8 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
+import { InstallPWA } from "@/components/InstallPWA";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -15,6 +17,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <InstallPWA />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
