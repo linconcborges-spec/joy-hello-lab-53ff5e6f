@@ -50,12 +50,10 @@ const Index = () => {
   const { settings, updateSettings } = useSettings();
   const { theme, setTheme } = useTheme();
 
-  // Sincronizar tema com configurações do banco
+  // Iniciar sempre com a cor clara conforme solicitado (reset no mount para ignorar cache do navegador)
   useEffect(() => {
-    if (settings.theme) {
-      setTheme(settings.theme);
-    }
-  }, [settings.theme, setTheme]);
+    setTheme("light");
+  }, [setTheme]);
 
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
