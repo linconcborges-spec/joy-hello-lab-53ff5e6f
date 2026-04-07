@@ -197,6 +197,19 @@ const Index = () => {
                   <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "delivering", employeeName: user.name })}>Entrega</ContextMenuItem>
                   <ContextMenuItem className="rounded-lg m-1" onClick={() => updateStatusMutation.mutate({ id: order.id, status: "completed", employeeName: user.name })}>Concluído</ContextMenuItem>
                   <ContextMenuSeparator />
+                  <ContextMenuItem 
+                    className="rounded-lg m-1 font-bold text-primary" 
+                    onClick={() => {
+                      printOrder(order, settings);
+                      markAsPrintedMutation.mutate(order.id);
+                      if (order.status === "pending") {
+                        updateStatusMutation.mutate({ id: order.id, status: "preparing", employeeName: user.name });
+                      }
+                    }}
+                  >
+                    <Printer className="h-4 w-4 mr-2" /> Imprimir e Produzir
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
                   <ContextMenuItem className="text-destructive font-bold rounded-lg m-1" onClick={() => { setOrderToCancel(order.id); setAuthCancelOpen(true); }}>Cancelar Pedido</ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
@@ -357,7 +370,13 @@ const Index = () => {
             onUpdateStatus={(id, status) => updateStatusMutation.mutate({ id, status, employeeName: user.name })}
             onDelete={(id) => setView("list")}
             onCancel={(id, employeeName) => cancelOrderMutation.mutate({ id, employeeName })}
-            onPrint={(order) => { printOrder(order, settings); markAsPrintedMutation.mutate(order.id); }}
+            onPrint={(order) => { 
+              printOrder(order, settings); 
+              markAsPrintedMutation.mutate(order.id); 
+              if (order.status === "pending") {
+                updateStatusMutation.mutate({ id: order.id, status: "preparing", employeeName: user.name });
+              }
+            }}
             onEdit={(order) => setView("edit")}
           />
         </div>

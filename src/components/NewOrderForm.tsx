@@ -522,7 +522,15 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
   };
 
   const processSubmission = (authorizedBy?: string, shouldPrint: boolean = true) => {
-    const orderData = pendingOrderData || prepareOrderData(authorizedBy);
+    let orderData = pendingOrderData || prepareOrderData(authorizedBy);
+
+    // Se for um novo pedido, definir o status inicial baseado na impressão
+    if (!initialOrder) {
+      orderData = {
+        ...orderData,
+        status: shouldPrint ? "preparing" : "pending"
+      };
+    }
 
     if (shouldPrint) {
       const orderToPrint: Order = {
@@ -537,7 +545,7 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
 
     onSubmit(orderData as any);
     if (!shouldPrint) {
-      toast.success("Pedido salvo sem impressão imediata.");
+      toast.success("Pedido salvo na coluna de Pendentes.");
     }
     setPendingOrderData(null);
     setShowPrintConfirm(false);
