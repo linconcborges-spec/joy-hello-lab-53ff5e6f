@@ -264,12 +264,20 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           </CardContent>
         </Card>
 
-        <div className="flex items-center justify-between pt-4 border-t">
-          <h2 className="text-xl font-bold">Configurações — Funcionários</h2>
-          <Button onClick={() => setShowNew(!showNew)} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Novo Funcionário
-          </Button>
-        </div>
+        {isAdmin && (
+          <div className="flex items-center justify-between pt-4 border-t">
+            <h2 className="text-xl font-bold">Configurações — Funcionários</h2>
+            <Button onClick={() => setShowNew(!showNew)} className="gap-1.5">
+              <Plus className="h-4 w-4" /> Novo Funcionário
+            </Button>
+          </div>
+        )}
+
+        {!isAdmin && (
+          <div className="flex items-center justify-between pt-4 border-t">
+            <h2 className="text-xl font-bold">Minha Conta</h2>
+          </div>
+        )}
 
         {showNew && (
           <Card>
@@ -334,7 +342,9 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {employees.map((emp) => (
+                  {employees
+                    .filter(emp => isAdmin || emp.id === user?.id)
+                    .map((emp) => (
                     <TableRow key={emp.id}>
                       <TableCell>
                         {editingId === emp.id ? (
@@ -396,27 +406,29 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(emp)}>
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Remover funcionário?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      O acesso de "{emp.name}" ({emp.username}) será removido permanentemente.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => deleteEmployee.mutate(emp.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                      Sim, remover
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                                {isAdmin && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive">
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Remover funcionário?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          O acesso de "{emp.name}" ({emp.username}) será removido permanentemente.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => deleteEmployee.mutate(emp.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                          Sim, remover
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
                             </>
                           )}
                         </div>
@@ -435,62 +447,64 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             )}
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base text-primary">Backup e Manutenção</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
-              <div className="space-y-1">
-                <p className="text-sm font-bold text-primary">Backup Completo do Sistema (RESTAURAÇÃO)</p>
-                <p className="text-xs text-muted-foreground">Baixe TODA a base de dados (produtos, categorias, configurações, histórico total) para um arquivo JSON seguro.</p>
-              </div>
-              <div className="flex gap-2 shrink-0">
-                <Button 
-                  onClick={() => exportFullSystemBackup()} 
-                  className="gap-2 h-11 bg-primary hover:bg-primary/90"
-                >
-                  <Download className="h-4 w-4" /> Exportar JSON
-                </Button>
-                
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept=".json"
-                    onChange={handleImport}
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                    title="Importar Backup"
-                  />
+        {isAdmin && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base text-primary">Backup e Manutenção</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-primary">Backup Completo do Sistema (RESTAURAÇÃO)</p>
+                  <p className="text-xs text-muted-foreground">Baixe TODA a base de dados (produtos, categorias, configurações, histórico total) para um arquivo JSON seguro.</p>
+                </div>
+                <div className="flex gap-2 shrink-0">
                   <Button 
-                    variant="outline"
-                    className="gap-2 h-11 border-primary/30"
+                    onClick={() => exportFullSystemBackup()} 
+                    className="gap-2 h-11 bg-primary hover:bg-primary/90"
                   >
-                    <Plus className="h-4 w-4" /> Importar JSON
+                    <Download className="h-4 w-4" /> Exportar JSON
                   </Button>
+                  
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={handleImport}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      title="Importar Backup"
+                    />
+                    <Button 
+                      variant="outline"
+                      className="gap-2 h-11 border-primary/30"
+                    >
+                      <Plus className="h-4 w-4" /> Importar JSON
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-secondary/20 border border-border/40">
-              <div className="space-y-1">
-                <p className="text-sm font-bold">Relatório de Pedidos (CSV)</p>
-                <p className="text-xs text-muted-foreground">Baixe apenas o resumo dos pedidos atuais para análise manual no Excel.</p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-secondary/20 border border-border/40">
+                <div className="space-y-1">
+                  <p className="text-sm font-bold">Relatório de Pedidos (CSV)</p>
+                  <p className="text-xs text-muted-foreground">Baixe apenas o resumo dos pedidos atuais para análise manual no Excel.</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => exportOrdersToCSV(orders)} 
+                  disabled={orders.length === 0}
+                  className="gap-2 shrink-0 border-primary/20 hover:bg-primary/5 h-11"
+                >
+                  <Download className="h-4 w-4" /> Exportar CSV
+                </Button>
               </div>
-              <Button 
-                variant="outline" 
-                onClick={() => exportOrdersToCSV(orders)} 
-                disabled={orders.length === 0}
-                className="gap-2 shrink-0 border-primary/20 hover:bg-primary/5 h-11"
-              >
-                <Download className="h-4 w-4" /> Exportar CSV
-              </Button>
-            </div>
-            
-            <p className="text-[10px] text-muted-foreground italic text-center">
-              * O backup em JSON permite restaurar o sistema em caso de perda total de dados.
-            </p>
-          </CardContent>
-        </Card>
+              
+              <p className="text-[10px] text-muted-foreground italic text-center">
+                * O backup em JSON permite restaurar o sistema em caso de perda total de dados.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
