@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Plus, Pencil, Trash2, Save, X, Eye, EyeOff, Shield, User, Moon, Sun, Download } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Save, X, Eye, EyeOff, Shield, User, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +23,6 @@ import { useEmployees, useAddEmployee, useUpdateEmployee, useDeleteEmployee } fr
 import { useSettings } from "@/hooks/useSettings";
 import { useOrders } from "@/hooks/useOrders";
 import { useAuth } from "@/hooks/useAuth";
-import { useTheme } from "next-themes";
 import { exportOrdersToCSV, exportFullSystemBackup, importFullSystemBackup } from "@/lib/ExportService";
 import { toast } from "sonner";
 
@@ -32,8 +31,6 @@ interface SettingsPageProps {
 }
 
 export function SettingsPage({ onBack }: SettingsPageProps) {
-  const { user, isAdmin } = useAuth();
-  const { theme, setTheme } = useTheme();
   const { user, isAdmin, isLoading: authLoading } = useAuth();
   const { data: employees = [], isLoading: employeesLoading } = useEmployees();
   const { data: orders = [] } = useOrders(); // Pega pedidos do ciclo atual
