@@ -235,7 +235,7 @@ function OrderItemRow({
         </div>
 
         {/* 6. Total do Item */}
-        <div className={cn("space-y-1.5 flex flex-col text-right", !isAdmin && "invisible")}>
+        <div className="space-y-1.5 flex flex-col text-right">
           <Label className="text-[10px] font-black uppercase opacity-60">Subtotal</Label>
           <div className="md:h-11 h-12 flex items-center justify-end">
             <span className="text-sm font-black text-primary">R$ {item.total.toFixed(2)}</span>
@@ -803,7 +803,7 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
       </Card>
 
       <div className="flex items-center justify-between bg-card rounded-xl p-4 border">
-        <span className={cn("text-lg font-black uppercase", !isAdmin && "invisible")}>Total: R$ {totalAmount.toFixed(2)}</span>
+        <span className="text-lg font-black uppercase">Total: R$ {totalAmount.toFixed(2)}</span>
         <Button id="submit-order" type="submit" size="lg" className="px-8 uppercase font-black">
           {initialOrder ? "Salvar Alterações" : "Criar Pedido"}
         </Button>
