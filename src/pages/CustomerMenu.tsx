@@ -156,7 +156,10 @@ export default function CustomerMenu() {
       
       {/* Banner Superior Estilo Hexágonos */}
       <div className="relative h-44 md:h-64 w-full bg-rose-900">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-40"></div>
+        <div 
+          className="absolute inset-0 bg-cover bg-center opacity-40"
+          style={{ backgroundImage: `url('${settings.bannerUrl || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop"}')` }}
+        ></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
       </div>
 
@@ -165,8 +168,12 @@ export default function CustomerMenu() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
            <div className="flex items-end gap-4">
               <div className="h-24 w-24 md:h-32 md:w-32 bg-white rounded-2xl shadow-2xl p-2 border-4 border-white overflow-hidden">
-                <div className="h-full w-full bg-rose-700 rounded-xl flex items-center justify-center text-white">
-                    <span className="text-3xl font-black italic tracking-tighter">IC</span>
+                <div className="h-full w-full bg-rose-700 rounded-xl flex items-center justify-center text-white overflow-hidden">
+                    {settings.logoUrl ? (
+                      <img src={settings.logoUrl} alt={settings.storeName} className="h-full w-full object-contain" />
+                    ) : (
+                      <span className="text-3xl font-black italic tracking-tighter">IC</span>
+                    )}
                 </div>
               </div>
               <div className="pb-1">

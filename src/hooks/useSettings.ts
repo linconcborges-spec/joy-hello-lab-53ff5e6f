@@ -11,6 +11,8 @@ export interface AppSettings {
   printFontSize: string;
   targetPrinter: string;
   theme: "light" | "dark";
+  logoUrl: string;
+  bannerUrl: string;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -22,6 +24,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   printFontSize: "14px",
   targetPrinter: "",
   theme: "light",
+  logoUrl: "",
+  bannerUrl: "",
 };
 
 const KEY_MAP: Record<string, keyof AppSettings> = {
@@ -33,6 +37,8 @@ const KEY_MAP: Record<string, keyof AppSettings> = {
   print_font_size: "printFontSize",
   target_printer: "targetPrinter",
   theme: "theme",
+  logo_url: "logoUrl",
+  banner_url: "bannerUrl",
 };
 
 const REVERSE_KEY_MAP: Record<keyof AppSettings, string> = Object.fromEntries(

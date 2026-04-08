@@ -24,7 +24,10 @@ import { useEmployees, useAddEmployee, useUpdateEmployee, useDeleteEmployee } fr
 import { useSettings } from "@/hooks/useSettings";
 import { useOrders } from "@/hooks/useOrders";
 import { useAuth } from "@/hooks/useAuth";
+import { useStorage } from "@/hooks/useStorage";
 import { exportOrdersToCSV, exportFullSystemBackup, importFullSystemBackup } from "@/lib/ExportService";
+import { CloudUpload, Loader2 } from "lucide-react";
+import { useRef } from "react";
 import { toast } from "sonner";
 
 interface SettingsPageProps {
@@ -49,7 +52,24 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const [printMarginTop, setPrintMarginTop] = useState(settings.printMarginTop || "0mm");
   const [printFontSize, setPrintFontSize] = useState(settings.printFontSize);
   const [targetPrinter, setTargetPrinter] = useState(settings.targetPrinter || "");
+  const [logoUrl, setLogoUrl] = useState(settings.logoUrl || "");
+  const [bannerUrl, setBannerUrl] = useState(settings.bannerUrl || "");
   const [availablePrinters, setAvailablePrinters] = useState<string[]>([]);
+  
+  const { uploadImage, isUploading } = useStorage();
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'banner') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const url = await uploadImage(file);
+    if (url) {
+      if (type === 'logo') setLogoUrl(url);
+      else setBannerUrl(url);
+    }
+  };
 
   useEffect(() => {
     // Try fetching printers from Tauri if available
@@ -98,7 +118,17 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   };
 
   const handleSaveGeneral = () => {
-    updateSettings({ storeName, defaultDeliveryFee, printPaperWidth, printMargin, printMarginTop, printFontSize, targetPrinter });
+    updateSettings({ 
+      storeName, 
+      defaultDeliveryFee, 
+      printPaperWidth, 
+      printMargin, 
+      printMarginTop, 
+      printFontSize, 
+      targetPrinter,
+      logoUrl,
+      bannerUrl
+    });
     toast.success("Configurações atualizadas com sucesso!");
   };
 
