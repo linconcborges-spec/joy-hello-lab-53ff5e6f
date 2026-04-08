@@ -119,6 +119,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   const [editAddonCategoryId, setEditAddonCategoryId] = useState("none");
 
   const [assigningCategory, setAssigningCategory] = useState<string | null>(null);
+  const [assignSearch, setAssignSearch] = useState("");
 
   const { uploadImage, isUploading } = useStorage();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -805,14 +806,36 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
       </div>
 
       {/* DIALOG DE ASSOCIAÇÃO DE PRODUTOS */}
-      <Dialog open={!!assigningCategory} onOpenChange={(open) => !open && setAssigningCategory(null)}>
+      <Dialog open={!!assigningCategory} onOpenChange={(open) => {
+        if (!open) {
+          setAssigningCategory(null);
+          setAssignSearch("");
+        }
+      }}>
         <DialogContent className="max-w-md max-h-[85vh] flex flex-col p-4">
           <DialogHeader>
             <DialogTitle>Vincular Produtos</DialogTitle>
           </DialogHeader>
+          <div className="relative mt-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Buscar por nome ou código..." 
+              value={assignSearch} 
+              onChange={(e) => setAssignSearch(e.target.value)} 
+              className="pl-9" 
+            />
+          </div>
           <div className="flex-1 overflow-y-auto pr-2 space-y-2 py-4">
             {(() => {
-              const allSorted = [...products].sort((a, b) => a.name.localeCompare(b.name));
+              const searchLower = assignSearch.toLowerCase();
+              const allSorted = [...products]
+                .filter(p => !assignSearch || p.name.toLowerCase().includes(searchLower) || (p.code && p.code.toLowerCase().includes(searchLower)))
+                .sort((a, b) => a.name.localeCompare(b.name));
+              
+              if (allSorted.length === 0) {
+                return <p className="text-center text-muted-foreground text-sm py-8">Nenhum produto encontrado...</p>;
+              }
+
               return allSorted.map(p => {
                 const isAssigned = p.category_id === assigningCategory;
                 return (
