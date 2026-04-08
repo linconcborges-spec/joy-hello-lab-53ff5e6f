@@ -481,7 +481,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                   {[...categories].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map((cat) => {
                     const catProducts = filteredProducts
                       .filter(p => p.category_id === cat.id)
-                      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+                      .sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0));
 
                     if (catProducts.length === 0 && search) return null;
 
@@ -553,12 +553,6 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                               )}
 
                               <div className="flex items-center gap-0.5 border-l pl-4 ml-2">
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMoveProduct(p, 'up')}>
-                                  <ChevronUp className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMoveProduct(p, 'down')}>
-                                  <ChevronDown className="h-3.5 w-3.5" />
-                                </Button>
                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateProduct.mutate({ id: p.id, is_visible: !p.is_visible })}>
                                   {p.is_visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
                                 </Button>
@@ -607,7 +601,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                   {(() => {
                     const unassignedProducts = filteredProducts
                       .filter(p => !p.category_id || !categories.some(c => c.id === p.category_id))
-                      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+                      .sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0));
                     
                     if (unassignedProducts.length === 0) return null;
 
@@ -659,12 +653,6 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                 )}
 
                                 <div className="flex items-center gap-0.5 border-l pl-4 ml-2">
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMoveProduct(p, 'up')}>
-                                    <ChevronUp className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMoveProduct(p, 'down')}>
-                                    <ChevronDown className="h-3.5 w-3.5" />
-                                  </Button>
                                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateProduct.mutate({ id: p.id, is_visible: !p.is_visible })}>
                                     {p.is_visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
                                   </Button>
