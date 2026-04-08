@@ -20,6 +20,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useProducts, useAddProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
 import { useAddons, useAddAddon, useUpdateAddon, useDeleteAddon } from "@/hooks/useAddons";
 import { useCategories, useAddCategory, useUpdateCategory, useDeleteCategory } from "@/hooks/useCategories";
@@ -115,6 +117,8 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   const [editAddonName, setEditAddonName] = useState("");
   const [editAddonPrice, setEditAddonPrice] = useState("");
   const [editAddonCategoryId, setEditAddonCategoryId] = useState("none");
+
+  const [assigningCategory, setAssigningCategory] = useState<string | null>(null);
 
   const { uploadImage, isUploading } = useStorage();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -413,8 +417,11 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                         <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleMoveCategory(cat, 'up')}><ChevronUp className="h-4 w-4" /></Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleMoveCategory(cat, 'down')}><ChevronDown className="h-4 w-4" /></Button>
-                          <Button variant="outline" size="sm" onClick={() => { setShowNewProduct(true); setNewProductCategoryId(cat.id); }} className="h-8 text-[10px] uppercase font-bold gap-1 ml-2">
-                            <Plus className="h-3 w-3" /> Produto
+                          <Button variant="outline" size="sm" onClick={() => setAssigningCategory(cat.id)} className="h-8 text-[10px] uppercase font-bold gap-1 ml-2" title="Vincular produtos existentes nesta categoria">
+                            <Plus className="h-3 w-3" /> Existente
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => { setShowNewProduct(true); setNewProductCategoryId(cat.id); }} className="h-8 text-[10px] uppercase font-bold gap-1 ml-1" title="Criar novo produto">
+                            <Plus className="h-3 w-3" /> Novo
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -450,7 +457,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                   </div>
                                 ) : (
                                   <div>
-                                    <p className="font-bold text-xs uppercase truncate">{p.name}</p>
+                                    <p className="font-bold text-xs uppercase truncate">{p.code ? `${p.code} - ` : ""}{p.name}</p>
                                     <p className="text-[10px] text-muted-foreground truncate">{p.description || "Sem descrição"}</p>
                                   </div>
                                 )}
@@ -552,7 +559,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                     </div>
                                   ) : (
                                     <div>
-                                      <p className="font-bold text-xs uppercase truncate">{p.name}</p>
+                                      <p className="font-bold text-xs uppercase truncate">{p.code ? `${p.code} - ` : ""}{p.name}</p>
                                       <p className="text-[10px] text-muted-foreground truncate">{p.description || "Sem descrição"}</p>
                                     </div>
                                   )}
@@ -796,6 +803,46 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
 
         </Tabs>
       </div>
+
+      {/* DIALOG DE ASSOCIAÇÃO DE PRODUTOS */}
+      <Dialog open={!!assigningCategory} onOpenChange={(open) => !open && setAssigningCategory(null)}>
+        <DialogContent className="max-w-md max-h-[85vh] flex flex-col p-4">
+          <DialogHeader>
+            <DialogTitle>Vincular Produtos</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto pr-2 space-y-2 py-4">
+            {(() => {
+              const allSorted = [...products].sort((a, b) => a.name.localeCompare(b.name));
+              return allSorted.map(p => {
+                const isAssigned = p.category_id === assigningCategory;
+                return (
+                  <div key={p.id} className="flex items-start space-x-3 p-3 hover:bg-muted/50 rounded-lg cursor-pointer border border-transparent hover:border-border transition-all" onClick={(e) => {
+                    e.preventDefault();
+                    updateProduct.mutate({ 
+                      id: p.id, 
+                      category_id: isAssigned ? null : assigningCategory 
+                    });
+                  }}>
+                    <Checkbox checked={isAssigned} className="mt-1" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold truncate">{p.code ? `${p.code} - ` : ""}{p.name}</p>
+                      {p.category_id && p.category_id !== assigningCategory && (
+                        <p className="text-[10px] text-muted-foreground uppercase truncate">Atualmente em: {getCategoryName(p.category_id)}</p>
+                      )}
+                      {!p.category_id && (
+                        <p className="text-[10px] text-emerald-500 uppercase font-black">Sem categoria</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+          <DialogFooter className="pt-2 border-t">
+            <Button className="w-full" onClick={() => setAssigningCategory(null)}>Concluído</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
