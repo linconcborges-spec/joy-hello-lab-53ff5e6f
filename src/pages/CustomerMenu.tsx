@@ -142,7 +142,8 @@ export default function CustomerMenu() {
       status: "pending",
       isPickup,
       observation: globalObservation,
-      isPrinted: false
+      isPrinted: false,
+      cnpj: ""
     }, {
       onSuccess: () => {
         setCart([]);
@@ -187,7 +188,7 @@ export default function CustomerMenu() {
                     </Badge>
                 </div>
                 <div className="flex items-center gap-1.5 text-slate-500 text-[10px] md:text-xs font-medium uppercase tracking-tight opacity-70">
-                    <MapPin className="h-3 w-3" /> {settings.storeAddress || "Av. Napoleão Rodrigues Parente, 55 - Portal Doutor José"}
+                    <MapPin className="h-3 w-3" /> {"Av. Napoleão Rodrigues Parente, 55 - Portal Doutor José"}
                 </div>
               </div>
            </div>
