@@ -21,6 +21,9 @@ import {
 import { useProducts, useAddProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
 import { useAddons, useAddAddon, useUpdateAddon, useDeleteAddon } from "@/hooks/useAddons";
 import { useCategories, useAddCategory, useDeleteCategory } from "@/hooks/useCategories";
+import { useStorage } from "@/hooks/useStorage";
+import { CloudUpload, Loader2 } from "lucide-react";
+import { useRef } from "react";
 
 function ConfirmDelete({ onConfirm, title }: { onConfirm: () => void; title: string }) {
   return (
@@ -103,6 +106,24 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   const [editAddonName, setEditAddonName] = useState("");
   const [editAddonPrice, setEditAddonPrice] = useState("");
   const [editAddonCategoryId, setEditAddonCategoryId] = useState("none");
+
+  const { uploadImage, isUploading } = useStorage();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const url = await uploadImage(file);
+    if (url) {
+      if (isEdit) {
+        setEditImageUrl(url);
+      } else {
+        setNewImageUrl(url);
+      }
+    }
+  };
 
   const filteredCategories = categories.filter((c) =>
     !categorySearch || c.name.toLowerCase().includes(categorySearch.toLowerCase())
@@ -261,9 +282,28 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                       <Label className="text-xs">Descrição (Detalhamento do item)</Label>
                       <Input value={newDescription} onChange={(e) => setNewDescription(e.target.value)} placeholder="Ex: Hambúrguer, Presunto, Mussarela..." />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">URL da Imagem (Link da foto)</Label>
-                      <Input value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} placeholder="https://exemplo.com/foto.jpg" />
+                    <div className="space-y-1.5 flex-1">
+                      <Label className="text-xs">Link da Imagem (ou clique na nuvem para subir)</Label>
+                      <div className="flex gap-2">
+                        <Input value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} placeholder="https://..." className="flex-1" />
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          className="hidden"
+                          accept="image/*"
+                          onChange={(e) => handleFileUpload(e)}
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          className="shrink-0 rounded-xl"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploading}
+                        >
+                          {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudUpload className="h-4 w-4" />}
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
@@ -308,7 +348,25 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                               <div className="space-y-2">
                                 <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-8 font-bold" placeholder="Nome" />
                                 <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="h-7 text-[10px]" placeholder="Descrição" />
-                                <Input value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} className="h-7 text-[10px]" placeholder="Link da Imagem" />
+                                <div className="flex gap-1">
+                                  <Input value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} className="h-7 text-[10px] flex-1" placeholder="Link da Imagem" />
+                                  <input
+                                    type="file"
+                                    ref={editFileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) => handleFileUpload(e, true)}
+                                  />
+                                  <Button 
+                                    size="icon" 
+                                    variant="ghost" 
+                                    className="h-7 w-7"
+                                    disabled={isUploading}
+                                    onClick={() => editFileInputRef.current?.click()}
+                                  >
+                                    {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <CloudUpload className="h-3.5 w-3.5" />}
+                                  </Button>
+                                </div>
                               </div>
                             ) : (
                               <div>
