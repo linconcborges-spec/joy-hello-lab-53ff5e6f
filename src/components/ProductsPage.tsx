@@ -20,10 +20,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useProducts, useAddProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
 import { useAddons, useAddAddon, useUpdateAddon, useDeleteAddon } from "@/hooks/useAddons";
-import { useCategories, useAddCategory, useDeleteCategory } from "@/hooks/useCategories";
+import { useCategories, useAddCategory, useUpdateCategory, useDeleteCategory } from "@/hooks/useCategories";
 import { useStorage } from "@/hooks/useStorage";
-import { CloudUpload, Loader2 } from "lucide-react";
+import { CloudUpload, Loader2, GripVertical, ChevronUp, ChevronDown, Eye, EyeOff, MoreVertical, Copy } from "lucide-react";
 import { useRef } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 function ConfirmDelete({ onConfirm, title }: { onConfirm: () => void; title: string }) {
   return (
@@ -69,6 +75,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   const deleteAddon = useDeleteAddon();
 
   const addCategory = useAddCategory();
+  const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
 
   const [search, setSearch] = useState("");
@@ -220,6 +227,46 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
     return cat ? cat.name : "Desconhecida";
   }
 
+  const handleMoveCategory = (cat: any, direction: 'up' | 'down') => {
+    const sorted = [...categories].sort((a, b) => a.sort_order - b.sort_order);
+    const idx = sorted.findIndex(c => c.id === cat.id);
+    if (direction === 'up' && idx > 0) {
+      const prev = sorted[idx - 1];
+      updateCategory.mutate({ id: cat.id, sort_order: prev.sort_order });
+      updateCategory.mutate({ id: prev.id, sort_order: cat.sort_order });
+    } else if (direction === 'down' && idx < sorted.length - 1) {
+      const next = sorted[idx + 1];
+      updateCategory.mutate({ id: cat.id, sort_order: next.sort_order });
+      updateCategory.mutate({ id: next.id, sort_order: cat.sort_order });
+    }
+  };
+
+  const handleMoveProduct = (prod: any, direction: 'up' | 'down') => {
+    const catProducts = products
+      .filter(p => p.category_id === prod.category_id)
+      .sort((a, b) => a.sort_order - b.sort_order);
+    
+    const idx = catProducts.findIndex(p => p.id === prod.id);
+    if (direction === 'up' && idx > 0) {
+      const prev = catProducts[idx - 1];
+      updateProduct.mutate({ id: prod.id, sort_order: prev.sort_order });
+      updateProduct.mutate({ id: prev.id, sort_order: prod.sort_order });
+    } else if (direction === 'down' && idx < catProducts.length - 1) {
+      const next = catProducts[idx + 1];
+      updateProduct.mutate({ id: prod.id, sort_order: next.sort_order });
+      updateProduct.mutate({ id: next.id, sort_order: prod.sort_order });
+    }
+  };
+
+  const handleDuplicateProduct = (p: any) => {
+    addProduct.mutate({
+      ...p,
+      name: `${p.name} (Cópia)`,
+      code: Math.floor(Math.random() * 9000) + 1000,
+      sort_order: (products.length > 0 ? Math.max(...products.map(pr => pr.sort_order)) : 0) + 1
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
@@ -314,129 +361,130 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
               </Card>
             )}
 
-            <Card>
-              <CardContent className="p-0 overflow-x-auto">
-                {loadingProducts ? (
-                  <p className="text-center py-8 text-muted-foreground">Carregando...</p>
-                ) : (
-                  <Table className="min-w-[800px]">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-20">Foto</TableHead>
-                        <TableHead className="w-16">Cód.</TableHead>
-                        <TableHead>Nome / Descrição</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead className="w-28">Preço</TableHead>
-                        <TableHead className="w-24">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredProducts.map((p) => (
-                        <TableRow key={p.id}>
-                          <TableCell>
-                            <div className="h-10 w-10 rounded-md bg-secondary flex items-center justify-center overflow-hidden border">
-                              {p.image_url ? (
-                                <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
-                              ) : (
-                                <UtensilsCrossed className="h-4 w-4 text-muted-foreground opacity-20" />
-                              )}
+            <div className="space-y-6">
+              {loadingProducts ? (
+                <div className="flex flex-col items-center justify-center py-20 bg-card rounded-2xl border border-dashed">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                  <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Organizando Cardápio...</p>
+                </div>
+              ) : (
+                categories.sort((a, b) => a.sort_order - b.sort_order).map((cat) => {
+                  const catProducts = filteredProducts
+                    .filter(p => p.category_id === cat.id)
+                    .sort((a, b) => a.sort_order - b.sort_order);
+
+                  return (
+                    <div key={cat.id} className="space-y-3">
+                      <div className="flex items-center justify-between bg-muted/30 p-3 rounded-xl border border-border/40">
+                        <div className="flex items-center gap-3">
+                          <GripVertical className="h-4 w-4 text-muted-foreground/40" />
+                          <h3 className="font-black text-sm uppercase italic tracking-tighter">{cat.name}</h3>
+                          <Badge variant="outline" className="text-[10px] h-5">{catProducts.length}</Badge>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleMoveCategory(cat, 'up')}><ChevronUp className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleMoveCategory(cat, 'down')}><ChevronDown className="h-4 w-4" /></Button>
+                          <Button variant="outline" size="sm" onClick={() => { setShowNewProduct(true); setNewProductCategoryId(cat.id); }} className="h-8 text-[10px] uppercase font-bold gap-1 ml-2">
+                            <Plus className="h-3 w-3" /> Produto
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem className="text-destructive font-bold" onClick={() => deleteCategory.mutate(cat.id)}>Excluir Categoria</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        {catProducts.map((p) => (
+                          <div key={p.id} className={cn(
+                            "group flex items-center justify-between bg-card p-3 rounded-xl border border-border/20 hover:border-primary/30 transition-all",
+                            !p.is_visible && "opacity-50 grayscale bg-muted/10"
+                          )}>
+                            <div className="flex items-center gap-4 flex-1">
+                              <GripVertical className="h-4 w-4 text-muted-foreground/20 group-hover:text-muted-foreground/40" />
+                              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden border">
+                                {p.image_url ? (
+                                  <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
+                                ) : (
+                                  <UtensilsCrossed className="h-4 w-4 text-muted-foreground/20" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                {editingProductId === p.id ? (
+                                  <div className="space-y-2">
+                                    <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-8 font-bold text-xs" />
+                                    <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="h-7 text-[10px]" />
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <p className="font-bold text-xs uppercase truncate">{p.name}</p>
+                                    <p className="text-[10px] text-muted-foreground truncate">{p.description || "Sem descrição"}</p>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </TableCell>
-                          <TableCell className="font-mono text-xs">{p.code}</TableCell>
-                          <TableCell>
-                            {editingProductId === p.id ? (
-                              <div className="space-y-2">
-                                <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-8 font-bold" placeholder="Nome" />
-                                <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="h-7 text-[10px]" placeholder="Descrição" />
-                                <div className="flex gap-1">
-                                  <Input value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} className="h-7 text-[10px] flex-1" placeholder="Link da Imagem" />
-                                  <input
-                                    type="file"
-                                    ref={editFileInputRef}
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={(e) => handleFileUpload(e, true)}
-                                  />
-                                  <Button 
-                                    size="icon" 
-                                    variant="ghost" 
-                                    className="h-7 w-7"
-                                    disabled={isUploading}
-                                    onClick={() => editFileInputRef.current?.click()}
-                                  >
-                                    {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <CloudUpload className="h-3.5 w-3.5" />}
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div>
-                                <p className="font-bold text-sm uppercase">{p.name}</p>
-                                <p className="text-[10px] text-muted-foreground line-clamp-1">{p.description || "Sem descrição"}</p>
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {editingProductId === p.id ? (
-                              <Select value={editProductCategoryId} onValueChange={setEditProductCategoryId}>
-                                <SelectTrigger className="h-8"><SelectValue placeholder="Nenhuma" /></SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">Nenhuma</SelectItem>
-                                  {categories.map((c) => (
-                                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <span className="text-[10px] font-bold px-2 py-1 bg-secondary rounded-full uppercase">
-                                {getCategoryName(p.category_id)}
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {editingProductId === p.id ? (
-                              <Input type="number" step="0.01" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} className="h-8 w-24" />
-                            ) : (
-                              <span className="font-black text-rose-600 italic">R$ {Number(p.price).toFixed(2)}</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
+
+                            <div className="flex items-center gap-4">
                               {editingProductId === p.id ? (
-                                <>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSaveProduct(p.id)}>
-                                    <Save className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingProductId(null)}>
-                                    <X className="h-3.5 w-3.5" />
-                                  </Button>
-                                </>
+                                <Input type="number" step="0.01" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} className="h-8 w-20 text-xs text-right" />
                               ) : (
-                                <>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { 
-                                    setEditingProductId(p.id); 
-                                    setEditName(p.name); 
-                                    setEditPrice(String(p.price)); 
-                                    setEditDescription(p.description || "");
-                                    setEditImageUrl(p.image_url || "");
-                                    setEditProductCategoryId(p.category_id || "none"); 
-                                  }}>
-                                    <Pencil className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <ConfirmDelete onConfirm={() => deleteProduct.mutate(p.id)} title="produto" />
-                                </>
+                                <span className={cn("font-black text-sm italic", p.is_visible ? "text-rose-600" : "text-muted-foreground")}>
+                                  R$ {Number(p.price).toFixed(2)}
+                                </span>
                               )}
+
+                              <div className="flex items-center gap-0.5 border-l pl-4 ml-2">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateProduct.mutate({ id: p.id, is_visible: !p.is_visible })}>
+                                  {p.is_visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                                </Button>
+                                
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-48">
+                                    {editingProductId === p.id ? (
+                                      <>
+                                        <DropdownMenuItem onClick={() => handleSaveProduct(p.id)} className="font-bold text-primary gap-2"><Save className="h-4 w-4" /> Salvar</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setEditingProductId(null)} className="gap-2"><X className="h-4 w-4" /> Cancelar</DropdownMenuItem>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <DropdownMenuItem onClick={() => {
+                                          setEditingProductId(p.id); 
+                                          setEditName(p.name); 
+                                          setEditPrice(String(p.price)); 
+                                          setEditDescription(p.description || "");
+                                          setEditImageUrl(p.image_url || "");
+                                          setEditProductCategoryId(p.category_id || "none");
+                                        }} className="gap-2 font-bold"><Pencil className="h-4 w-4" /> Editar</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleMoveProduct(p, 'up')} className="gap-2"><ChevronUp className="h-4 w-4" /> Mover para Cima</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleMoveProduct(p, 'down')} className="gap-2"><ChevronDown className="h-4 w-4" /> Mover para Baixo</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleDuplicateProduct(p)} className="gap-2"><Copy className="h-4 w-4" /> Duplicar</DropdownMenuItem>
+                                        <DropdownMenuItem className="text-destructive font-bold gap-2" onClick={() => deleteProduct.mutate(p.id)}><Trash2 className="h-4 w-4" /> Excluir</DropdownMenuItem>
+                                      </>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {filteredProducts.length === 0 && (
-                        <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum produto encontrado</TableCell></TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
+                          </div>
+                        ))}
+                        {catProducts.length === 0 && (
+                          <div className="text-center py-6 border border-dashed rounded-xl opacity-20">
+                            <p className="text-[10px] font-black uppercase">Nenhum produto nesta categoria</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </TabsContent>
 
           {/* ADDONS TAB */}

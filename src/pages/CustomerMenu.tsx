@@ -79,7 +79,10 @@ export default function CustomerMenu() {
   const { data: categories = [] } = useQuery({
     queryKey: ["categories_public"],
     queryFn: async () => {
-      const { data } = await supabase.from("categories").select("*").order("name");
+      const { data } = await supabase
+        .from("categories")
+        .select("id, name, sort_order")
+        .order("sort_order", { ascending: true });
       return data as Category[];
     }
   });
@@ -87,7 +90,11 @@ export default function CustomerMenu() {
   const { data: products = [] } = useQuery({
     queryKey: ["products_public"],
     queryFn: async () => {
-      const { data } = await supabase.from("products").select("*").order("name");
+      const { data } = await supabase
+        .from("products")
+        .select("*")
+        .eq("is_visible", true)
+        .order("sort_order", { ascending: true });
       return data as Product[];
     }
   });
