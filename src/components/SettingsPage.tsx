@@ -199,6 +199,47 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
 
         <Card>
           <CardHeader className="pb-3">
+            <CardTitle className="text-base text-primary">Identidade Visual (Cardápio)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Logo da Loja</Label>
+                <div className="flex gap-2">
+                  <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="URL da Logo" className="flex-1" />
+                  <input type="file" ref={logoInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'logo')} />
+                  <Button type="button" variant="secondary" size="icon" className="shrink-0" onClick={() => logoInputRef.current?.click()} disabled={isUploading}>
+                    {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudUpload className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {logoUrl && (
+                  <div className="h-20 w-20 rounded-xl border overflow-hidden mt-2 bg-slate-50">
+                    <img src={logoUrl} alt="Logo" className="h-full w-full object-contain" />
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">Banner de Fundo</Label>
+                <div className="flex gap-2">
+                  <Input value={bannerUrl} onChange={(e) => setBannerUrl(e.target.value)} placeholder="URL do Banner" className="flex-1" />
+                  <input type="file" ref={bannerInputRef} className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'banner')} />
+                  <Button type="button" variant="secondary" size="icon" className="shrink-0" onClick={() => bannerInputRef.current?.click()} disabled={isUploading}>
+                    {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudUpload className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {bannerUrl && (
+                  <div className="h-20 w-full rounded-xl border overflow-hidden mt-2 bg-slate-50">
+                    <img src={bannerUrl} alt="Banner" className="h-full w-full object-cover" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
             <CardTitle className="text-base text-primary">Configurações de Impressão</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3">
