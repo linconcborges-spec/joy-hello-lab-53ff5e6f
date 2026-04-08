@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, Pencil, Trash2, Search, Save, X, UtensilsCrossed } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Search, Save, X, UtensilsCrossed, Loader2, Upload } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,7 @@ import {
 import { useProducts, useAddProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
 import { useAddons, useAddAddon, useUpdateAddon, useDeleteAddon } from "@/hooks/useAddons";
 import { useCategories, useAddCategory, useDeleteCategory } from "@/hooks/useCategories";
+import { useStorage } from "@/hooks/useStorage";
 
 function ConfirmDelete({ onConfirm, title }: { onConfirm: () => void; title: string }) {
   return (
@@ -56,6 +58,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   const { data: products = [], isLoading: loadingProducts } = useProducts();
   const { data: addons = [], isLoading: loadingAddons } = useAddons();
   const { data: categories = [], isLoading: loadingCategories } = useCategories();
+  const { uploadImage } = useStorage();
   
   const addProduct = useAddProduct();
   const updateProduct = useUpdateProduct();
@@ -84,6 +87,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newProductCategoryId, setNewProductCategoryId] = useState("none");
   const [showNewProduct, setShowNewProduct] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // New addon form
   const [newAddonName, setNewAddonName] = useState("");
@@ -121,6 +125,21 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
       a.name.toLowerCase().includes(addonSearch.toLowerCase()) ||
       a.code.toString().includes(addonSearch)
   );
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const url = await uploadImage(file);
+    setIsUploading(false);
+
+    if (url) {
+      if (isEdit) setEditImageUrl(url);
+      else setNewImageUrl(url);
+      toast.success("Foto carregada!");
+    }
+  };
 
   const handleAddCategory = () => {
     if (!newCategoryName.trim()) return;
@@ -200,48 +219,64 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
-        <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5">
-          <ArrowLeft className="h-4 w-4" /> Voltar
+    <div className="min-h-screen bg-background antialiased">
+      <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
+        <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5 font-medium text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Voltar ao Painel
         </Button>
 
-        <Tabs defaultValue="products">
-          <TabsList>
-            <TabsTrigger value="products">Produtos ({products.length})</TabsTrigger>
-            <TabsTrigger value="addons">Adicionais ({addons.length})</TabsTrigger>
-            <TabsTrigger value="categories">Categorias ({categories.length})</TabsTrigger>
+        <header className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">Catálogo de Produtos</h1>
+            <p className="text-sm text-muted-foreground">Gerencie o cardápio, adicionais e categorias do seu estabelecimento.</p>
+        </header>
+
+        <Tabs defaultValue="products" className="w-full">
+          <TabsList className="bg-muted/50 p-1">
+            <TabsTrigger value="products" className="font-medium">Produtos ({products.length})</TabsTrigger>
+            <TabsTrigger value="addons" className="font-medium">Adicionais ({addons.length})</TabsTrigger>
+            <TabsTrigger value="categories" className="font-medium">Categorias ({categories.length})</TabsTrigger>
           </TabsList>
 
           {/* PRODUCTS TAB */}
-          <TabsContent value="products" className="space-y-4">
-            <div className="flex gap-2">
+          <TabsContent value="products" className="space-y-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar produto por nome ou código..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                <Input placeholder="Buscar produto..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-11 border-muted" />
               </div>
-              <Button onClick={() => setShowNewProduct(!showNewProduct)} className="gap-1.5">
-                <Plus className="h-4 w-4" /> Novo
+              <Button onClick={() => setShowNewProduct(!showNewProduct)} className="h-11 gap-2 font-semibold bg-rose-600 hover:bg-rose-700">
+                <Plus className="h-4 w-4" /> Novo Produto
               </Button>
             </div>
 
             {showNewProduct && (
-              <Card>
-                <CardHeader className="pb-3"><CardTitle className="text-base">Novo Produto</CardTitle></CardHeader>
+              <Card className="border-rose-100 bg-rose-50/10">
+                <CardHeader className="pb-3"><CardTitle className="text-base font-semibold">Cadastrar Novo Item</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex flex-wrap gap-4 items-end">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end">
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Código</Label>
-                      <Input value={newCode} onChange={(e) => setNewCode(e.target.value)} placeholder="Cód." className="w-20" />
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Cód. Interno</Label>
+                      <Input value={newCode} onChange={(e) => setNewCode(e.target.value)} placeholder="001" className="bg-white" />
                     </div>
-                    <div className="space-y-1.5 flex-1 min-w-[200px]">
-                      <Label className="text-xs">Nome</Label>
-                      <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nome do produto" />
+                    <div className="space-y-1.5 col-span-2">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Nome Comercial</Label>
+                      <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Ex: X-Salada Especial" className="bg-white" />
                     </div>
-                    <div className="space-y-1.5 w-40">
-                      <Label className="text-xs">Categoria</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Preço (R$)</Label>
+                      <Input type="number" step="0.01" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} placeholder="0.00" className="bg-white" />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-1.5 flex-1">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Descrição / Ingredientes</Label>
+                      <Input value={newDescription} onChange={(e) => setNewDescription(e.target.value)} placeholder="Breve resumo para o cliente..." className="bg-white" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Categoria</Label>
                       <Select value={newProductCategoryId} onValueChange={setNewProductCategoryId}>
-                        <SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger>
+                        <SelectTrigger className="bg-white"><SelectValue placeholder="Escolha..." /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">Nenhuma</SelectItem>
                           {categories.map((c) => (
@@ -251,76 +286,89 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                       </Select>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Preço (R$)</Label>
-                      <Input type="number" step="0.01" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} placeholder="0.00" className="w-28" />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Descrição (Detalhamento do item)</Label>
-                      <Input value={newDescription} onChange={(e) => setNewDescription(e.target.value)} placeholder="Ex: Hambúrguer, Presunto, Mussarela..." />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">URL da Imagem (Link da foto)</Label>
-                      <Input value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} placeholder="https://exemplo.com/foto.jpg" />
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Foto do Produto</Label>
+                      <div className="flex gap-2">
+                         <div className="flex-1 relative">
+                            <Input value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} placeholder="URL ou Upload..." className="bg-white pr-10" />
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                <label className="cursor-pointer hover:text-rose-600 transition-all">
+                                    {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                                    <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e)} disabled={isUploading} />
+                                </label>
+                            </div>
+                         </div>
+                         {newImageUrl && (
+                             <div className="h-10 w-10 rounded border bg-white overflow-hidden shrink-0">
+                                <img src={newImageUrl} className="h-full w-full object-cover" />
+                             </div>
+                         )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex justify-end">
-                    <Button onClick={handleAddProduct} disabled={addProduct.isPending} className="w-full md:w-auto">Salvar Produto</Button>
+                  <div className="flex justify-end pt-2">
+                    <Button onClick={handleAddProduct} disabled={addProduct.isPending || isUploading} className="w-full md:w-auto font-bold uppercase tracking-widest text-[11px] h-11 px-8 bg-slate-900">Salvar no Catálogo</Button>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            <Card>
+            <Card className="border-muted/40 shadow-sm overflow-hidden">
               <CardContent className="p-0 overflow-x-auto">
                 {loadingProducts ? (
-                  <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+                  <div className="flex flex-col items-center justify-center py-20 gap-3">
+                      <Loader2 className="h-8 w-8 animate-spin text-rose-500" />
+                      <p className="text-xs font-medium text-muted-foreground">Sincronizando produtos...</p>
+                  </div>
                 ) : (
-                  <Table className="min-w-[800px]">
-                    <TableHeader>
+                  <Table>
+                    <TableHeader className="bg-muted/30">
                       <TableRow>
-                        <TableHead className="w-20">Foto</TableHead>
-                        <TableHead className="w-16">Cód.</TableHead>
-                        <TableHead>Nome / Descrição</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead className="w-28">Preço</TableHead>
-                        <TableHead className="w-24">Ações</TableHead>
+                        <TableHead className="w-16 text-[10px] uppercase font-bold">Foto</TableHead>
+                        <TableHead className="w-16 text-[10px] uppercase font-bold text-center">Cód</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold">Resumo do Item</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold">Categoria</TableHead>
+                        <TableHead className="w-28 text-[10px] uppercase font-bold">Preço</TableHead>
+                        <TableHead className="w-24 text-[10px] uppercase font-bold text-right pr-6">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredProducts.map((p) => (
-                        <TableRow key={p.id}>
+                        <TableRow key={p.id} className="group hover:bg-muted/5 transition-colors">
                           <TableCell>
-                            <div className="h-10 w-10 rounded-md bg-secondary flex items-center justify-center overflow-hidden border">
+                            <div className="h-10 w-10 rounded-lg bg-secondary/50 flex items-center justify-center overflow-hidden border border-muted transition-all group-hover:scale-105">
                               {p.image_url ? (
                                 <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
                               ) : (
-                                <UtensilsCrossed className="h-4 w-4 text-muted-foreground opacity-20" />
+                                <UtensilsCrossed className="h-4 w-4 text-muted-foreground/30" />
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="font-mono text-xs">{p.code}</TableCell>
+                          <TableCell className="font-mono text-[11px] text-center text-muted-foreground">{p.code}</TableCell>
                           <TableCell>
                             {editingProductId === p.id ? (
-                              <div className="space-y-2">
-                                <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-8 font-bold" placeholder="Nome" />
-                                <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="h-7 text-[10px]" placeholder="Descrição" />
-                                <Input value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} className="h-7 text-[10px]" placeholder="Link da Imagem" />
+                              <div className="space-y-2 py-2">
+                                <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-8 font-semibold text-xs" />
+                                <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="h-7 text-[10px]" />
+                                <div className="flex gap-2">
+                                    <Input value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} className="h-7 text-[10px] flex-1" />
+                                    <label className="h-7 w-7 flex items-center justify-center bg-muted rounded cursor-pointer hover:bg-rose-50 hover:text-rose-600 transition-colors">
+                                         {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                                         <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, true)} disabled={isUploading} />
+                                    </label>
+                                </div>
                               </div>
                             ) : (
-                              <div>
-                                <p className="font-bold text-sm uppercase">{p.name}</p>
-                                <p className="text-[10px] text-muted-foreground line-clamp-1">{p.description || "Sem descrição"}</p>
+                              <div className="py-2">
+                                <p className="font-semibold text-sm text-slate-800 uppercase tracking-tight">{p.name}</p>
+                                <p className="text-[10px] text-muted-foreground font-medium line-clamp-1 italic">{p.description || "Sem descrição disponível"}</p>
                               </div>
                             )}
                           </TableCell>
                           <TableCell>
                             {editingProductId === p.id ? (
                               <Select value={editProductCategoryId} onValueChange={setEditProductCategoryId}>
-                                <SelectTrigger className="h-8"><SelectValue placeholder="Nenhuma" /></SelectTrigger>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Nenhuma" /></SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="none">Nenhuma</SelectItem>
                                   {categories.map((c) => (
@@ -329,32 +377,32 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                 </SelectContent>
                               </Select>
                             ) : (
-                              <span className="text-[10px] font-bold px-2 py-1 bg-secondary rounded-full uppercase">
+                              <Badge variant="secondary" className="text-[9px] font-semibold bg-muted text-muted-foreground uppercase px-2">
                                 {getCategoryName(p.category_id)}
-                              </span>
+                              </Badge>
                             )}
                           </TableCell>
                           <TableCell>
                             {editingProductId === p.id ? (
-                              <Input type="number" step="0.01" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} className="h-8 w-24" />
+                              <Input type="number" step="0.01" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} className="h-8 w-24 font-bold" />
                             ) : (
-                              <span className="font-black text-rose-600 italic">R$ {Number(p.price).toFixed(2)}</span>
+                              <span className="font-bold text-slate-900 text-sm">R$ {Number(p.price).toFixed(2)}</span>
                             )}
                           </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
+                          <TableCell className="text-right pr-6">
+                            <div className="flex justify-end gap-1">
                               {editingProductId === p.id ? (
                                 <>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSaveProduct(p.id)}>
-                                    <Save className="h-3.5 w-3.5" />
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600" onClick={() => handleSaveProduct(p.id)}>
+                                    <Save className="h-4 w-4" />
                                   </Button>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingProductId(null)}>
-                                    <X className="h-3.5 w-3.5" />
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => setEditingProductId(null)}>
+                                    <X className="h-4 w-4" />
                                   </Button>
                                 </>
                               ) : (
                                 <>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { 
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-900" onClick={() => { 
                                     setEditingProductId(p.id); 
                                     setEditName(p.name); 
                                     setEditPrice(String(p.price)); 
@@ -362,7 +410,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                     setEditImageUrl(p.image_url || "");
                                     setEditProductCategoryId(p.category_id || "none"); 
                                   }}>
-                                    <Pencil className="h-3.5 w-3.5" />
+                                    <Pencil className="h-4 w-4" />
                                   </Button>
                                   <ConfirmDelete onConfirm={() => deleteProduct.mutate(p.id)} title="produto" />
                                 </>
@@ -372,7 +420,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                         </TableRow>
                       ))}
                       {filteredProducts.length === 0 && (
-                        <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum produto encontrado</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-20 text-xs font-medium">Nenhum produto encontrado para sua busca.</TableCell></TableRow>
                       )}
                     </TableBody>
                   </Table>
@@ -382,29 +430,29 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
           </TabsContent>
 
           {/* ADDONS TAB */}
-          <TabsContent value="addons" className="space-y-4">
-            <div className="flex gap-2">
+          <TabsContent value="addons" className="space-y-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar adicional..." value={addonSearch} onChange={(e) => setAddonSearch(e.target.value)} className="pl-9" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                <Input placeholder="Buscar adicional..." value={addonSearch} onChange={(e) => setAddonSearch(e.target.value)} className="pl-9 h-11" />
               </div>
-              <Button onClick={() => setShowNewAddon(!showNewAddon)} className="gap-1.5">
-                <Plus className="h-4 w-4" /> Novo
+              <Button onClick={() => setShowNewAddon(!showNewAddon)} className="h-11 gap-2 font-semibold">
+                <Plus className="h-4 w-4" /> Novo Adicional
               </Button>
             </div>
 
             {showNewAddon && (
-              <Card>
-                <CardHeader className="pb-3"><CardTitle className="text-base">Novo Adicional</CardTitle></CardHeader>
-                <CardContent className="flex flex-wrap gap-2 items-end">
-                  <div className="space-y-1.5 flex-1 min-w-[150px]">
-                    <Label className="text-xs">Nome</Label>
-                    <Input value={newAddonName} onChange={(e) => setNewAddonName(e.target.value)} placeholder="Ex: Bacon, Ovo..." />
+              <Card className="border-slate-100 bg-slate-50/20">
+                <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Cadastrar Adicional / Complemento</CardTitle></CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                  <div className="space-y-1.5 col-span-2">
+                    <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Nome</Label>
+                    <Input value={newAddonName} onChange={(e) => setNewAddonName(e.target.value)} placeholder="Ex: Bacon Crocante, Ovo frito..." className="bg-white" />
                   </div>
-                  <div className="space-y-1.5 w-32">
-                    <Label className="text-xs">Categoria</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Vincular a Categoria</Label>
                     <Select value={newAddonCategoryId} onValueChange={setNewAddonCategoryId}>
-                      <SelectTrigger><SelectValue placeholder="Todas" /></SelectTrigger>
+                      <SelectTrigger className="bg-white"><SelectValue placeholder="Todas" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">Todas / Geral</SelectItem>
                         {categories.map((c) => (
@@ -414,44 +462,46 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Preço (R$)</Label>
-                    <Input type="number" step="0.01" value={newAddonPrice} onChange={(e) => setNewAddonPrice(e.target.value)} placeholder="0.00" className="w-28" />
+                    <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Preço Extra</Label>
+                    <div className="flex gap-2">
+                        <Input type="number" step="0.01" value={newAddonPrice} onChange={(e) => setNewAddonPrice(e.target.value)} placeholder="0.00" className="bg-white" />
+                        <Button onClick={handleAddAddon} disabled={addAddon.isPending}>Salvar</Button>
+                    </div>
                   </div>
-                  <Button onClick={handleAddAddon} disabled={addAddon.isPending}>Salvar</Button>
                 </CardContent>
               </Card>
             )}
 
-            <Card>
+            <Card className="border-muted/40 shadow-sm overflow-hidden">
               <CardContent className="p-0 overflow-x-auto">
                 {loadingAddons ? (
-                  <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+                  <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
                 ) : (
-                  <Table className="min-w-[600px]">
-                    <TableHeader>
+                  <Table>
+                    <TableHeader className="bg-muted/30">
                       <TableRow>
-                        <TableHead className="w-20">Código</TableHead>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead className="w-28">Preço</TableHead>
-                        <TableHead className="w-24">Ações</TableHead>
+                        <TableHead className="w-20 text-[10px] uppercase font-bold text-center">Cód</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold">Nome do Adicional</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold">Abrangência</TableHead>
+                        <TableHead className="w-28 text-[10px] uppercase font-bold">Preço Base</TableHead>
+                        <TableHead className="w-24 text-[10px] uppercase font-bold text-right pr-6">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredAddons.map((a) => (
-                        <TableRow key={a.id}>
-                          <TableCell className="font-mono">{a.code}</TableCell>
+                        <TableRow key={a.id} className="hover:bg-muted/5 transition-colors">
+                          <TableCell className="font-mono text-[10px] text-center text-muted-foreground">{a.code}</TableCell>
                           <TableCell>
                             {editingAddonId === a.id ? (
-                              <Input value={editAddonName} onChange={(e) => setEditAddonName(e.target.value)} className="h-8" />
+                              <Input value={editAddonName} onChange={(e) => setEditAddonName(e.target.value)} className="h-8 text-xs" />
                             ) : (
-                              a.name
+                              <span className="font-medium text-sm text-slate-700">{a.name}</span>
                             )}
                           </TableCell>
                           <TableCell>
                             {editingAddonId === a.id ? (
                               <Select value={editAddonCategoryId} onValueChange={setEditAddonCategoryId}>
-                                <SelectTrigger className="h-8"><SelectValue placeholder="Todas" /></SelectTrigger>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Todas" /></SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="none">Todas / Geral</SelectItem>
                                   {categories.map((c) => (
@@ -460,33 +510,33 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                 </SelectContent>
                               </Select>
                             ) : (
-                              <span className="text-xs px-2 py-1 bg-secondary rounded-full">
-                                {!a.category_id ? "Todas / Geral" : getCategoryName(a.category_id)}
-                              </span>
+                              <Badge variant="outline" className="text-[9px] font-semibold text-muted-foreground uppercase border-muted/50">
+                                {!a.category_id ? "Todas Categorias" : getCategoryName(a.category_id)}
+                              </Badge>
                             )}
                           </TableCell>
                           <TableCell>
                             {editingAddonId === a.id ? (
                               <Input type="number" step="0.01" value={editAddonPrice} onChange={(e) => setEditAddonPrice(e.target.value)} className="h-8 w-24" />
                             ) : (
-                              `R$ ${Number(a.price).toFixed(2)}`
+                              <span className="font-semibold text-rose-600/80 text-sm">R$ {Number(a.price).toFixed(2)}</span>
                             )}
                           </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
+                          <TableCell className="text-right pr-6">
+                            <div className="flex justify-end gap-1">
                               {editingAddonId === a.id ? (
                                 <>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSaveAddon(a.id)}>
-                                    <Save className="h-3.5 w-3.5" />
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600" onClick={() => handleSaveAddon(a.id)}>
+                                    <Save className="h-4 w-4" />
                                   </Button>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingAddonId(null)}>
-                                    <X className="h-3.5 w-3.5" />
+                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingAddonId(null)}>
+                                    <X className="h-4 w-4" />
                                   </Button>
                                 </>
                               ) : (
                                 <>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingAddonId(a.id); setEditAddonName(a.name); setEditAddonPrice(String(a.price)); setEditAddonCategoryId(a.category_id || "none"); }}>
-                                    <Pencil className="h-3.5 w-3.5" />
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-slate-900" onClick={() => { setEditingAddonId(a.id); setEditAddonName(a.name); setEditAddonPrice(String(a.price)); setEditAddonCategoryId(a.category_id || "none"); }}>
+                                    <Pencil className="h-4 w-4" />
                                   </Button>
                                   <ConfirmDelete onConfirm={() => deleteAddon.mutate(a.id)} title="adicional" />
                                 </>
@@ -495,9 +545,6 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                           </TableCell>
                         </TableRow>
                       ))}
-                      {filteredAddons.length === 0 && (
-                        <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum adicional cadastrado</TableCell></TableRow>
-                      )}
                     </TableBody>
                   </Table>
                 )}
@@ -506,54 +553,51 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
           </TabsContent>
 
           {/* CATEGORIES TAB */}
-          <TabsContent value="categories" className="space-y-4">
-            <div className="flex gap-2">
+          <TabsContent value="categories" className="space-y-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar categoria..." value={categorySearch} onChange={(e) => setCategorySearch(e.target.value)} className="pl-9" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                <Input placeholder="Buscar categoria..." value={categorySearch} onChange={(e) => setCategorySearch(e.target.value)} className="pl-9 h-11" />
               </div>
-              <Button onClick={() => setShowNewCategory(!showNewCategory)} className="gap-1.5">
-                <Plus className="h-4 w-4" /> Nova
+              <Button onClick={() => setShowNewCategory(!showNewCategory)} className="h-11 gap-2 font-semibold">
+                <Plus className="h-4 w-4" /> Nova Categoria
               </Button>
             </div>
 
             {showNewCategory && (
-              <Card>
-                <CardHeader className="pb-3"><CardTitle className="text-base">Nova Categoria</CardTitle></CardHeader>
+              <Card className="border-slate-100 bg-slate-50/20">
+                <CardHeader className="pb-3"><CardTitle className="text-sm font-semibold">Criar Nova Categoria</CardTitle></CardHeader>
                 <CardContent className="flex gap-2 items-end">
                   <div className="space-y-1.5 flex-1">
-                    <Label className="text-xs">Nome da Categoria</Label>
-                    <Input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Ex: Bebidas, Lanches..." />
+                    <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Nome amigável</Label>
+                    <Input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Ex: Combos, Bebidas, Pizzas..." className="bg-white h-11" />
                   </div>
-                  <Button onClick={handleAddCategory} disabled={addCategory.isPending}>Salvar</Button>
+                  <Button onClick={handleAddCategory} disabled={addCategory.isPending} className="h-11 px-8">Criar Agora</Button>
                 </CardContent>
               </Card>
             )}
 
-            <Card>
+            <Card className="border-muted/40 shadow-sm overflow-hidden">
               <CardContent className="p-0">
                 {loadingCategories ? (
-                  <p className="text-center py-8 text-muted-foreground">Carregando...</p>
+                  <div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
                 ) : (
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-muted/30">
                       <TableRow>
-                        <TableHead>Nome</TableHead>
-                        <TableHead className="w-24">Ações</TableHead>
+                        <TableHead className="text-[10px] uppercase font-bold pl-6">Título da Categoria</TableHead>
+                        <TableHead className="w-24 text-[10px] uppercase font-bold text-right pr-6">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredCategories.map((c) => (
-                        <TableRow key={c.id}>
-                          <TableCell>{c.name}</TableCell>
-                          <TableCell>
+                        <TableRow key={c.id} className="hover:bg-muted/5 transition-colors">
+                          <TableCell className="font-semibold text-sm text-slate-700 pl-6 uppercase tracking-tight">{c.name}</TableCell>
+                          <TableCell className="text-right pr-6">
                             <ConfirmDelete onConfirm={() => deleteCategory.mutate(c.id)} title="categoria" />
                           </TableCell>
                         </TableRow>
                       ))}
-                      {filteredCategories.length === 0 && (
-                        <TableRow><TableCell colSpan={2} className="text-center text-muted-foreground py-8">Nenhuma categoria encontrada</TableCell></TableRow>
-                      )}
                     </TableBody>
                   </Table>
                 )}

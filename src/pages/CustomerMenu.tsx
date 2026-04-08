@@ -72,7 +72,7 @@ export default function CustomerMenu() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 280);
+      setScrolled(window.scrollY > 220);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -154,72 +154,72 @@ export default function CustomerMenu() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] pb-32 font-inter selection:bg-rose-100">
+    <div className="min-h-screen bg-[#F8F9FA] pb-32 font-inter antialiased selection:bg-rose-100">
       
       {/* Sticky Header Small (Appears on Scroll) */}
       <div className={cn(
-        "fixed top-0 left-0 right-0 h-16 bg-white z-[50] flex items-center px-6 transition-all duration-300 shadow-sm border-b",
+        "fixed top-0 left-0 right-0 h-16 bg-white z-[50] flex items-center px-6 transition-all duration-500 shadow-sm border-b",
         scrolled ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"
       )}>
-         <h1 className="text-xl font-black text-slate-900 tracking-tighter uppercase italic">{settings.storeName}</h1>
+         <h1 className="text-lg font-bold text-slate-900 tracking-tight uppercase italic">{settings.storeName}</h1>
       </div>
 
       {/* Banner Superior Estilo Hexágonos */}
       <div className="relative h-44 md:h-64 w-full bg-[#E11D48]">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-40 mix-blend-overlay"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-30 mix-blend-overlay"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
       </div>
 
       {/* Info Loja Header */}
       <div className="px-6 -mt-10 relative z-20">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
            <div className="flex items-end gap-5">
-              <div className="h-24 w-24 md:h-32 md:w-32 bg-white rounded-[12px] shadow-2xl p-2 border-4 border-white overflow-hidden">
+              <div className="h-24 w-24 md:h-32 md:w-32 bg-white rounded-[12px] shadow-2xl p-1.5 border-4 border-white overflow-hidden">
                 <div className="h-full w-full bg-rose-700 rounded-lg flex items-center justify-center text-white">
-                    <span className="text-3xl font-black italic tracking-tighter">IC</span>
+                    <span className="text-3xl font-bold italic tracking-tighter">IC</span>
                 </div>
               </div>
               <div className="pb-1">
                 <div className="flex items-center gap-2 mb-1">
-                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none">{settings.storeName}</h1>
-                    <Badge variant="outline" className="bg-slate-100 text-slate-600 border-none h-5 px-1.5 text-[10px] uppercase font-black tracking-widest flex items-center gap-1.5">
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight uppercase leading-none">{settings.storeName}</h1>
+                    <Badge variant="outline" className="bg-slate-100 text-slate-500 border-none h-5 px-1.5 text-[9px] uppercase font-bold tracking-widest flex items-center gap-1.5">
                         <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div> Aberto
                     </Badge>
                 </div>
-                <div className="flex items-center gap-1.5 text-slate-500 text-[10px] md:text-xs font-medium uppercase tracking-tighter opacity-70">
+                <div className="flex items-center gap-1.5 text-slate-500 text-[10px] md:text-xs font-medium uppercase tracking-tight opacity-70">
                     <MapPin className="h-3 w-3" /> {settings.storeAddress || "Av. Napoleão Rodrigues Parente, 55 - Portal Doutor José"}
                 </div>
               </div>
            </div>
            
            <div className="flex items-center gap-2 pb-1">
-              <button className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-all"><MessageCircle className="h-4 w-4" /></button>
-              <button className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-all"><Instagram className="h-4 w-4" /></button>
-              <button className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-all"><Facebook className="h-4 w-4" /></button>
-              <Button variant="outline" size="sm" className="h-9 rounded-xl font-black uppercase text-[10px] gap-2 border-slate-200 bg-white"><Info className="h-4 w-4" /> Informação</Button>
+              <button className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-all"><MessageCircle className="h-4 w-4" /></button>
+              <button className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-all"><Instagram className="h-4 w-4" /></button>
+              <button className="h-9 w-9 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-all"><Facebook className="h-4 w-4" /></button>
+              <Button variant="outline" size="sm" className="h-9 rounded-xl font-bold uppercase text-[9px] gap-2 border-slate-200 bg-white text-slate-600"><Info className="h-4 w-4" /> Informação</Button>
            </div>
         </div>
       </div>
 
       {/* Categories Bar & Search (The OlaClick Way) */}
       <div className="sticky top-0 md:top-16 z-40 bg-white border-b border-slate-100 transition-all duration-300">
-        <div className="flex items-center h-16 w-full relative">
+        <div className="flex items-center h-14 w-full relative">
             
             {/* Search Overlay (Expands) */}
             <div className={cn(
-                "absolute inset-0 bg-white z-50 flex items-center px-4 transition-all duration-300",
+                "absolute inset-0 bg-white z-50 flex items-center px-4 transition-all duration-500",
                 isSearching ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-full pointer-events-none"
             )}>
                 <input 
                     type="text" 
                     placeholder="O que você está procurando?" 
-                    className="flex-1 h-12 bg-transparent outline-none font-bold text-sm uppercase tracking-tight"
+                    className="flex-1 h-10 bg-transparent outline-none font-semibold text-sm uppercase tracking-tight"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     autoFocus={isSearching}
                 />
                 <button onClick={() => setIsSearching(false)} className="h-10 w-10 flex items-center justify-center text-rose-600">
-                    <X className="h-6 w-6" />
+                    <X className="h-5 w-5" />
                 </button>
             </div>
 
@@ -227,19 +227,19 @@ export default function CustomerMenu() {
             <div className="flex items-center gap-0 overflow-x-auto px-4 no-scrollbar flex-1 h-full">
                 <button 
                    onClick={() => setIsSearching(true)}
-                   className="h-12 w-12 flex items-center justify-center text-slate-900 mr-2 shrink-0 border-r"
+                   className="h-10 w-10 flex items-center justify-center text-slate-900 mr-2 shrink-0 border-r border-slate-100"
                 >
-                    <Search className="h-5 w-5" />
+                    <Search className="h-4 w-4 text-slate-400" />
                 </button>
                 
                 <button 
                     onClick={() => setActiveCategory(null)}
                     className={cn(
-                        "px-6 h-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border-b-[3px]",
-                        !activeCategory ? "border-rose-600 text-rose-600" : "border-transparent text-slate-500"
+                        "px-6 h-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all border-b-2",
+                        !activeCategory ? "border-rose-600 text-rose-600" : "border-transparent text-slate-400"
                     )}
                 >
-                    !! PROMOÇÃO !!
+                    🔥 Destaques
                 </button>
                 {categories.map((cat) => (
                     <button 
@@ -250,8 +250,8 @@ export default function CustomerMenu() {
                         if (el) window.scrollTo({ top: el.offsetTop - 120, behavior: 'smooth' });
                     }}
                     className={cn(
-                        "px-6 h-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all border-b-[3px] flex items-center gap-2",
-                        activeCategory === cat.id ? "border-rose-600 text-rose-600" : "border-transparent text-slate-500"
+                        "px-6 h-full text-[10px] font-bold uppercase tracking-widest whitespace-nowrap transition-all border-b-2",
+                        activeCategory === cat.id ? "border-rose-600 text-rose-600" : "border-transparent text-slate-400"
                     )}
                     >
                     {cat.name}
@@ -268,8 +268,8 @@ export default function CustomerMenu() {
             if (catProducts.length === 0) return null;
 
             return (
-                <div key={cat.id} id={cat.id} className="animate-in fade-in duration-500">
-                    <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter mb-8 flex items-center gap-3">
+                <div key={cat.id} id={cat.id} className="animate-in fade-in duration-700">
+                    <h2 className="text-lg font-bold text-slate-900 uppercase tracking-tight mb-8">
                         {cat.name}
                     </h2>
 
@@ -283,27 +283,27 @@ export default function CustomerMenu() {
                                     setQuantity(1);
                                     setItemObservation("");
                                 }}
-                                className="bg-white rounded-[12px] p-0 flex gap-0 hover:shadow-lg transition-all cursor-pointer overflow-hidden border border-slate-100"
+                                className="bg-white rounded-[12px] p-0 flex gap-0 hover:shadow-md transition-all cursor-pointer overflow-hidden border border-slate-100"
                             >
                                 <div className="flex-1 p-4 flex flex-col justify-between">
                                     <div className="space-y-1">
-                                        <h3 className="font-black text-sm text-slate-900 uppercase tracking-tight leading-tight">{p.name}</h3>
-                                        <p className="text-[10px] text-slate-400 font-bold leading-relaxed line-clamp-2">
+                                        <h3 className="font-bold text-sm text-slate-900 uppercase tracking-tight leading-tight">{p.name}</h3>
+                                        <p className="text-[10px] text-slate-400 font-medium leading-relaxed line-clamp-2">
                                             {p.description || "Ingredientes selecionados para o melhor sabor do Império."}
                                         </p>
                                     </div>
-                                    <span className="text-base font-black text-slate-900 mt-2">R$ {Number(p.price).toFixed(2)}</span>
+                                    <span className="text-sm font-bold text-slate-900 mt-2">R$ {Number(p.price).toFixed(2)}</span>
                                 </div>
                                 
                                 <div className="relative h-28 w-28 md:h-32 md:w-32 bg-[#F8F9FA] shrink-0 overflow-hidden">
                                      <div className="absolute inset-0 flex items-center justify-center opacity-10">
-                                        <UtensilsCrossed className="h-10 w-10 text-rose-600" />
+                                        <UtensilsCrossed className="h-8 w-8 text-rose-600" />
                                      </div>
                                      {p.image_url && <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />}
                                      
                                      {/* Botão + OlaClick Style */}
-                                     <div className="absolute bottom-1 right-1 h-9 w-9 bg-rose-600 rounded-full flex items-center justify-center text-white shadow-xl active:scale-95 transition-all z-10 border-2 border-white">
-                                        <Plus className="h-5 w-5 stroke-[4px]" />
+                                     <div className="absolute bottom-1.5 right-1.5 h-8 w-8 bg-rose-600 rounded-full flex items-center justify-center text-white shadow-lg active:scale-95 transition-all z-10 border-2 border-white">
+                                        <Plus className="h-4 w-4 stroke-[3px]" />
                                      </div>
                                 </div>
                             </div>
@@ -323,15 +323,15 @@ export default function CustomerMenu() {
                     {/* Header Item */}
                     <div className="px-8 py-6 border-b border-slate-50">
                          <div className="flex justify-between items-start">
-                             <h2 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter leading-tight">{selectedProduct.name}</h2>
-                             <span className="text-lg font-black text-rose-600 italic">R$ {Number(selectedProduct.price).toFixed(2)}</span>
+                             <h2 className="text-xl font-bold text-slate-900 uppercase italic tracking-tight leading-tight">{selectedProduct.name}</h2>
+                             <span className="text-lg font-bold text-rose-600 italic">R$ {Number(selectedProduct.price).toFixed(2)}</span>
                          </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto px-8 py-8 no-scrollbar space-y-10">
                          {/* Adicionais */}
                          <div className="space-y-5">
-                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block border-l-4 border-rose-600 pl-3">Adicionais</span>
+                            <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest block border-l-2 border-rose-600 pl-3">Adicionais</span>
                             <div className="grid gap-3">
                                 {addons
                                     .filter(a => !a.category_id || a.category_id === selectedProduct.category_id)
@@ -347,12 +347,12 @@ export default function CustomerMenu() {
                                                 )}
                                             >
                                                 <div className="flex items-center gap-3">
-                                                    <div className={cn("h-5 w-5 rounded-md border flex items-center justify-center transition-all", isSelected ? "bg-rose-600 border-rose-600 text-white" : "border-slate-300 bg-white")}>
-                                                        {isSelected && <Check className="h-3.5 w-3.5 stroke-[3px]" />}
+                                                    <div className={cn("h-5 w-5 rounded-lg border flex items-center justify-center transition-all", isSelected ? "bg-rose-600 border-rose-600 text-white" : "border-slate-300 bg-white")}>
+                                                        {isSelected && <Check className="h-3 w-3 stroke-[3px]" />}
                                                     </div>
-                                                    <span className="text-xs font-black text-slate-800 uppercase italic">{addon.name}</span>
+                                                    <span className="text-xs font-semibold text-slate-700 uppercase italic">{addon.name}</span>
                                                 </div>
-                                                <span className="text-xs font-black text-rose-600 italic">+ R$ {addon.price}</span>
+                                                <span className="text-xs font-bold text-rose-600 italic">+ R$ {addon.price}</span>
                                             </div>
                                         );
                                     })
@@ -362,25 +362,25 @@ export default function CustomerMenu() {
 
                          {/* Observação Item */}
                          <div className="space-y-4">
-                            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest block border-l-4 border-slate-200 pl-3">Observações</span>
+                            <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest block border-l-2 border-slate-200 pl-3">Observações</span>
                             <textarea 
                                 value={itemObservation}
                                 onChange={(e) => setItemObservation(e.target.value)}
                                 placeholder="EX: SEM CEBOLA, SEM MOLHO..."
-                                className="w-full h-28 bg-slate-50 border-0 rounded-2xl p-5 text-xs font-bold placeholder:text-slate-300 uppercase focus:ring-2 focus:ring-rose-100 transition-all"
+                                className="w-full h-24 bg-slate-50 border-0 rounded-2xl p-5 text-xs font-semibold placeholder:text-slate-300 uppercase focus:ring-0 transition-all"
                             ></textarea>
                          </div>
                     </div>
 
                     {/* Footer Order Selection */}
                     <div className="px-8 pb-10 pt-4 flex items-center gap-4 bg-white border-t">
-                        <div className="flex items-center gap-4 bg-slate-100 p-1.5 rounded-2xl">
-                             <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="h-10 w-10 bg-white rounded-xl shadow-sm flex items-center justify-center"><Minus className="h-4 w-4" /></button>
-                             <span className="text-lg font-black w-6 text-center italic">{quantity}</span>
-                             <button onClick={() => setQuantity(quantity + 1)} className="h-10 w-10 bg-rose-600 text-white rounded-xl flex items-center justify-center shadow-md"><Plus className="h-4 w-4" /></button>
+                        <div className="flex items-center gap-4 bg-slate-100 p-1 rounded-2xl">
+                             <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="h-10 w-10 bg-white rounded-xl shadow-sm flex items-center justify-center"><Minus className="h-3.5 w-3.5" /></button>
+                             <span className="text-lg font-bold w-6 text-center italic">{quantity}</span>
+                             <button onClick={() => setQuantity(quantity + 1)} className="h-10 w-10 bg-rose-600 text-white rounded-xl flex items-center justify-center shadow-md"><Plus className="h-3.5 w-3.5 text-white" /></button>
                         </div>
                         <Button 
-                            className="flex-1 h-14 rounded-2xl bg-rose-600 font-black uppercase italic tracking-widest text-base shadow-2xl shadow-rose-500/20"
+                            className="flex-1 h-12 rounded-2xl bg-rose-600 font-bold uppercase italic tracking-widest text-sm shadow-xl shadow-rose-500/10"
                             onClick={handleAddToCart}
                         >
                             Confirmar R$ {( (Number(selectedProduct.price) + selectedAddons.reduce((s, a) => s + a.price, 0)) * quantity ).toFixed(2)}
@@ -393,18 +393,18 @@ export default function CustomerMenu() {
 
       {/* Floating View Cart Button */}
       {cart.length > 0 && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] md:w-[450px] z-50 animate-in slide-in-from-bottom-10 duration-500">
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] md:w-[420px] z-50 animate-in slide-in-from-bottom-10 duration-700">
             <button 
                 onClick={() => setCheckoutOpen(true)}
-                className="w-full h-18 bg-rose-600 text-white rounded-[24px] flex items-center justify-between px-10 shadow-3xl shadow-rose-900/40 active:scale-95 transition-all"
+                className="w-full h-16 bg-rose-600 text-white rounded-[20px] flex items-center justify-between px-8 shadow-2xl shadow-rose-900/40 active:scale-95 transition-all"
             >
                 <div className="flex flex-col items-start gap-0">
-                    <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-80 decoration-white/20 underline underline-offset-4">Meu Carrinho</span>
-                    <span className="text-lg font-black italic tracking-tighter uppercase leading-none">{cart.length} {cart.length === 1 ? 'Produto' : 'Produtos'}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-[0.2em] opacity-80">Meu Carrinho</span>
+                    <span className="text-base font-bold italic tracking-tight uppercase leading-none">{cart.length} {cart.length === 1 ? 'Produto' : 'Produtos'}</span>
                 </div>
                 <div className="flex items-center gap-4">
-                    <span className="text-2xl font-black italic tracking-tighter">R$ {cartTotal.toFixed(2)}</span>
-                    <div className="h-10 w-10 bg-white/20 rounded-full flex items-center justify-center group-hover:translate-x-1 transition-all"><Plus className="h-5 w-5 rotate-45" /></div>
+                    <span className="text-xl font-bold italic tracking-tighter">R$ {cartTotal.toFixed(2)}</span>
+                    <div className="h-8 w-8 bg-white/20 rounded-full flex items-center justify-center"><Plus className="h-4 w-4 rotate-45" /></div>
                 </div>
             </button>
         </div>
@@ -412,58 +412,58 @@ export default function CustomerMenu() {
 
       {/* Checkout Drawer (Final Flow) */}
       <Drawer open={checkoutOpen} onOpenChange={setCheckoutOpen}>
-        <DrawerContent className="bg-white rounded-t-[40px] border-0 max-h-[96vh]">
+        <DrawerContent className="bg-white rounded-t-[32px] border-0 max-h-[96vh]">
             <div className="mx-auto w-12 h-1.5 bg-slate-100 rounded-full mt-4 mb-2"></div>
             <div className="px-8 pb-12 pt-6 overflow-y-auto no-scrollbar flex flex-col gap-10">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter">Finalizar Pedido</h2>
-                    <Badge className="bg-rose-50 text-rose-600 border-none font-black px-3 py-1">PASSO ÚNICO</Badge>
+                    <h2 className="text-2xl font-bold text-slate-900 uppercase italic tracking-tight">Finalizar Pedido</h2>
+                    <Badge className="bg-slate-50 text-slate-400 border-none font-bold px-3 py-1 text-[9px]">PASSO ÚNICO</Badge>
                 </div>
 
                 <div className="grid gap-8">
                     {/* Delivery Toggle Style OlaClick */}
-                    <div className="flex p-2 bg-slate-50 border border-slate-100 rounded-[20px]">
-                        <button onClick={() => setIsPickup(false)} className={cn("flex-1 h-12 rounded-[14px] text-[11px] font-black uppercase flex items-center justify-center gap-2 transition-all", !isPickup ? "bg-white shadow-md text-rose-600" : "text-slate-400")}>🛵 Delivery</button>
-                        <button onClick={() => setIsPickup(true)} className={cn("flex-1 h-12 rounded-[14px] text-[11px] font-black uppercase flex items-center justify-center gap-2 transition-all", isPickup ? "bg-white shadow-md text-rose-600" : "text-slate-400")}>🛍️ Retirada</button>
+                    <div className="flex p-1.5 bg-slate-50 border border-slate-100 rounded-[18px]">
+                        <button onClick={() => setIsPickup(false)} className={cn("flex-1 h-11 rounded-[14px] text-[10px] font-bold uppercase flex items-center justify-center gap-2 transition-all", !isPickup ? "bg-white shadow-sm text-rose-600" : "text-slate-400")}>🛵 Delivery</button>
+                        <button onClick={() => setIsPickup(true)} className={cn("flex-1 h-11 rounded-[14px] text-[10px] font-bold uppercase flex items-center justify-center gap-2 transition-all", isPickup ? "bg-white shadow-sm text-rose-600" : "text-slate-400")}>🛍️ Retirada</button>
                     </div>
 
                     <div className="space-y-3">
-                        <Label className="uppercase font-black text-[10px] text-slate-400 tracking-widest pl-2">Informações Iniciais</Label>
-                        <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="SEU NOME" className="w-full h-14 bg-slate-50 px-6 rounded-2xl border-0 font-black text-xs uppercase focus:ring-2 focus:ring-rose-100 transition-all" />
-                        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="SEU WHATSAPP" className="w-full h-14 bg-slate-50 px-6 rounded-2xl border-0 font-black text-xs focus:ring-2 focus:ring-rose-100 transition-all" />
+                        <Label className="uppercase font-bold text-[9px] text-slate-400 tracking-widest pl-2">Informações Iniciais</Label>
+                        <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="SEU NOME" className="w-full h-12 bg-slate-50 px-6 rounded-xl border-0 font-bold text-xs uppercase focus:ring-0" />
+                        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="SEU WHATSAPP" className="w-full h-12 bg-slate-50 px-6 rounded-xl border-0 font-bold text-xs focus:ring-0" />
                     </div>
 
                     {!isPickup && (
                         <div className="space-y-3">
-                            <Label className="uppercase font-black text-[10px] text-slate-400 tracking-widest pl-2">Onde Entregamos?</Label>
-                            <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="ENDEREÇO COMPLETO..." className="w-full h-14 bg-slate-50 px-6 rounded-2xl border-0 font-black text-[10px] uppercase focus:ring-2 focus:ring-rose-100 transition-all" />
+                            <Label className="uppercase font-bold text-[9px] text-slate-400 tracking-widest pl-2">Endereço de Entrega</Label>
+                            <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="RUA, NÚMERO, BAIRRO..." className="w-full h-12 bg-slate-50 px-6 rounded-xl border-0 font-bold text-[10px] uppercase focus:ring-0" />
                         </div>
                     )}
 
                     <div className="space-y-4">
-                        <Label className="uppercase font-black text-[10px] text-slate-400 tracking-widest pl-2">Forma de Pagamento</Label>
+                        <Label className="uppercase font-bold text-[9px] text-slate-400 tracking-widest pl-2">Forma de Pagamento</Label>
                         <div className="grid grid-cols-3 gap-3">
                             {["cash", "card", "pix"].map(m => (
-                                <button key={m} onClick={() => setPaymentMethod(m as any)} className={cn("h-20 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all", paymentMethod === m ? "bg-slate-900 border-slate-900 text-white scale-105 shadow-xl" : "bg-white border-slate-100 text-slate-300")}>
-                                    {m === 'cash' ? <Banknote className="h-6 w-6" /> : m === 'card' ? <CreditCard className="h-4 w-4" /> : <QrCode className="h-4 w-4" />}
-                                    <span className="text-[9px] font-black uppercase">{m === 'cash' ? 'Dinheiro' : m === 'card' ? 'Cartão' : 'PIX'}</span>
+                                <button key={m} onClick={() => setPaymentMethod(m as any)} className={cn("h-16 rounded-2xl border-2 flex flex-col items-center justify-center gap-1.5 transition-all", paymentMethod === m ? "bg-slate-900 border-slate-900 text-white shadow-lg" : "bg-white border-slate-100 text-slate-300")}>
+                                    {m === 'cash' ? <Banknote className="h-4.5 w-4.5" /> : m === 'card' ? <CreditCard className="h-4.5 w-4.5" /> : <QrCode className="h-4.5 w-4.5" />}
+                                    <span className="text-[8px] font-bold uppercase">{m === 'cash' ? 'Dinheiro' : m === 'card' ? 'Cartão' : 'PIX'}</span>
                                 </button>
                             ))}
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-[#18181B] rounded-[32px] p-8 text-white space-y-4">
-                    <div className="flex justify-between items-center opacity-40 text-[10px] font-black uppercase"><span>Valor dos Produtos</span><span>R$ {cartTotal.toFixed(2)}</span></div>
-                    {!isPickup && <div className="flex justify-between items-center opacity-40 text-[10px] font-black uppercase"><span>Taxa de Entrega Fixa</span><span>R$ {settings.defaultDeliveryFee.toFixed(2)}</span></div>}
+                <div className="bg-[#18181B] rounded-[28px] p-6 text-white space-y-4">
+                    <div className="flex justify-between items-center opacity-40 text-[9px] font-bold uppercase"><span>Valor dos Produtos</span><span>R$ {cartTotal.toFixed(2)}</span></div>
+                    {!isPickup && <div className="flex justify-between items-center opacity-40 text-[9px] font-bold uppercase"><span>Taxa de Entrega</span><span>R$ {settings.defaultDeliveryFee.toFixed(2)}</span></div>}
                     <div className="h-[1px] bg-white/5 my-2"></div>
                     <div className="flex justify-between items-center">
-                        <span className="text-xl font-[1000] uppercase italic tracking-tighter">Total do Pedido</span>
-                        <span className="text-3xl font-[1000] text-rose-500 italic tracking-tighter">R$ {totalWithDelivery.toFixed(2)}</span>
+                        <span className="text-lg font-bold uppercase italic tracking-tight">Total do Pedido</span>
+                        <span className="text-2xl font-bold text-rose-500 italic tracking-tight">R$ {totalWithDelivery.toFixed(2)}</span>
                     </div>
                 </div>
 
-                <Button onClick={handleFinishOrder} disabled={addOrder.isPending} className="w-full h-18 rounded-[24px] bg-rose-600 text-white font-[1000] uppercase italic tracking-[0.2em] text-lg shadow-3xl shadow-rose-900/20 active:scale-95 transition-all">
+                <Button onClick={handleFinishOrder} disabled={addOrder.isPending} className="w-full h-16 rounded-[20px] bg-rose-600 text-white font-bold uppercase italic tracking-widest text-base shadow-xl active:scale-95 transition-all">
                     {addOrder.isPending ? "PROCESSANDO..." : "CONFIRMAR E ENVIAR"}
                 </Button>
             </div>
