@@ -42,7 +42,10 @@ export function useAddProduct() {
       qc.invalidateQueries({ queryKey: ["products"] });
       toast.success("Produto cadastrado!");
     },
-    onError: () => toast.error("Erro ao cadastrar produto"),
+    onError: (error: any) => {
+      console.error("Erro ao cadastrar:", error);
+      toast.error(error.message || "Erro ao cadastrar produto");
+    },
   });
 }
 
@@ -57,7 +60,10 @@ export function useUpdateProduct() {
       qc.invalidateQueries({ queryKey: ["products"] });
       toast.success("Produto atualizado!");
     },
-    onError: () => toast.error("Erro ao atualizar produto"),
+    onError: (error: any) => {
+      console.error("Erro ao atualizar:", error);
+      toast.error(error.message || "Erro ao atualizar produto");
+    },
   });
 }
 
