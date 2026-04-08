@@ -52,10 +52,22 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const [printMarginTop, setPrintMarginTop] = useState(settings.printMarginTop || "0mm");
   const [printFontSize, setPrintFontSize] = useState(settings.printFontSize);
   const [targetPrinter, setTargetPrinter] = useState(settings.targetPrinter || "");
-  const [logoUrl, setLogoUrl] = useState(settings.logoUrl || "");
   const [bannerUrl, setBannerUrl] = useState(settings.bannerUrl || "");
   const [availablePrinters, setAvailablePrinters] = useState<string[]>([]);
   
+  // Sync state when settings actually load
+  useEffect(() => {
+    setStoreName(settings.storeName);
+    setDefaultDeliveryFee(settings.defaultDeliveryFee);
+    setPrintPaperWidth(settings.printPaperWidth);
+    setPrintMargin(settings.printMargin);
+    setPrintMarginTop(settings.printMarginTop || "0mm");
+    setPrintFontSize(settings.printFontSize);
+    setTargetPrinter(settings.targetPrinter || "");
+    setLogoUrl(settings.logoUrl || "");
+    setBannerUrl(settings.bannerUrl || "");
+  }, [settings]);
+
   const { uploadImage, isUploading } = useStorage();
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
