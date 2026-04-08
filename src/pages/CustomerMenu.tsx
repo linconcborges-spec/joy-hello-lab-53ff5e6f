@@ -132,6 +132,7 @@ export default function CustomerMenu() {
       customerName,
       phone,
       address: isPickup ? "RETIRADA NO LOCAL" : address,
+      cnpj: "",
       items: cart,
       paymentMethod,
       deliveryFee: isPickup ? 0 : settings.defaultDeliveryFee,
@@ -182,7 +183,7 @@ export default function CustomerMenu() {
                     <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-100 h-5 px-1.5 text-[10px] uppercase font-bold">Aberto</Badge>
                 </div>
                 <div className="flex items-center gap-1.5 text-slate-400 text-[10px] md:text-xs font-medium uppercase tracking-tighter">
-                    <MapPin className="h-3 w-3" /> {settings.storeAddress || "Portal Doutor José, Martinópolis - SP"}
+                    <MapPin className="h-3 w-3" /> Portal Doutor José, Martinópolis - SP
                 </div>
               </div>
            </div>
