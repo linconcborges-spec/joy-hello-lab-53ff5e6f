@@ -26,7 +26,7 @@ import { useProducts, useAddProduct, useUpdateProduct, useDeleteProduct } from "
 import { useAddons, useAddAddon, useUpdateAddon, useDeleteAddon } from "@/hooks/useAddons";
 import { useCategories, useAddCategory, useUpdateCategory, useDeleteCategory } from "@/hooks/useCategories";
 import { useStorage } from "@/hooks/useStorage";
-import { CloudUpload, Loader2, GripVertical, ChevronUp, ChevronDown, Eye, EyeOff, MoreVertical, Copy } from "lucide-react";
+import { CloudUpload, Loader2, GripVertical, ChevronUp, ChevronDown, ChevronRight, Eye, EyeOff, MoreVertical, Copy } from "lucide-react";
 import { useRef } from "react";
 import {
   DropdownMenu,
@@ -164,6 +164,11 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   const [search, setSearch] = useState("");
   const [addonSearch, setAddonSearch] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
+  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+
+  const toggleCategoryCollapse = (id: string) => {
+    setCollapsedCategories(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // New category form
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -488,9 +493,14 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                     return (
                       <div key={cat.id} className="space-y-3">
                       <div className="flex items-center justify-between bg-muted/30 p-3 rounded-xl border border-border/40">
-                        <div className="flex items-center gap-3">
-                          <GripVertical className="h-4 w-4 text-muted-foreground/40" />
-                          <h3 className="font-black text-sm uppercase italic tracking-tighter">{cat.name}</h3>
+                        <div className="flex items-center gap-3 flex-1 cursor-pointer select-none group" onClick={() => toggleCategoryCollapse(cat.id)} title="Clique para expandir/recolher">
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground/40 hover:bg-muted/50 cursor-grab active:cursor-grabbing shrink-0" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+                            <GripVertical className="h-4 w-4" />
+                          </Button>
+                          <div className="flex items-center justify-center shrink-0 w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors">
+                            {collapsedCategories[cat.id] ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </div>
+                          <h3 className="font-black text-sm uppercase italic tracking-tighter shrink-0 group-hover:text-primary transition-colors">{cat.name}</h3>
                           <Badge variant="outline" className="text-[10px] h-5">{catProducts.length}</Badge>
                         </div>
                         <div className="flex items-center gap-1">
@@ -513,7 +523,8 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                         </div>
                       </div>
 
-                      <div className="space-y-1">
+                      {!collapsedCategories[cat.id] && (
+                        <div className="space-y-1 mt-2">
                         {catProducts.map((p) => (
                           <div key={p.id} className={cn(
                             "group flex items-center justify-between bg-card p-3 rounded-xl border border-border/20 hover:border-primary/30 transition-all",
@@ -592,7 +603,8 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                             <p className="text-[10px] font-black uppercase">Nenhum produto nesta categoria</p>
                           </div>
                         )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   )
                   })}
