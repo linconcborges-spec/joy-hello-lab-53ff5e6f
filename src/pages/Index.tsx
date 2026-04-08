@@ -18,7 +18,7 @@ import { LoginPage } from "@/components/LoginPage";
 import { AuthModal } from "@/components/AuthModal";
 import { 
   useOrders, useAddOrder, useUpdateOrder, useUpdateOrderStatus, 
-  useCancelOrder, useMarkAsPrinted 
+  useCancelOrder, useMarkAsPrinted, useDeleteOrder 
 } from "@/hooks/useOrders";
 import { useAuth } from "@/hooks/useAuth";
 import { useSettings } from "@/hooks/useSettings";
@@ -110,6 +110,7 @@ const Index = () => {
   const updateStatusMutation = useUpdateOrderStatus();
   const cancelOrderMutation = useCancelOrder();
   const markAsPrintedMutation = useMarkAsPrinted();
+  const deleteOrderMutation = useDeleteOrder();
 
   if (authLoading || (ordersLoading && !isHistoryView)) {
     return (
@@ -359,7 +360,7 @@ const Index = () => {
             order={selectedOrder}
             onBack={() => setView("list")}
             onUpdateStatus={(id, status) => updateStatusMutation.mutate({ id, status, employeeName: user.name })}
-            onDelete={(id) => setView("list")}
+            onDelete={(id) => { deleteOrderMutation.mutate(id); setView("list"); }}
             onCancel={(id, employeeName) => cancelOrderMutation.mutate({ id, employeeName })}
             onPrint={(order) => { 
               printOrder(order, settings); 

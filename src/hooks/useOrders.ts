@@ -304,3 +304,30 @@ export function useMarkAsPrinted() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
   });
 }
+
+export function useDeleteOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // Deletar itens e adicionais primeiro (caso não haja ON DELETE CASCADE)
+      const { data: items } = await supabase
+        .from("order_items")
+        .select("id")
+        .eq("order_id", id);
+
+      if (items && items.length > 0) {
+        const itemIds = items.map((i) => i.id);
+        await supabase.from("order_addons").delete().in("order_item_id", itemIds);
+        await supabase.from("order_items").delete().eq("order_id", id);
+      }
+
+      const { error } = await supabase.from("orders").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      toast.success("Pedido excluído!");
+    },
+    onError: () => toast.error("Erro ao excluir pedido"),
+  });
+}
