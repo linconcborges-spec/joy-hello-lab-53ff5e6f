@@ -119,7 +119,7 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
     <Card
       className={cn(
         "cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 border-border/60 overflow-hidden active:scale-[0.98] duration-200",
-        isLate && "ring-2 ring-destructive ring-offset-2 animate-pulse"
+        isLate && "ring-2 ring-destructive ring-offset-2"
       )}
       onClick={(e) => {
         if (isMobile) {
@@ -136,7 +136,7 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
             <div className="flex items-center gap-2">
               <p className="font-black text-foreground text-base uppercase tracking-tight leading-none">#{order.number}</p>
               {isLate && (
-                <Badge className="bg-destructive text-white border-none text-[8px] px-1 h-4 font-black uppercase tracking-tighter animate-bounce">
+                <Badge className="bg-destructive text-white border-none text-[8px] px-1 h-4 font-black uppercase tracking-tighter">
                   ATRASADO!
                 </Badge>
               )}
