@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, Pencil, Trash2, Search, Save, X } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Search, Save, X, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -80,6 +80,8 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   const [newCode, setNewCode] = useState("");
   const [newName, setNewName] = useState("");
   const [newPrice, setNewPrice] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newImageUrl, setNewImageUrl] = useState("");
   const [newProductCategoryId, setNewProductCategoryId] = useState("none");
   const [showNewProduct, setShowNewProduct] = useState(false);
 
@@ -93,6 +95,8 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editImageUrl, setEditImageUrl] = useState("");
   const [editProductCategoryId, setEditProductCategoryId] = useState("none");
 
   const [editingAddonId, setEditingAddonId] = useState<string | null>(null);
@@ -133,9 +137,21 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
         code: parseInt(newCode), 
         name: newName.trim(), 
         price: parseFloat(newPrice) || 0,
+        description: newDescription.trim(),
+        image_url: newImageUrl.trim(),
         category_id: newProductCategoryId === "none" ? null : newProductCategoryId
       },
-      { onSuccess: () => { setNewCode(""); setNewName(""); setNewPrice(""); setNewProductCategoryId("none"); setShowNewProduct(false); } }
+      { 
+        onSuccess: () => { 
+          setNewCode(""); 
+          setNewName(""); 
+          setNewPrice(""); 
+          setNewDescription("");
+          setNewImageUrl("");
+          setNewProductCategoryId("none"); 
+          setShowNewProduct(false); 
+        } 
+      }
     );
   };
 
@@ -145,6 +161,8 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
         id, 
         name: editName, 
         price: parseFloat(editPrice) || 0,
+        description: editDescription,
+        image_url: editImageUrl,
         category_id: editProductCategoryId === "none" ? null : editProductCategoryId
       },
       { onSuccess: () => setEditingProductId(null) }
@@ -210,32 +228,48 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
             {showNewProduct && (
               <Card>
                 <CardHeader className="pb-3"><CardTitle className="text-base">Novo Produto</CardTitle></CardHeader>
-                <CardContent className="flex flex-wrap gap-2 items-end">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Código</Label>
-                    <Input value={newCode} onChange={(e) => setNewCode(e.target.value)} placeholder="Cód." className="w-20" />
+                <CardContent className="space-y-4">
+                  <div className="flex flex-wrap gap-4 items-end">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Código</Label>
+                      <Input value={newCode} onChange={(e) => setNewCode(e.target.value)} placeholder="Cód." className="w-20" />
+                    </div>
+                    <div className="space-y-1.5 flex-1 min-w-[200px]">
+                      <Label className="text-xs">Nome</Label>
+                      <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nome do produto" />
+                    </div>
+                    <div className="space-y-1.5 w-40">
+                      <Label className="text-xs">Categoria</Label>
+                      <Select value={newProductCategoryId} onValueChange={setNewProductCategoryId}>
+                        <SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Nenhuma</SelectItem>
+                          {categories.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Preço (R$)</Label>
+                      <Input type="number" step="0.01" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} placeholder="0.00" className="w-28" />
+                    </div>
                   </div>
-                  <div className="space-y-1.5 flex-1 min-w-[200px]">
-                    <Label className="text-xs">Nome</Label>
-                    <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nome do produto" />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Descrição (Detalhamento do item)</Label>
+                      <Input value={newDescription} onChange={(e) => setNewDescription(e.target.value)} placeholder="Ex: Hambúrguer, Presunto, Mussarela..." />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">URL da Imagem (Link da foto)</Label>
+                      <Input value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} placeholder="https://exemplo.com/foto.jpg" />
+                    </div>
                   </div>
-                  <div className="space-y-1.5 w-32">
-                    <Label className="text-xs">Categoria</Label>
-                    <Select value={newProductCategoryId} onValueChange={setNewProductCategoryId}>
-                      <SelectTrigger><SelectValue placeholder="Nenhuma" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Nenhuma</SelectItem>
-                        {categories.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+
+                  <div className="flex justify-end">
+                    <Button onClick={handleAddProduct} disabled={addProduct.isPending} className="w-full md:w-auto">Salvar Produto</Button>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">Preço (R$)</Label>
-                    <Input type="number" step="0.01" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} placeholder="0.00" className="w-28" />
-                  </div>
-                  <Button onClick={handleAddProduct} disabled={addProduct.isPending}>Salvar</Button>
                 </CardContent>
               </Card>
             )}
@@ -245,11 +279,12 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                 {loadingProducts ? (
                   <p className="text-center py-8 text-muted-foreground">Carregando...</p>
                 ) : (
-                  <Table className="min-w-[600px]">
+                  <Table className="min-w-[800px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-20">Código</TableHead>
-                        <TableHead>Nome</TableHead>
+                        <TableHead className="w-20">Foto</TableHead>
+                        <TableHead className="w-16">Cód.</TableHead>
+                        <TableHead>Nome / Descrição</TableHead>
                         <TableHead>Categoria</TableHead>
                         <TableHead className="w-28">Preço</TableHead>
                         <TableHead className="w-24">Ações</TableHead>
@@ -258,12 +293,28 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                     <TableBody>
                       {filteredProducts.map((p) => (
                         <TableRow key={p.id}>
-                          <TableCell className="font-mono">{p.code}</TableCell>
+                          <TableCell>
+                            <div className="h-10 w-10 rounded-md bg-secondary flex items-center justify-center overflow-hidden border">
+                              {p.image_url ? (
+                                <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
+                              ) : (
+                                <UtensilsCrossed className="h-4 w-4 text-muted-foreground opacity-20" />
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">{p.code}</TableCell>
                           <TableCell>
                             {editingProductId === p.id ? (
-                              <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-8" />
+                              <div className="space-y-2">
+                                <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-8 font-bold" placeholder="Nome" />
+                                <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="h-7 text-[10px]" placeholder="Descrição" />
+                                <Input value={editImageUrl} onChange={(e) => setEditImageUrl(e.target.value)} className="h-7 text-[10px]" placeholder="Link da Imagem" />
+                              </div>
                             ) : (
-                              p.name
+                              <div>
+                                <p className="font-bold text-sm uppercase">{p.name}</p>
+                                <p className="text-[10px] text-muted-foreground line-clamp-1">{p.description || "Sem descrição"}</p>
+                              </div>
                             )}
                           </TableCell>
                           <TableCell>
@@ -278,7 +329,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                 </SelectContent>
                               </Select>
                             ) : (
-                              <span className="text-xs px-2 py-1 bg-secondary rounded-full">
+                              <span className="text-[10px] font-bold px-2 py-1 bg-secondary rounded-full uppercase">
                                 {getCategoryName(p.category_id)}
                               </span>
                             )}
@@ -287,7 +338,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                             {editingProductId === p.id ? (
                               <Input type="number" step="0.01" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} className="h-8 w-24" />
                             ) : (
-                              `R$ ${Number(p.price).toFixed(2)}`
+                              <span className="font-black text-rose-600 italic">R$ {Number(p.price).toFixed(2)}</span>
                             )}
                           </TableCell>
                           <TableCell>
@@ -303,7 +354,14 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                 </>
                               ) : (
                                 <>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingProductId(p.id); setEditName(p.name); setEditPrice(String(p.price)); setEditProductCategoryId(p.category_id || "none"); }}>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { 
+                                    setEditingProductId(p.id); 
+                                    setEditName(p.name); 
+                                    setEditPrice(String(p.price)); 
+                                    setEditDescription(p.description || "");
+                                    setEditImageUrl(p.image_url || "");
+                                    setEditProductCategoryId(p.category_id || "none"); 
+                                  }}>
                                     <Pencil className="h-3.5 w-3.5" />
                                   </Button>
                                   <ConfirmDelete onConfirm={() => deleteProduct.mutate(p.id)} title="produto" />
@@ -314,7 +372,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                         </TableRow>
                       ))}
                       {filteredProducts.length === 0 && (
-                        <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum produto encontrado</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum produto encontrado</TableCell></TableRow>
                       )}
                     </TableBody>
                   </Table>

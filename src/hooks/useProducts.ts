@@ -7,6 +7,8 @@ export interface Product {
   code: number;
   name: string;
   price: number;
+  description?: string | null;
+  image_url?: string | null;
   category_id?: string | null;
 }
 
@@ -16,7 +18,7 @@ export function useProducts() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, code, name, price, category_id")
+        .select("*")
         .order("code", { ascending: true });
       if (error) throw error;
       return data as Product[];
@@ -27,11 +29,11 @@ export function useProducts() {
 export function useAddProduct() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (product: { code: number; name: string; price: number; category_id?: string | null }) => {
+    mutationFn: async (product: { code: number; name: string; price: number; description?: string | null; image_url?: string | null; category_id?: string | null }) => {
       const { data, error } = await supabase
         .from("products")
         .insert(product)
-        .select("id, code, name, price, category_id")
+        .select("*")
         .single();
       if (error) throw error;
       return data as Product;
@@ -47,7 +49,7 @@ export function useAddProduct() {
 export function useUpdateProduct() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; name: string; price: number; category_id?: string | null }) => {
+    mutationFn: async ({ id, ...data }: { id: string; name: string; price: number; description?: string | null; image_url?: string | null; category_id?: string | null }) => {
       const { error } = await supabase.from("products").update(data).eq("id", id);
       if (error) throw error;
     },
