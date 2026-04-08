@@ -94,7 +94,7 @@ export default function CustomerMenu() {
         .from("products")
         .select("*")
         .eq("is_visible", true)
-        .order("sort_order", { ascending: true });
+        .order("code", { ascending: true });
       return data as Product[];
     }
   });
