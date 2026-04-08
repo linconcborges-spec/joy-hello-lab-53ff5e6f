@@ -553,6 +553,12 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                               )}
 
                               <div className="flex items-center gap-0.5 border-l pl-4 ml-2">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMoveProduct(p, 'up')}>
+                                  <ChevronUp className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMoveProduct(p, 'down')}>
+                                  <ChevronDown className="h-3.5 w-3.5" />
+                                </Button>
                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateProduct.mutate({ id: p.id, is_visible: !p.is_visible })}>
                                   {p.is_visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
                                 </Button>
@@ -577,8 +583,6 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                           setEditImageUrl(p.image_url || "");
                                           setEditProductCategoryId(p.category_id || "none");
                                         }} className="gap-2 font-bold"><Pencil className="h-4 w-4" /> Editar</DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleMoveProduct(p, 'up')} className="gap-2"><ChevronUp className="h-4 w-4" /> Mover para Cima</DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleMoveProduct(p, 'down')} className="gap-2"><ChevronDown className="h-4 w-4" /> Mover para Baixo</DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => handleDuplicateProduct(p)} className="gap-2"><Copy className="h-4 w-4" /> Duplicar</DropdownMenuItem>
                                         <DropdownMenuItem className="text-destructive font-bold gap-2" onClick={() => deleteProduct.mutate(p.id)}><Trash2 className="h-4 w-4" /> Excluir</DropdownMenuItem>
                                       </>
@@ -655,6 +659,12 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                 )}
 
                                 <div className="flex items-center gap-0.5 border-l pl-4 ml-2">
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMoveProduct(p, 'up')}>
+                                    <ChevronUp className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMoveProduct(p, 'down')}>
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                  </Button>
                                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateProduct.mutate({ id: p.id, is_visible: !p.is_visible })}>
                                     {p.is_visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
                                   </Button>
@@ -679,8 +689,6 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                             setEditImageUrl(p.image_url || "");
                                             setEditProductCategoryId(p.category_id || "none");
                                           }} className="gap-2 font-bold"><Pencil className="h-4 w-4" /> Editar</DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => handleMoveProduct(p, 'up')} className="gap-2"><ChevronUp className="h-4 w-4" /> Mover para Cima</DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => handleMoveProduct(p, 'down')} className="gap-2"><ChevronDown className="h-4 w-4" /> Mover para Baixo</DropdownMenuItem>
                                           <DropdownMenuItem onClick={() => handleDuplicateProduct(p)} className="gap-2"><Copy className="h-4 w-4" /> Duplicar</DropdownMenuItem>
                                           <DropdownMenuItem className="text-destructive font-bold gap-2" onClick={() => deleteProduct.mutate(p.id)}><Trash2 className="h-4 w-4" /> Excluir</DropdownMenuItem>
                                         </>
