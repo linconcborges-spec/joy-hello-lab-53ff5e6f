@@ -1,4 +1,5 @@
 import { Clock, MapPin, Printer, ListOrdered } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -16,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import type { Order } from "@/types/order";
 import { STATUS_LABELS } from "@/types/order";
 import { useState, useEffect } from "react";
+import { differenceInMinutes } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 
 const statusVariant: Record<Order["status"], string> = {
@@ -88,12 +90,27 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
 
+  const [now, setNow] = useState(new Date());
+
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
     checkMobile();
     window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    const interval = setInterval(() => setNow(new Date()), 30000);
+    return () => {
+      window.removeEventListener("resize", checkMobile);
+      clearInterval(interval);
+    };
   }, []);
+
+  const elapsedMinutes = differenceInMinutes(now, new Date(order.createdAt));
+  const isLate = elapsedMinutes >= 60 && order.status !== 'completed' && order.status !== 'cancelled';
+
+  const formatElapsed = (minutes: number) => {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return h > 0 ? `${h}h ${m}m` : `${m} min`;
+  };
 
   const time = new Date(order.createdAt).toLocaleTimeString("pt-BR", {
     hour: "2-digit",
@@ -102,7 +119,10 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
 
   const CardUI = (
     <Card
-      className="cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 border-border/60 overflow-hidden active:scale-[0.98] duration-200"
+      className={cn(
+        "cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5 border-border/60 overflow-hidden active:scale-[0.98] duration-200",
+        isLate && "ring-2 ring-destructive ring-offset-2 animate-pulse"
+      )}
       onClick={(e) => {
         if (isMobile) {
           e.stopPropagation();
@@ -114,9 +134,16 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
     >
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
-          <div>
-            <p className="font-black text-foreground text-base uppercase tracking-tight leading-none">#{order.number}</p>
-            <p className="text-sm font-semibold text-foreground truncate max-w-[160px] mt-1 italic">{order.customerName || "Avulso"}</p>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <p className="font-black text-foreground text-base uppercase tracking-tight leading-none">#{order.number}</p>
+              {isLate && (
+                <Badge className="bg-destructive text-white border-none text-[8px] px-1 h-4 font-black uppercase tracking-tighter animate-bounce">
+                  ATRASADO!
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm font-semibold text-foreground truncate max-w-[160px] italic">{order.customerName || "Avulso"}</p>
           </div>
           <div className="flex items-center gap-1.5">
             {order.isPrinted && (
@@ -135,9 +162,16 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
               <span className="truncate uppercase text-[10px] tracking-tight">{order.address}</span>
             </div>
           )}
-          <div className="flex items-center gap-1.5">
-            <Clock className="h-3 w-3 shrink-0 opacity-50" />
-            <span className="text-[10px] font-black">{time}</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-3 w-3 shrink-0 opacity-50" />
+              <span className="text-[10px] font-black">{time}</span>
+            </div>
+            <div className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest bg-secondary/30 px-2 py-0.5 rounded-full">
+              <span className={cn(isLate ? "text-destructive" : "text-muted-foreground")}>
+                {formatElapsed(elapsedMinutes)}
+              </span>
+            </div>
           </div>
           {order.observation && (
             <div className="flex items-start gap-1.5 mt-2 bg-orange-500/5 px-2 py-1.5 rounded-xl border border-orange-500/10 border-dashed">
