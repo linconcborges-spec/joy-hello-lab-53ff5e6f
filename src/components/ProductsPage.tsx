@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Plus, Pencil, Trash2, Search, Save, X, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -165,6 +165,24 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   const [addonSearch, setAddonSearch] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [activeTab, setActiveTab] = useState("products");
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        if (activeTab === "products") {
+          setShowNewProduct(true);
+        } else if (activeTab === "addons") {
+          setShowNewAddon(true);
+        } else if (activeTab === "categories") {
+          setShowNewCategory(true);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeTab]);
 
   const toggleCategoryCollapse = (id: string) => {
     setExpandedCategories(prev => ({ ...prev, [id]: !prev[id] }));
@@ -388,7 +406,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
           <ArrowLeft className="h-4 w-4" /> Voltar
         </Button>
 
-        <Tabs defaultValue="products">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="products">Produtos ({products.length})</TabsTrigger>
             <TabsTrigger value="addons">Adicionais ({addons.length})</TabsTrigger>

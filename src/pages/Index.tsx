@@ -100,6 +100,19 @@ const Index = () => {
     };
   }, [showRevenue]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key.toLowerCase() === 'n') {
+        if (view !== "products") {
+          e.preventDefault();
+          setView("new");
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [view]);
+
   const { data: orders = [], isLoading: ordersLoading } = useOrders(
     isHistoryView ? dateRange.from?.toISOString() : undefined,
     isHistoryView ? dateRange.to?.toISOString() : undefined
