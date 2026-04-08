@@ -82,8 +82,7 @@ export function useSettings() {
       for (const row of upserts) {
         const { error } = await supabase
           .from("settings")
-          .update({ value: row.value })
-          .eq("key", row.key);
+          .upsert({ key: row.key, value: row.value }, { onConflict: 'key' });
         if (error) throw error;
       }
     },
