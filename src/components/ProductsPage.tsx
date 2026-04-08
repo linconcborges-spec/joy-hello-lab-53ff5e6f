@@ -317,14 +317,14 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
     return cat ? cat.name : "Desconhecida";
   }
 
-  const handleMoveCategory = (cat: any, direction: 'up' | 'down') => {
+  const handleMoveCategory = async (cat: any, direction: 'up' | 'down') => {
     let sorted = categories.map(c => ({ ...c })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
     
     // Check if we have corrupted/duplicate sort_orders
     const needsNormalization = new Set(sorted.map(c => c.sort_order)).size !== sorted.length || sorted.some(c => c.sort_order == null);
     
     if (needsNormalization) {
-       sorted.forEach((c, i) => { c.sort_order = i; });
+       sorted.forEach((c, i) => { c.sort_order = i * 10; });
     }
 
     const idx = sorted.findIndex(c => c.id === cat.id);
@@ -338,15 +338,19 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
       current.sort_order = target.sort_order;
       target.sort_order = temp;
       
-      if (needsNormalization) {
-        // Send updates for all to fix the entire specific collection
-        sorted.forEach((c) => {
-          updateCategory.mutate({ id: c.id, sort_order: c.sort_order });
-        });
-      } else {
-        // Send updates only for the swapped
-        updateCategory.mutate({ id: current.id, sort_order: current.sort_order });
-        updateCategory.mutate({ id: target.id, sort_order: target.sort_order });
+      try {
+        if (needsNormalization) {
+          // Send updates for all sequentially/parallel safely
+          await Promise.all(sorted.map(c => updateCategory.mutateAsync({ id: c.id, sort_order: c.sort_order })));
+        } else {
+          // Send updates only for the swapped
+          await Promise.all([
+            updateCategory.mutateAsync({ id: current.id, sort_order: current.sort_order }),
+            updateCategory.mutateAsync({ id: target.id, sort_order: target.sort_order })
+          ]);
+        }
+      } catch (err) {
+        console.error("Move error:", err);
       }
     }
   };
