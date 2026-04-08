@@ -65,22 +65,20 @@ const OrderItemsSummary = ({ order }: { order: Order }) => {
               </p>
             )}
           </div>
-          {isAdmin && <span className="text-[11px] font-black text-foreground ml-2">R$ {item.total.toFixed(2)}</span>}
+          <span className="text-[11px] font-black text-foreground ml-2">R$ {item.total.toFixed(2)}</span>
         </div>
       ))}
-      {isAdmin && order.deliveryFee > 0 && (
+      {order.deliveryFee > 0 && (
         <div className="flex justify-between items-center text-[10px] pt-2 border-t border-primary/10 font-black uppercase tracking-widest opacity-60">
           <span>Taxa de Entrega</span>
           <span>R$ {order.deliveryFee.toFixed(2)}</span>
         </div>
       )}
     </div>
-    {isAdmin && (
-      <div className="bg-secondary/30 p-3 flex justify-between items-center mt-auto border-t border-border/10">
-        <span className="text-[10px] font-black uppercase opacity-40 italic">Total Geral</span>
-        <p className="text-base font-black text-primary tracking-tighter italic">R$ {order.totalAmount.toFixed(2)}</p>
-      </div>
-    )}
+    <div className="bg-secondary/30 p-3 flex justify-between items-center mt-auto border-t border-border/10">
+      <span className="text-[10px] font-black uppercase opacity-40 italic">Total Geral</span>
+      <p className="text-base font-black text-primary tracking-tighter italic">R$ {order.totalAmount.toFixed(2)}</p>
+    </div>
   </div>
   );
 };
@@ -186,11 +184,9 @@ export function OrderCard({ order, onClick }: OrderCardProps) {
           <span className="text-[9px] font-black text-muted-foreground uppercase flex items-center gap-1 opacity-50">
             <ListOrdered className="h-3 w-3" /> {order.items.length} {order.items.length === 1 ? "item" : "itens"}
           </span>
-          {isAdmin && (
-            <span className="font-black text-primary text-sm whitespace-nowrap italic tracking-tighter">
-              R$ {order.totalAmount.toFixed(2)}
-            </span>
-          )}
+          <span className="font-black text-primary text-sm whitespace-nowrap italic tracking-tighter">
+            R$ {order.totalAmount.toFixed(2)}
+          </span>
         </div>
       </CardContent>
     </Card>

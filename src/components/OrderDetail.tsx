@@ -257,7 +257,7 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel,
                       )}
                     </div>
                     <div className="flex justify-end items-center mt-3 sm:mt-0 sm:ml-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-border/10">
-                      {isAdmin && <span className="font-black text-sm">R$ {item.total.toFixed(2)}</span>}
+                      <span className="font-black text-sm">R$ {item.total.toFixed(2)}</span>
                     </div>
                   </div>
                 ))}
@@ -265,7 +265,6 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel,
             )}
           </div>
 
-          {isAdmin && (
             <div className="border-t pt-4 font-black">
               <div className="flex justify-between text-muted-foreground text-[10px] uppercase tracking-widest">
                 <span>Subtotal</span>
@@ -286,7 +285,6 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel,
                 </div>
               )}
             </div>
-          )}
 
           {order.originalSnapshot && typeof order.originalSnapshot === 'object' && (
             <div className="mt-8 border-t-4 border-dashed border-muted pt-6 opacity-80 bg-muted/5 p-4 rounded-3xl">
@@ -299,15 +297,13 @@ export function OrderDetail({ order, onBack, onUpdateStatus, onDelete, onCancel,
                 {Array.isArray(order.originalSnapshot.items) && order.originalSnapshot.items.map((item: any) => (
                   <div key={item.id} className="flex justify-between text-[10px] font-bold uppercase py-1 border-b border-border/10">
                     <span>{item.quantity}x {item.product}</span>
-                    {isAdmin && <span>R$ {Number(item.total || 0).toFixed(2)}</span>}
+                    <span>R$ {Number(item.total || 0).toFixed(2)}</span>
                   </div>
                 ))}
-                {isAdmin && (
-                  <div className="flex justify-between font-black text-xs pt-1">
-                    <span>TOTAL ANTERIOR:</span>
-                    <span>R$ {Number(order.originalSnapshot.totalAmount || 0).toFixed(2)}</span>
-                  </div>
-                )}
+                <div className="flex justify-between font-black text-xs pt-1">
+                  <span>TOTAL ANTERIOR:</span>
+                  <span>R$ {Number(order.originalSnapshot.totalAmount || 0).toFixed(2)}</span>
+                </div>
               </div>
             </div>
           )}
