@@ -27,7 +27,6 @@ import { useAddons, useAddAddon, useUpdateAddon, useDeleteAddon } from "@/hooks/
 import { useCategories, useAddCategory, useUpdateCategory, useDeleteCategory } from "@/hooks/useCategories";
 import { useStorage } from "@/hooks/useStorage";
 import { CloudUpload, Loader2, GripVertical, ChevronUp, ChevronDown, ChevronRight, Eye, EyeOff, MoreVertical, Copy } from "lucide-react";
-import { useRef } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
