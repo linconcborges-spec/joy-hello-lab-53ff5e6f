@@ -195,7 +195,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   const [editPrice, setEditPrice] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editImageUrl, setEditImageUrl] = useState("");
-  const [editProductCategoryId, setEditProductCategoryId] = useState("none");
+  const [editProductCategoryIds, setEditProductCategoryIds] = useState<string[]>([]);
 
   const [editingAddonId, setEditingAddonId] = useState<string | null>(null);
   const [editAddonName, setEditAddonName] = useState("");
@@ -274,7 +274,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
         price: parseFloat(newPrice) || 0,
         description: newDescription.trim(),
         image_url: newImageUrl.trim(),
-        category_id: newProductCategoryId === "none" ? null : newProductCategoryId
+        category_ids: newProductCategoryId === "none" ? [] : [newProductCategoryId]
       },
       { 
         onSuccess: () => { 
@@ -298,7 +298,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
         price: parseFloat(editPrice) || 0,
         description: editDescription,
         image_url: editImageUrl,
-        category_id: editProductCategoryId === "none" ? null : editProductCategoryId
+        category_ids: editProductCategoryIds
       },
       { onSuccess: () => setEditingProductId(null) }
     );
@@ -524,9 +524,9 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
               ) : (
                 <>
                   {/* CATEGORIES WITH PRODUCTS */}
-                  {[...categories].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map((cat) => {
+                    {[...categories].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map((cat) => {
                     const catProducts = filteredProducts
-                      .filter(p => p.category_id === cat.id)
+                      .filter(p => (p.category_ids ?? [p.category_id].filter(Boolean)).includes(cat.id))
                       .sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0));
 
                     if (catProducts.length === 0 && search) return null;
@@ -585,6 +585,21 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                   <div className="space-y-2">
                                     <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-8 font-bold text-xs" />
                                     <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="h-7 text-[10px]" />
+                                    <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1">
+                                      {categories.map(c => (
+                                        <label key={c.id} className="flex items-center gap-1.5 cursor-pointer">
+                                          <Checkbox
+                                            checked={editProductCategoryIds.includes(c.id)}
+                                            onCheckedChange={(checked) =>
+                                              setEditProductCategoryIds(prev =>
+                                                checked ? [...prev, c.id] : prev.filter(id => id !== c.id)
+                                              )
+                                            }
+                                          />
+                                          <span className="text-[10px] font-bold uppercase">{c.name}</span>
+                                        </label>
+                                      ))}
+                                    </div>
                                   </div>
                                 ) : (
                                   <div>
@@ -627,7 +642,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                           setEditPrice(String(p.price)); 
                                           setEditDescription(p.description || "");
                                           setEditImageUrl(p.image_url || "");
-                                          setEditProductCategoryId(p.category_id || "none");
+                                          setEditProductCategoryIds(p.category_ids ?? (p.category_id ? [p.category_id] : []));
                                         }} className="gap-2 font-bold"><Pencil className="h-4 w-4" /> Editar</DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => handleDuplicateProduct(p)} className="gap-2"><Copy className="h-4 w-4" /> Duplicar</DropdownMenuItem>
                                         <DropdownMenuItem className="text-destructive font-bold gap-2" onClick={() => deleteProduct.mutate(p.id)}><Trash2 className="h-4 w-4" /> Excluir</DropdownMenuItem>
@@ -686,6 +701,21 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                     <div className="space-y-2">
                                       <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-8 font-bold text-xs" />
                                       <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="h-7 text-[10px]" />
+                                      <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1">
+                                        {categories.map(c => (
+                                          <label key={c.id} className="flex items-center gap-1.5 cursor-pointer">
+                                            <Checkbox
+                                              checked={editProductCategoryIds.includes(c.id)}
+                                              onCheckedChange={(checked) =>
+                                                setEditProductCategoryIds(prev =>
+                                                  checked ? [...prev, c.id] : prev.filter(id => id !== c.id)
+                                                )
+                                              }
+                                            />
+                                            <span className="text-[10px] font-bold uppercase">{c.name}</span>
+                                          </label>
+                                        ))}
+                                      </div>
                                     </div>
                                   ) : (
                                     <div>
@@ -728,7 +758,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                                             setEditPrice(String(p.price)); 
                                             setEditDescription(p.description || "");
                                             setEditImageUrl(p.image_url || "");
-                                            setEditProductCategoryId(p.category_id || "none");
+                                            setEditProductCategoryIds(p.category_ids ?? (p.category_id ? [p.category_id] : []));
                                           }} className="gap-2 font-bold"><Pencil className="h-4 w-4" /> Editar</DropdownMenuItem>
                                           <DropdownMenuItem onClick={() => handleDuplicateProduct(p)} className="gap-2"><Copy className="h-4 w-4" /> Duplicar</DropdownMenuItem>
                                           <DropdownMenuItem className="text-destructive font-bold gap-2" onClick={() => deleteProduct.mutate(p.id)}><Trash2 className="h-4 w-4" /> Excluir</DropdownMenuItem>
