@@ -318,16 +318,36 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   }
 
   const handleMoveCategory = (cat: any, direction: 'up' | 'down') => {
-    const sorted = [...categories].sort((a, b) => a.sort_order - b.sort_order);
+    let sorted = categories.map(c => ({ ...c })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    
+    // Check if we have corrupted/duplicate sort_orders
+    const needsNormalization = new Set(sorted.map(c => c.sort_order)).size !== sorted.length || sorted.some(c => c.sort_order == null);
+    
+    if (needsNormalization) {
+       sorted.forEach((c, i) => { c.sort_order = i; });
+    }
+
     const idx = sorted.findIndex(c => c.id === cat.id);
-    if (direction === 'up' && idx > 0) {
-      const prev = sorted[idx - 1];
-      updateCategory.mutate({ id: cat.id, sort_order: prev.sort_order });
-      updateCategory.mutate({ id: prev.id, sort_order: cat.sort_order });
-    } else if (direction === 'down' && idx < sorted.length - 1) {
-      const next = sorted[idx + 1];
-      updateCategory.mutate({ id: cat.id, sort_order: next.sort_order });
-      updateCategory.mutate({ id: next.id, sort_order: cat.sort_order });
+    let swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+
+    if (swapIdx >= 0 && swapIdx < sorted.length) {
+      const current = sorted[idx];
+      const target = sorted[swapIdx];
+
+      const temp = current.sort_order;
+      current.sort_order = target.sort_order;
+      target.sort_order = temp;
+      
+      if (needsNormalization) {
+        // Send updates for all to fix the entire specific collection
+        sorted.forEach((c) => {
+          updateCategory.mutate({ id: c.id, sort_order: c.sort_order });
+        });
+      } else {
+        // Send updates only for the swapped
+        updateCategory.mutate({ id: current.id, sort_order: current.sort_order });
+        updateCategory.mutate({ id: target.id, sort_order: target.sort_order });
+      }
     }
   };
 
