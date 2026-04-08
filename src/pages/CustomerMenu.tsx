@@ -258,9 +258,17 @@ export default function CustomerMenu() {
                                 </div>
                                 
                                 <div className="relative h-[100px] w-[100px] md:h-[120px] md:w-[120px] rounded-2xl bg-slate-50 border border-slate-100 shrink-0 overflow-hidden group">
-                                     <div className="absolute inset-0 flex items-center justify-center opacity-30">
-                                        <UtensilsCrossed className="h-10 w-10 text-rose-600 rotate-45" />
-                                     </div>
+                                     {p.image_url ? (
+                                        <img 
+                                          src={p.image_url} 
+                                          alt={p.name} 
+                                          className="h-full w-full object-cover transition-transform group-hover:scale-110 duration-500"
+                                        />
+                                     ) : (
+                                        <div className="absolute inset-0 flex items-center justify-center opacity-30">
+                                            <UtensilsCrossed className="h-10 w-10 text-rose-600 rotate-45" />
+                                        </div>
+                                     )}
                                      {/* Botão + Vermelho Estilo OlaClick */}
                                      <div className="absolute bottom-1.5 right-1.5 h-8 w-8 bg-rose-600 rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition-all z-10">
                                         <Plus className="h-5 w-5" />
