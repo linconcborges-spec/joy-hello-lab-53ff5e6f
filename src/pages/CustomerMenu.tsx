@@ -156,12 +156,12 @@ export default function CustomerMenu() {
     <div className="min-h-screen bg-[#fcfcfc] pb-32 font-inter selection:bg-rose-100">
       
       {/* Banner Superior Estilo Hexágonos */}
-      <div className="relative h-44 md:h-64 w-full bg-rose-900">
+      <div className="relative h-44 md:h-64 w-full bg-slate-100">
         <div 
-          className="absolute inset-0 bg-cover bg-center opacity-40"
+          className="absolute inset-0 bg-cover bg-center opacity-100"
           style={{ backgroundImage: `url('${settings.bannerUrl || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop"}')` }}
         ></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
       </div>
 
       {/* Info Loja Header */}
