@@ -167,23 +167,6 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [activeTab, setActiveTab] = useState("products");
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && e.key.toLowerCase() === 'n') {
-        e.preventDefault();
-        if (activeTab === "products") {
-          setShowNewProduct(true);
-        } else if (activeTab === "addons") {
-          setShowNewAddon(true);
-        } else if (activeTab === "categories") {
-          setShowNewCategory(true);
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeTab]);
-
   const toggleCategoryCollapse = (id: string) => {
     setExpandedCategories(prev => ({ ...prev, [id]: !prev[id] }));
   };
@@ -221,6 +204,23 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   const [editAddonCategoryId, setEditAddonCategoryId] = useState("none");
 
   const [assigningCategory, setAssigningCategory] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        if (activeTab === "products") {
+          setShowNewProduct(true);
+        } else if (activeTab === "addons") {
+          setShowNewAddon(true);
+        } else if (activeTab === "categories") {
+          setShowNewCategory(true);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeTab]);
 
   const { uploadImage, isUploading } = useStorage();
   const fileInputRef = useRef<HTMLInputElement>(null);
