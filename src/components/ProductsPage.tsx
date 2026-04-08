@@ -290,10 +290,27 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Buscar produto por nome ou código..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
               </div>
+              <Button variant="outline" onClick={() => setShowNewCategory(!showNewCategory)} className="gap-1.5">
+                <Plus className="h-4 w-4" /> Categoria
+              </Button>
               <Button onClick={() => setShowNewProduct(!showNewProduct)} className="gap-1.5">
-                <Plus className="h-4 w-4" /> Novo
+                <Plus className="h-4 w-4" /> Produto
               </Button>
             </div>
+
+            {showNewCategory && (
+              <Card className="border-dashed border-primary/40 bg-primary/5">
+                <CardHeader className="pb-3"><CardTitle className="text-base text-primary">Nova Categoria</CardTitle></CardHeader>
+                <CardContent className="flex gap-2 items-end">
+                  <div className="space-y-1.5 flex-1">
+                    <Label className="text-xs">Nome da Categoria</Label>
+                    <Input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Ex: Bebidas, Lanches..." onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()} />
+                  </div>
+                  <Button onClick={handleAddCategory} disabled={addCategory.isPending}>Salvar</Button>
+                  <Button variant="ghost" size="icon" onClick={() => { setShowNewCategory(false); setNewCategoryName(""); }}><X className="h-4 w-4" /></Button>
+                </CardContent>
+              </Card>
+            )}
 
             {showNewProduct && (
               <Card>
