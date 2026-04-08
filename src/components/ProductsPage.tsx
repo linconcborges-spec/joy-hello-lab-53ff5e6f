@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ArrowLeft, Plus, Pencil, Trash2, Search, Save, X, UtensilsCrossed } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,9 +64,9 @@ interface ProductsPageProps {
 }
 
 export function ProductsPage({ onBack }: ProductsPageProps) {
-  const { data: products = [], isLoading: loadingProducts } = useProducts();
+  const { data: products = [], isLoading: loadingProducts, isError: errorProducts } = useProducts();
   const { data: addons = [], isLoading: loadingAddons } = useAddons();
-  const { data: categories = [], isLoading: loadingCategories } = useCategories();
+  const { data: categories = [], isLoading: loadingCategories, isError: errorCategories } = useCategories();
   
   const addProduct = useAddProduct();
   const updateProduct = useUpdateProduct();
@@ -362,19 +364,29 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
             )}
 
             <div className="space-y-6">
-              {loadingProducts ? (
+              {loadingProducts || loadingCategories ? (
                 <div className="flex flex-col items-center justify-center py-20 bg-card rounded-2xl border border-dashed">
                   <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
                   <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Organizando Cardápio...</p>
                 </div>
+              ) : errorProducts || errorCategories ? (
+                <div className="flex flex-col items-center justify-center py-20 bg-destructive/5 rounded-2xl border border-destructive/20">
+                  <X className="h-8 w-8 text-destructive mb-2" />
+                  <p className="text-sm font-bold text-destructive uppercase">Erro ao carregar dados</p>
+                  <p className="text-xs text-muted-foreground mt-1 text-center px-4">Verifique se as colunas 'sort_order' e 'is_visible' foram criadas no banco de dados.</p>
+                </div>
               ) : (
-                categories.sort((a, b) => a.sort_order - b.sort_order).map((cat) => {
-                  const catProducts = filteredProducts
-                    .filter(p => p.category_id === cat.id)
-                    .sort((a, b) => a.sort_order - b.sort_order);
+                <>
+                  {/* CATEGORIES WITH PRODUCTS */}
+                  {[...categories].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map((cat) => {
+                    const catProducts = filteredProducts
+                      .filter(p => p.category_id === cat.id)
+                      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
 
-                  return (
-                    <div key={cat.id} className="space-y-3">
+                    if (catProducts.length === 0 && search) return null;
+
+                    return (
+                      <div key={cat.id} className="space-y-3">
                       <div className="flex items-center justify-between bg-muted/30 p-3 rounded-xl border border-border/40">
                         <div className="flex items-center gap-3">
                           <GripVertical className="h-4 w-4 text-muted-foreground/40" />
@@ -481,8 +493,106 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                         )}
                       </div>
                     </div>
-                  );
-                })
+                  )
+                  })}
+
+                  {/* UNASSIGNED PRODUCTS */}
+                  {(() => {
+                    const unassignedProducts = filteredProducts
+                      .filter(p => !p.category_id || !categories.some(c => c.id === p.category_id))
+                      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+                    
+                    if (unassignedProducts.length === 0) return null;
+
+                    return (
+                      <div className="space-y-3 pt-4 border-t border-dashed">
+                        <div className="flex items-center justify-between bg-slate-100/50 p-3 rounded-xl border border-dashed">
+                          <div className="flex items-center gap-3">
+                            <h3 className="font-black text-sm uppercase italic tracking-tighter text-slate-400">Produtos Sem Categoria</h3>
+                            <Badge variant="outline" className="text-[10px] h-5 bg-white">{unassignedProducts.length}</Badge>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          {unassignedProducts.map((p) => (
+                            <div key={p.id} className={cn(
+                              "group flex items-center justify-between bg-card p-3 rounded-xl border border-border/20 hover:border-primary/30 transition-all",
+                              !p.is_visible && "opacity-50 grayscale bg-muted/10"
+                            )}>
+                              <div className="flex items-center gap-4 flex-1">
+                                <GripVertical className="h-4 w-4 text-muted-foreground/20 group-hover:text-muted-foreground/40" />
+                                <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden border">
+                                  {p.image_url ? (
+                                    <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
+                                  ) : (
+                                    <UtensilsCrossed className="h-4 w-4 text-muted-foreground/20" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  {editingProductId === p.id ? (
+                                    <div className="space-y-2">
+                                      <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-8 font-bold text-xs" />
+                                      <Input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="h-7 text-[10px]" />
+                                    </div>
+                                  ) : (
+                                    <div>
+                                      <p className="font-bold text-xs uppercase truncate">{p.name}</p>
+                                      <p className="text-[10px] text-muted-foreground truncate">{p.description || "Sem descrição"}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-4">
+                                {editingProductId === p.id ? (
+                                  <Input type="number" step="0.01" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} className="h-8 w-20 text-xs text-right" />
+                                ) : (
+                                  <span className={cn("font-black text-sm italic", p.is_visible ? "text-rose-600" : "text-muted-foreground")}>
+                                    R$ {Number(p.price).toFixed(2)}
+                                  </span>
+                                )}
+
+                                <div className="flex items-center gap-0.5 border-l pl-4 ml-2">
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateProduct.mutate({ id: p.id, is_visible: !p.is_visible })}>
+                                    {p.is_visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                                  </Button>
+                                  
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-48">
+                                      {editingProductId === p.id ? (
+                                        <>
+                                          <DropdownMenuItem onClick={() => handleSaveProduct(p.id)} className="font-bold text-primary gap-2"><Save className="h-4 w-4" /> Salvar</DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => setEditingProductId(null)} className="gap-2"><X className="h-4 w-4" /> Cancelar</DropdownMenuItem>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <DropdownMenuItem onClick={() => {
+                                            setEditingProductId(p.id); 
+                                            setEditName(p.name); 
+                                            setEditPrice(String(p.price)); 
+                                            setEditDescription(p.description || "");
+                                            setEditImageUrl(p.image_url || "");
+                                            setEditProductCategoryId(p.category_id || "none");
+                                          }} className="gap-2 font-bold"><Pencil className="h-4 w-4" /> Editar</DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => handleMoveProduct(p, 'up')} className="gap-2"><ChevronUp className="h-4 w-4" /> Mover para Cima</DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => handleMoveProduct(p, 'down')} className="gap-2"><ChevronDown className="h-4 w-4" /> Mover para Baixo</DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => handleDuplicateProduct(p)} className="gap-2"><Copy className="h-4 w-4" /> Duplicar</DropdownMenuItem>
+                                          <DropdownMenuItem className="text-destructive font-bold gap-2" onClick={() => deleteProduct.mutate(p.id)}><Trash2 className="h-4 w-4" /> Excluir</DropdownMenuItem>
+                                        </>
+                                      )}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </>
               )}
             </div>
           </TabsContent>
