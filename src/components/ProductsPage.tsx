@@ -164,10 +164,10 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
   const [search, setSearch] = useState("");
   const [addonSearch, setAddonSearch] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
-  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   const toggleCategoryCollapse = (id: string) => {
-    setCollapsedCategories(prev => ({ ...prev, [id]: !prev[id] }));
+    setExpandedCategories(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   // New category form
@@ -522,7 +522,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                             <GripVertical className="h-4 w-4" />
                           </Button>
                           <div className="flex items-center justify-center shrink-0 w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors">
-                            {collapsedCategories[cat.id] ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            {!expandedCategories[cat.id] ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                           </div>
                           <h3 className="font-black text-sm uppercase italic tracking-tighter shrink-0 group-hover:text-primary transition-colors">{cat.name}</h3>
                           <Badge variant="outline" className="text-[10px] h-5">{catProducts.length}</Badge>
@@ -547,7 +547,7 @@ export function ProductsPage({ onBack }: ProductsPageProps) {
                         </div>
                       </div>
 
-                      {!collapsedCategories[cat.id] && (
+                      {expandedCategories[cat.id] && (
                         <div className="space-y-1 mt-2">
                         {catProducts.map((p) => (
                           <div key={p.id} className={cn(
