@@ -19,15 +19,29 @@ export function useProducts() {
   return useQuery({
     queryKey: ["products"],
     queryFn: async () => {
+      // Fetch products normally
       const { data: products, error } = await supabase
         .from("products")
-        .select("*, product_categories(category_id)")
+        .select("*")
         .order("code", { ascending: true });
       if (error) throw error;
 
+      // Separately fetch multi-category associations (graceful fallback if table doesn't exist)
+      const { data: productCategories } = await supabase
+        .from("product_categories")
+        .select("product_id, category_id");
+
+      // Build a map: product_id -> category_ids[]
+      const pcMap: Record<string, string[]> = {};
+      (productCategories ?? []).forEach((pc: any) => {
+        if (!pcMap[pc.product_id]) pcMap[pc.product_id] = [];
+        pcMap[pc.product_id].push(pc.category_id);
+      });
+
       return (products ?? []).map((p: any) => ({
         ...p,
-        category_ids: (p.product_categories ?? []).map((pc: any) => pc.category_id),
+        // Use junction table if available, otherwise fall back to single category_id
+        category_ids: pcMap[p.id] ?? (p.category_id ? [p.category_id] : []),
       })) as Product[];
     },
   });
