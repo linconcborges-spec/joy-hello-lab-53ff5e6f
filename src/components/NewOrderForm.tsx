@@ -267,7 +267,11 @@ function OrderItemRow({
         </div>
         <div className="flex flex-wrap gap-2.5">
           {addons
-            .filter((addon: any) => !addon.category_id || addon.category_id === item.categoryId)
+            .filter((addon: any) => {
+              const ids: string[] = addon.category_ids ?? (addon.category_id ? [addon.category_id] : []);
+              // Show addon if it has no categories (general/all) OR if current item's category matches any of its categories
+              return ids.length === 0 || (item.categoryId && ids.includes(item.categoryId));
+            })
             .map((addon: any) => {
             const selected = item.addons.some((a: any) => a.name === addon.name);
             return (
@@ -286,7 +290,10 @@ function OrderItemRow({
               </Badge>
             );
           })}
-          {addons.filter((addon: any) => !addon.category_id || addon.category_id === item.categoryId).length === 0 && (
+          {addons.filter((addon: any) => {
+            const ids: string[] = addon.category_ids ?? (addon.category_id ? [addon.category_id] : []);
+            return ids.length === 0 || (item.categoryId && ids.includes(item.categoryId));
+          }).length === 0 && (
             <span className="text-xs text-muted-foreground uppercase font-black opacity-20">Nenhum adicional p/ esta categoria</span>
           )}
         </div>
