@@ -2,6 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCallback } from "react";
 
+export interface BusinessHours {
+  open: string;  // "HH:MM"
+  close: string; // "HH:MM"
+  enabled: boolean;
+}
+
 export interface AppSettings {
   storeName: string;
   defaultDeliveryFee: number;
@@ -13,7 +19,27 @@ export interface AppSettings {
   theme: "light" | "dark";
   logoUrl: string;
   bannerUrl: string;
+  // Digital Menu settings
+  menuOpen: boolean;
+  storeAddress: string;
+  storePhone: string;
+  deliveryTimeMin: number;
+  deliveryTimeMax: number;
+  instagramUrl: string;
+  facebookUrl: string;
+  whatsappNumber: string;
+  businessHours: BusinessHours[];
 }
+
+const DEFAULT_BUSINESS_HOURS: BusinessHours[] = [
+  { open: "08:00", close: "22:00", enabled: true },  // Dom
+  { open: "08:00", close: "22:00", enabled: true },  // Seg
+  { open: "08:00", close: "22:00", enabled: true },  // Ter
+  { open: "08:00", close: "22:00", enabled: true },  // Qua
+  { open: "08:00", close: "22:00", enabled: true },  // Qui
+  { open: "08:00", close: "22:00", enabled: true },  // Sex
+  { open: "08:00", close: "22:00", enabled: true },  // Sab
+];
 
 const DEFAULT_SETTINGS: AppSettings = {
   storeName: "Império Chiclets",
@@ -26,6 +52,15 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: "light",
   logoUrl: "",
   bannerUrl: "",
+  menuOpen: true,
+  storeAddress: "",
+  storePhone: "",
+  deliveryTimeMin: 30,
+  deliveryTimeMax: 50,
+  instagramUrl: "",
+  facebookUrl: "",
+  whatsappNumber: "",
+  businessHours: DEFAULT_BUSINESS_HOURS,
 };
 
 const KEY_MAP: Record<string, keyof AppSettings> = {
@@ -39,6 +74,15 @@ const KEY_MAP: Record<string, keyof AppSettings> = {
   theme: "theme",
   logo_url: "logoUrl",
   banner_url: "bannerUrl",
+  menu_open: "menuOpen",
+  store_address: "storeAddress",
+  store_phone: "storePhone",
+  delivery_time_min: "deliveryTimeMin",
+  delivery_time_max: "deliveryTimeMax",
+  instagram_url: "instagramUrl",
+  facebook_url: "facebookUrl",
+  whatsapp_number: "whatsappNumber",
+  business_hours: "businessHours",
 };
 
 const REVERSE_KEY_MAP: Record<keyof AppSettings, string> = Object.fromEntries(
@@ -50,8 +94,16 @@ function parseSettings(rows: { key: string; value: string }[]): AppSettings {
   for (const row of rows) {
     const field = KEY_MAP[row.key];
     if (!field) continue;
-    if (field === "defaultDeliveryFee") {
-      settings[field] = parseFloat(row.value) || 0;
+    if (field === "defaultDeliveryFee" || field === "deliveryTimeMin" || field === "deliveryTimeMax") {
+      (settings as any)[field] = parseFloat(row.value) || 0;
+    } else if (field === "menuOpen") {
+      (settings as any)[field] = row.value === "true";
+    } else if (field === "businessHours") {
+      try {
+        (settings as any)[field] = JSON.parse(row.value);
+      } catch {
+        (settings as any)[field] = DEFAULT_BUSINESS_HOURS;
+      }
     } else {
       (settings as any)[field] = row.value;
     }
@@ -77,7 +129,7 @@ export function useSettings() {
     mutationFn: async (partial: Partial<AppSettings>) => {
       const upserts = Object.entries(partial).map(([field, val]) => ({
         key: REVERSE_KEY_MAP[field as keyof AppSettings],
-        value: String(val),
+        value: typeof val === "object" ? JSON.stringify(val) : String(val),
       }));
       for (const row of upserts) {
         const { error } = await supabase
