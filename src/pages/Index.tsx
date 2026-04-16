@@ -3,7 +3,7 @@ import {
   Plus, Search, UtensilsCrossed, Users, Package, Settings, 
   Calendar as CalendarIcon, Printer, FileText, ChevronDown,
   LayoutDashboard, Truck, CheckCircle2, Clock, XCircle,
-  Sun, Moon
+  Sun, Moon, ExternalLink
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -510,6 +510,16 @@ const Index = () => {
               <Settings className="h-5 w-5" />
             </Button>
 
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => window.open("/cardapio", "_blank")}
+              title="Abrir Menu Virtual"
+              className="h-12 w-12 rounded-2xl bg-card border-border/40 shadow-sm transition-all active:scale-90 text-primary border-primary/30 hover:bg-primary/5"
+            >
+              <ExternalLink className="h-5 w-5" />
+            </Button>
+
             <div className="hidden lg:block h-10 w-px bg-border/20 mx-1" />
 
             <Button onClick={() => setView("new")} className="hidden lg:flex h-14 rounded-2xl px-8 shadow-xl shadow-primary/20 font-black uppercase text-xs gap-3 transform hover:-translate-y-0.5 transition-transform">
@@ -578,6 +588,9 @@ const Index = () => {
                     </Button>
                     <Button variant="outline" onClick={() => setView("customers")} className="h-24 rounded-3xl border-border/40 bg-card flex-col gap-2 font-black uppercase text-[10px] tracking-widest">
                       <Users className="h-6 w-6 opacity-40" /> Clientes
+                    </Button>
+                    <Button variant="outline" onClick={() => window.open("/cardapio", "_blank")} className="h-24 rounded-3xl border-primary/20 bg-primary/5 text-primary flex-col gap-2 font-black uppercase text-[10px] tracking-widest col-span-2">
+                      <ExternalLink className="h-6 w-6 opacity-60" /> Menu Virtual
                     </Button>
                   </div>
                 </div>
