@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 
 export interface BusinessHours {
   open: string;  // "HH:MM"
@@ -113,6 +113,22 @@ function parseSettings(rows: { key: string; value: string }[]): AppSettings {
 
 export function useSettings() {
   const qc = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase.channel('schema-settings-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'settings' },
+        () => {
+          qc.invalidateQueries({ queryKey: ["settings"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
 
   const { data: settings = DEFAULT_SETTINGS, isLoading } = useQuery({
     queryKey: ["settings"],

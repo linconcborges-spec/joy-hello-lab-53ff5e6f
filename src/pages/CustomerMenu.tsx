@@ -18,7 +18,7 @@ import {
   Info,
   Menu as MenuIcon
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSettings } from "@/hooks/useSettings";
 import { useAddons } from "@/hooks/useAddons";
@@ -69,12 +69,35 @@ export default function CustomerMenu() {
   const [changeFor, setChangeFor] = useState("");
   const [globalObservation, setGlobalObservation] = useState("");
 
+  const qc = useQueryClient();
+
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  useEffect(() => {
+    const channel = supabase.channel('customer-menu-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
+        qc.invalidateQueries({ queryKey: ["categories_public"] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+        qc.invalidateQueries({ queryKey: ["products_public"] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'addons' }, () => {
+        qc.invalidateQueries({ queryKey: ["addons"] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, () => {
+        qc.invalidateQueries({ queryKey: ["settings"] });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories_public"],
@@ -110,7 +133,14 @@ export default function CustomerMenu() {
     }
   };
 
+  const isStoreOpen = settings.menuOpen ?? true;
+
   const handleAddToCart = () => {
+    if (!isStoreOpen) {
+      toast.error("A loja está fechada no momento.");
+      return;
+    }
+
     const itemTotal = selectedProduct.price + selectedAddons.reduce((s, a) => s + a.price, 0);
     setCart([...cart, { 
       id: crypto.randomUUID(), 
@@ -185,21 +215,36 @@ export default function CustomerMenu() {
                 </div>
               </div>
               <div className="pb-1">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter uppercase leading-none">{settings.storeName}</h1>
-                    <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-100 h-5 px-1.5 text-[10px] uppercase font-bold">Aberto</Badge>
+                    {isStoreOpen ? (
+                      <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-100 h-5 px-1.5 text-[10px] uppercase font-bold shrink-0">Aberto</Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-red-50 text-red-600 border-red-100 h-5 px-1.5 text-[10px] uppercase font-bold shrink-0">Fechado</Badge>
+                    )}
+                    <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200 h-5 px-1.5 text-[10px] uppercase font-bold shrink-0">
+                      ⏳ {settings.deliveryTimeMin || 30}–{settings.deliveryTimeMax || 50} min
+                    </Badge>
                 </div>
                 <div className="flex items-center gap-1.5 text-slate-400 text-[10px] md:text-xs font-medium uppercase tracking-tighter">
-                    <MapPin className="h-3 w-3" /> Portal Doutor José, Martinópolis - SP
+                    <MapPin className="h-3 w-3 shrink-0" /> <span className="truncate">{settings.storeAddress || "Endereço não informado"}</span>
                 </div>
               </div>
            </div>
            
            <div className="flex items-center gap-2 pb-1">
-              <button className="h-10 w-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-emerald-600 hover:bg-slate-50 transition-all"><MessageCircle className="h-5 w-5" /></button>
-              <button className="h-10 w-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-rose-600 hover:bg-slate-50 transition-all"><Instagram className="h-5 w-5" /></button>
-              <button className="h-10 w-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-blue-600 hover:bg-slate-50 transition-all"><Facebook className="h-5 w-5" /></button>
-              <Button variant="outline" size="sm" className="h-10 rounded-xl font-bold uppercase text-[10px] gap-2 border-slate-100"><Info className="h-4 w-4" /> Informação</Button>
+              {settings.whatsappNumber && (
+                <a href={`https://wa.me/${settings.whatsappNumber}`} target="_blank" rel="noreferrer" className="h-10 w-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-emerald-600 hover:bg-slate-50 transition-all"><MessageCircle className="h-5 w-5" /></a>
+              )}
+              {settings.instagramUrl && (
+                <a href={settings.instagramUrl} target="_blank" rel="noreferrer" className="h-10 w-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-rose-600 hover:bg-slate-50 transition-all"><Instagram className="h-5 w-5" /></a>
+              )}
+              {settings.facebookUrl && (
+                <a href={settings.facebookUrl} target="_blank" rel="noreferrer" className="h-10 w-10 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-blue-600 hover:bg-slate-50 transition-all"><Facebook className="h-5 w-5" /></a>
+              )}
+              {settings.storePhone && (
+                 <Button variant="outline" size="sm" className="h-10 rounded-xl font-bold uppercase text-[10px] gap-2 border-slate-100 bg-white" onClick={() => toast(`Ligue para nós: \n${settings.storePhone}`)}><Clock className="h-4 w-4" /> Info</Button>
+              )}
            </div>
         </div>
       </div>
