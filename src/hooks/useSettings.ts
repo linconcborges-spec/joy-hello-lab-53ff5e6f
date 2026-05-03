@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCallback, useEffect } from "react";
+import { getCachedData, setCachedData } from "@/lib/offlineStorage";
 
 export interface BusinessHours {
   open: string;  // "HH:MM"
@@ -29,6 +30,7 @@ export interface AppSettings {
   facebookUrl: string;
   whatsappNumber: string;
   businessHours: BusinessHours[];
+  autoPrint: boolean;
 }
 
 const DEFAULT_BUSINESS_HOURS: BusinessHours[] = [
@@ -61,6 +63,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   facebookUrl: "",
   whatsappNumber: "",
   businessHours: DEFAULT_BUSINESS_HOURS,
+  autoPrint: false,
 };
 
 const KEY_MAP: Record<string, keyof AppSettings> = {
@@ -83,6 +86,7 @@ const KEY_MAP: Record<string, keyof AppSettings> = {
   facebook_url: "facebookUrl",
   whatsapp_number: "whatsappNumber",
   business_hours: "businessHours",
+  auto_print: "autoPrint",
 };
 
 const REVERSE_KEY_MAP: Record<keyof AppSettings, string> = Object.fromEntries(
@@ -96,7 +100,7 @@ function parseSettings(rows: { key: string; value: string }[]): AppSettings {
     if (!field) continue;
     if (field === "defaultDeliveryFee" || field === "deliveryTimeMin" || field === "deliveryTimeMax") {
       (settings as any)[field] = parseFloat(row.value) || 0;
-    } else if (field === "menuOpen") {
+    } else if (field === "menuOpen" || field === "autoPrint") {
       (settings as any)[field] = row.value === "true";
     } else if (field === "businessHours") {
       try {
@@ -133,11 +137,21 @@ export function useSettings() {
   const { data: settings = DEFAULT_SETTINGS, isLoading } = useQuery({
     queryKey: ["settings"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("settings")
-        .select("key, value");
-      if (error) throw error;
-      return parseSettings((data as any[]) || []);
+      try {
+        const { data, error } = await supabase
+          .from("settings")
+          .select("key, value");
+        if (error) throw error;
+        const result = parseSettings((data as any[]) || []);
+        // Salva no cache local para uso offline
+        setCachedData('settings', result);
+        return result;
+      } catch (err) {
+        // Offline: retorna cache local se disponível
+        const cached = getCachedData<AppSettings>('settings');
+        if (cached) return cached;
+        throw err;
+      }
     },
   });
 

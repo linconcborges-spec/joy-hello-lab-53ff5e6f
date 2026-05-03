@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Plus, Pencil, Trash2, Save, X, Eye, EyeOff, Shield, User, Download, Moon, Sun, Store, Clock, Instagram, Facebook, Phone, MapPin, Bike, ToggleLeft, ToggleRight } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Save, X, Eye, EyeOff, Shield, User, Download, Moon, Sun, Store, Clock, Instagram, Facebook, Phone, MapPin, Bike, ToggleLeft, ToggleRight, Printer } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +61,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
 
   // ─── Digital Menu settings state ─────────────────────────────────────────
   const [menuOpen, setMenuOpen] = useState(settings.menuOpen ?? true);
+  const [autoPrint, setAutoPrint] = useState(settings.autoPrint ?? false);
   const [storeAddress, setStoreAddress] = useState(settings.storeAddress || "");
   const [storePhone, setStorePhone] = useState(settings.storePhone || "");
   const [deliveryTimeMin, setDeliveryTimeMin] = useState(settings.deliveryTimeMin || 30);
@@ -86,6 +87,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
     setLogoUrl(settings.logoUrl || "");
     setBannerUrl(settings.bannerUrl || "");
     setMenuOpen(settings.menuOpen ?? true);
+    setAutoPrint(settings.autoPrint ?? false);
     setStoreAddress(settings.storeAddress || "");
     setStorePhone(settings.storePhone || "");
     setDeliveryTimeMin(settings.deliveryTimeMin || 30);
@@ -295,6 +297,51 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                 <div className="sm:col-span-3 flex justify-end pt-2">
                   <Button onClick={handleSaveGeneral} className="gap-1.5"><Save className="h-4 w-4" /> Salvar Configurações</Button>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Impressão Automática de Pedidos */}
+            <Card className={cn(
+              "border-2 transition-all duration-300",
+              autoPrint
+                ? "border-primary/40 bg-primary/5"
+                : "border-border/40"
+            )}>
+              <CardContent className="flex items-start justify-between p-5 gap-4">
+                <div className="flex items-start gap-3">
+                  <div className={cn(
+                    "h-10 w-10 rounded-xl flex items-center justify-center shrink-0 transition-colors",
+                    autoPrint ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  )}>
+                    <Printer className="h-5 w-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-black text-sm uppercase tracking-tight">
+                      {autoPrint ? "🟢 Impressão Automática Ativa" : "⚪ Impressão Automática"}
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Quando ativado, novos pedidos (inclusive do mobile) são impressos automaticamente
+                      e avançam direto para <strong>Em Produção</strong>, sem precisar clicar.
+                    </p>
+                    {autoPrint && (
+                      <p className="text-[10px] font-black uppercase text-primary tracking-widest mt-1">
+                        Aguardando novos pedidos via Realtime...
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Switch
+                  checked={autoPrint}
+                  onCheckedChange={(v) => {
+                    setAutoPrint(v);
+                    updateSettings({ autoPrint: v });
+                    toast.success(v
+                      ? "Impressão automática ativada! Novos pedidos serão impressos automaticamente."
+                      : "Impressão automática desativada."
+                    );
+                  }}
+                  className="scale-125 shrink-0 mt-1"
+                />
               </CardContent>
             </Card>
 

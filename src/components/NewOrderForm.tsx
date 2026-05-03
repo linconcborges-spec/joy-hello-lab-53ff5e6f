@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, ArrowLeft, Search, X, Check, ChevronsUpDown, Phone, MapPin, PackageCheck, Eraser } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Search, X, Check, ChevronsUpDown, Phone, MapPin, PackageCheck, Eraser, Printer, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -16,6 +16,7 @@ import { useProducts } from "@/hooks/useProducts";
 import { useAddons } from "@/hooks/useAddons";
 import { useSettings } from "@/hooks/useSettings";
 import { printOrder } from "@/lib/PrintService";
+import { getNextLocalOrderNumber } from "@/lib/offlineStorage";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -326,7 +327,6 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [showCuringaDialog, setShowCuringaDialog] = useState(false);
-  const [showPrintConfirm, setShowPrintConfirm] = useState(false);
   const [pendingOrderData, setPendingOrderData] = useState<any>(null);
 
   useEffect(() => {
@@ -484,7 +484,7 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
   const subtotal = items.reduce((sum, i) => sum + i.total, 0);
   const totalAmount = subtotal + (isPickup ? 0 : deliveryFee);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent, shouldPrint: boolean = false) => {
     e.preventDefault();
     const validItems = items.filter((i) => i.product.trim());
     if (validItems.length === 0) {
@@ -497,7 +497,7 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
     } else {
       const data = prepareOrderData();
       setPendingOrderData(data);
-      setShowPrintConfirm(true);
+      processSubmission(undefined, shouldPrint, data);
     }
   };
 
@@ -528,34 +528,36 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
     return orderData;
   };
 
-  const processSubmission = (authorizedBy?: string, shouldPrint: boolean = true) => {
-    let orderData = pendingOrderData || prepareOrderData(authorizedBy);
+  const processSubmission = (authorizedBy?: string, shouldPrint: boolean = true, overrideData?: any) => {
+    let orderData = overrideData || pendingOrderData || prepareOrderData(authorizedBy);
 
     // Se for um novo pedido, definir o status inicial baseado na impressão
     if (!initialOrder) {
       orderData = {
         ...orderData,
-        status: shouldPrint ? "preparing" : "pending"
+        status: shouldPrint ? "preparing" : "pending",
+        isPrinted: shouldPrint,
       };
     }
 
     if (shouldPrint) {
+      // Número para impressão: usa número real do pedido existente,
+      // ou reserva o próximo número local (offline/novo pedido)
+      const printNumber = initialOrder?.number || getNextLocalOrderNumber();
       const orderToPrint: Order = {
         ...orderData as any,
         id: initialOrder?.id || "temp",
-        number: initialOrder?.number || 0,
+        number: printNumber,
         createdAt: initialOrder?.createdAt || new Date().toISOString(),
       };
       printOrder(orderToPrint, settings);
       toast.success("Pedido enviado para a impressora!");
+    } else {
+      toast.success("Pedido salvo! Aguardando impressão.");
     }
 
     onSubmit(orderData as any);
-    if (!shouldPrint) {
-      toast.success("Pedido salvo na coluna de Pendentes.");
-    }
     setPendingOrderData(null);
-    setShowPrintConfirm(false);
   };
 
   return (
@@ -809,11 +811,37 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
         </CardContent>
       </Card>
 
-      <div className="flex items-center justify-between bg-card rounded-xl p-4 border">
+      <div className="flex flex-col sm:flex-row items-center justify-between bg-card rounded-xl p-4 border gap-3">
         <span className="text-lg font-black uppercase">Total: R$ {totalAmount.toFixed(2)}</span>
-        <Button id="submit-order" type="submit" size="lg" className="px-8 uppercase font-black">
-          {initialOrder ? "Salvar Alterações" : "Criar Pedido"}
-        </Button>
+        {initialOrder ? (
+          <Button id="submit-order" type="submit" size="lg" className="px-8 uppercase font-black w-full sm:w-auto">
+            Salvar Alterações
+          </Button>
+        ) : (
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button
+              id="submit-order-save"
+              type="button"
+              variant="outline"
+              size="lg"
+              className="flex-1 sm:flex-none px-6 uppercase font-black gap-2 border-border/60"
+              onClick={(e) => handleSubmit(e as any, false)}
+            >
+              <Save className="h-4 w-4" />
+              Salvar
+            </Button>
+            <Button
+              id="submit-order"
+              type="button"
+              size="lg"
+              className="flex-1 sm:flex-none px-6 uppercase font-black gap-2 shadow-lg shadow-primary/20"
+              onClick={(e) => handleSubmit(e as any, true)}
+            >
+              <Printer className="h-4 w-4" />
+              Salvar e Imprimir
+            </Button>
+          </div>
+        )}
       </div>
 
       <Dialog open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
@@ -880,30 +908,6 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={showPrintConfirm} onOpenChange={setShowPrintConfirm}>
-        <AlertDialogContent className="rounded-[2rem]">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="uppercase font-black italic">Imprimir Pedido?</AlertDialogTitle>
-            <AlertDialogDescription className="text-sm">
-              O pedido foi criado com sucesso. Deseja realizar a impressão agora?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-0">
-            <AlertDialogCancel 
-              onClick={() => processSubmission(undefined, false)}
-              className="rounded-xl uppercase font-bold text-xs"
-            >
-              Não Imprimir
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => processSubmission(undefined, true)}
-              className="rounded-xl uppercase font-black text-xs bg-primary text-white"
-            >
-              Sim, Imprimir Agora
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <AuthModal
         open={authModalOpen}

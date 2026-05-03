@@ -18,7 +18,7 @@ import { LoginPage } from "@/components/LoginPage";
 import { AuthModal } from "@/components/AuthModal";
 import { 
   useOrders, useAddOrder, useUpdateOrder, useUpdateOrderStatus, 
-  useCancelOrder, useMarkAsPrinted, useDeleteOrder 
+  useCancelOrder, useMarkAsPrinted, useDeleteOrder, useAutoprint
 } from "@/hooks/useOrders";
 import { useAuth } from "@/hooks/useAuth";
 import { useSettings } from "@/hooks/useSettings";
@@ -49,6 +49,9 @@ const Index = () => {
   const { user, isAdmin, logout, isLoading: authLoading } = useAuth();
   const { settings, updateSettings } = useSettings();
   const { theme, setTheme } = useTheme();
+
+  // Impressão automática via Supabase Realtime (pedidos do mobile e desktop)
+  useAutoprint(settings);
 
   // Iniciar sempre com a cor clara conforme solicitado (reset no mount para ignorar cache do navegador)
   useEffect(() => {

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getCachedData, setCachedData } from "@/lib/offlineStorage";
 
 export interface Customer {
   id: string;
@@ -27,12 +28,22 @@ export function useCustomers() {
   return useQuery({
     queryKey: ["customers"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("id, name, addresses, phone")
-        .order("name", { ascending: true });
-      if (error) throw error;
-      return data as unknown as Customer[];
+      try {
+        const { data, error } = await supabase
+          .from("customers")
+          .select("id, name, addresses, phone")
+          .order("name", { ascending: true });
+        if (error) throw error;
+        const result = data as unknown as Customer[];
+        // Salva no cache local para uso offline
+        setCachedData('customers', result);
+        return result;
+      } catch (err) {
+        // Offline: retorna cache local se disponível
+        const cached = getCachedData<Customer[]>('customers');
+        if (cached) return cached;
+        throw err;
+      }
     },
   });
 }

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getCachedData, setCachedData } from "@/lib/offlineStorage";
 
 export interface Product {
   id: string;
@@ -19,30 +20,41 @@ export function useProducts() {
   return useQuery({
     queryKey: ["products"],
     queryFn: async () => {
-      // Fetch products normally
-      const { data: products, error } = await supabase
-        .from("products")
-        .select("*")
-        .order("code", { ascending: true });
-      if (error) throw error;
+      try {
+        // Fetch products normally
+        const { data: products, error } = await supabase
+          .from("products")
+          .select("*")
+          .order("code", { ascending: true });
+        if (error) throw error;
 
-      // Separately fetch multi-category associations (graceful fallback if table doesn't exist)
-      const { data: productCategories } = await supabase
-        .from("product_categories")
-        .select("product_id, category_id");
+        // Separately fetch multi-category associations (graceful fallback if table doesn't exist)
+        const { data: productCategories } = await supabase
+          .from("product_categories")
+          .select("product_id, category_id");
 
-      // Build a map: product_id -> category_ids[]
-      const pcMap: Record<string, string[]> = {};
-      (productCategories ?? []).forEach((pc: any) => {
-        if (!pcMap[pc.product_id]) pcMap[pc.product_id] = [];
-        pcMap[pc.product_id].push(pc.category_id);
-      });
+        // Build a map: product_id -> category_ids[]
+        const pcMap: Record<string, string[]> = {};
+        (productCategories ?? []).forEach((pc: any) => {
+          if (!pcMap[pc.product_id]) pcMap[pc.product_id] = [];
+          pcMap[pc.product_id].push(pc.category_id);
+        });
 
-      return (products ?? []).map((p: any) => ({
-        ...p,
-        // Use junction table if available, otherwise fall back to single category_id
-        category_ids: pcMap[p.id] ?? (p.category_id ? [p.category_id] : []),
-      })) as Product[];
+        const result = (products ?? []).map((p: any) => ({
+          ...p,
+          // Use junction table if available, otherwise fall back to single category_id
+          category_ids: pcMap[p.id] ?? (p.category_id ? [p.category_id] : []),
+        })) as Product[];
+
+        // Salva no cache local para uso offline
+        setCachedData('products', result);
+        return result;
+      } catch (err) {
+        // Offline: retorna cache local se disponível
+        const cached = getCachedData<Product[]>('products');
+        if (cached) return cached;
+        throw err;
+      }
     },
   });
 }

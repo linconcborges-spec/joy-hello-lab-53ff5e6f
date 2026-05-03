@@ -1,7 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import type { Order, OrderItem } from "@/types/order";
+import type { Order } from "@/types/order";
+import type { AppSettings } from "@/hooks/useSettings";
+import { printOrder } from "@/lib/PrintService";
+import {
+  getCachedData,
+  setCachedData,
+  addToOfflineQueue,
+  getNextLocalOrderNumber,
+  syncLocalOrderCounter,
+} from "@/lib/offlineStorage";
 
 /**
  * Retorna a data de início do ciclo atual (04:50 da madrugada)
@@ -24,63 +34,84 @@ export function useOrders(startDate?: string, endDate?: string) {
   return useQuery({
     queryKey: ["orders", start, endDate],
     queryFn: async () => {
-      let query = supabase
-        .from("orders")
-        .select(`
-          *,
-          items:order_items(
+      try {
+        let query = supabase
+          .from("orders")
+          .select(`
             *,
-            addons:order_addons(*)
-          )
-        `)
-        .gte("created_at", start);
+            items:order_items(
+              *,
+              addons:order_addons(*)
+            )
+          `)
+          .gte("created_at", start);
 
-      if (endDate) {
-        query = query.lte("created_at", endDate);
-      }
+        if (endDate) {
+          query = query.lte("created_at", endDate);
+        }
 
-      const { data, error } = await query.order("created_at", { ascending: false });
+        const { data, error } = await query.order("created_at", { ascending: false });
 
-      if (error) throw error;
-      
-      // Mapear snake_case do banco para camelCase do TS
-      const mappedOrders = (data as any[]).map(order => ({
-        id: order.id,
-        number: order.number,
-        customerName: order.customer_name,
-        address: order.address,
-        phone: order.phone,
-        deliveryFee: Number(order.delivery_fee),
-        totalAmount: Number(order.total_amount),
-        changeFor: Number(order.change_for),
-        status: order.status,
-        paymentMethod: order.payment_method,
-        isPrinted: order.is_printed,
-        createdAt: order.created_at,
-        cancelledBy: order.cancelled_by,
-        cancelledAt: order.cancelled_at,
-        lastEditedBy: order.last_edited_by,
-        lastEditedAt: order.last_edited_at,
-        observation: order.observation,
-        originalSnapshot: order.original_snapshot,
-        items: (order.items || []).map((item: any) => ({
-          id: item.id,
-          productCode: item.product_code ?? "",
-          categoryId: item.category_id ?? null,
-          product: item.product_name,
-          quantity: item.quantity,
-          unitPrice: Number(item.unit_price),
-          total: Number(item.total),
-          observation: item.observation,
-          addons: (item.addons || []).map((addon: any) => ({
-            name: addon.name,
-            price: Number(addon.price)
+        if (error) throw error;
+        
+        // Mapear snake_case do banco para camelCase do TS
+        const mappedOrders = (data as any[]).map(order => ({
+          id: order.id,
+          number: order.number,
+          customerName: order.customer_name,
+          address: order.address,
+          phone: order.phone,
+          deliveryFee: Number(order.delivery_fee),
+          totalAmount: Number(order.total_amount),
+          changeFor: Number(order.change_for),
+          status: order.status,
+          paymentMethod: order.payment_method,
+          isPrinted: order.is_printed,
+          createdAt: order.created_at,
+          cancelledBy: order.cancelled_by,
+          cancelledAt: order.cancelled_at,
+          lastEditedBy: order.last_edited_by,
+          lastEditedAt: order.last_edited_at,
+          observation: order.observation,
+          originalSnapshot: order.original_snapshot,
+          items: (order.items || []).map((item: any) => ({
+            id: item.id,
+            productCode: item.product_code ?? "",
+            categoryId: item.category_id ?? null,
+            product: item.product_name,
+            quantity: item.quantity,
+            unitPrice: Number(item.unit_price),
+            total: Number(item.total),
+            observation: item.observation,
+            addons: (item.addons || []).map((addon: any) => ({
+              name: addon.name,
+              price: Number(addon.price)
+            }))
           }))
-        }))
-      })) as Order[];
-      
-      // Garante explicitamente no frontend que o maior número (mais novo) ficará no index 0 (topo)
-      return mappedOrders.sort((a, b) => b.number - a.number);
+        })) as Order[];
+        
+        // Garante explicitamente no frontend que o maior número ficará no index 0 (topo)
+        const sorted = mappedOrders.sort((a, b) => b.number - a.number);
+
+        // Sincroniza o contador local com o maior número do servidor
+        if (sorted.length > 0) {
+          syncLocalOrderCounter(sorted[0].number);
+        }
+
+        // Salva no cache para uso offline
+        if (!startDate && !endDate) {
+          setCachedData('orders_today', sorted);
+        }
+
+        return sorted;
+      } catch (err) {
+        // Offline: retorna cache local dos pedidos de hoje
+        if (!startDate && !endDate) {
+          const cached = getCachedData<Order[]>('orders_today');
+          if (cached) return cached;
+        }
+        throw err;
+      }
     },
   });
 }
@@ -90,6 +121,49 @@ export function useAddOrder() {
 
   return useMutation({
     mutationFn: async (orderData: Omit<Order, "id" | "number" | "createdAt">) => {
+      // -----------------------------------------------------------------------
+      // MODO OFFLINE: salva na fila local e retorna um objeto fictício
+      // -----------------------------------------------------------------------
+      if (!navigator.onLine) {
+        const tempNumber = getNextLocalOrderNumber();
+        const tempId = crypto.randomUUID();
+        const now = new Date().toISOString();
+
+        addToOfflineQueue({
+          tempId,
+          tempNumber,
+          createdAt: now,
+          orderData,
+          printed: true,
+        });
+
+        // Adiciona otimisticamente ao cache local de pedidos de hoje
+        const cachedOrders = getCachedData<Order[]>('orders_today') || [];
+        const fakeOrder: Order = {
+          ...(orderData as any),
+          id: tempId,
+          number: tempNumber,
+          createdAt: now,
+          isPrinted: true,
+        };
+        setCachedData('orders_today', [fakeOrder, ...cachedOrders]);
+
+        // Atualiza o React Query cache local para o Kanban refletir o pedido
+        qc.setQueryData(
+          ["orders", getCycleStart(), undefined],
+          (old: Order[] | undefined) => [fakeOrder, ...(old || [])]
+        );
+
+        toast.success("Pedido salvo localmente. Será enviado ao servidor quando a conexão voltar.", {
+          duration: 6000,
+        });
+
+        return { id: tempId, number: tempNumber };
+      }
+
+      // -----------------------------------------------------------------------
+      // MODO ONLINE: fluxo normal
+      // -----------------------------------------------------------------------
       const cycleStart = getCycleStart();
       
       // 1. Buscar o próximo número do pedido para o ciclo atual
@@ -158,6 +232,8 @@ export function useAddOrder() {
         }
       }
 
+      // Atualiza contador local
+      syncLocalOrderCounter(nextNumber);
       return order;
     },
     onSuccess: () => {
@@ -330,4 +406,111 @@ export function useDeleteOrder() {
     },
     onError: () => toast.error("Erro ao excluir pedido"),
   });
+}
+
+// ---------------------------------------------------------------------------
+// Hook de Impressão Automática via Supabase Realtime
+// Escuta novos pedidos (INSERT) e dispara a impressão diretamente no desktop.
+// Quando um pedido é impresso, avança o status para "Em Produção" e marca
+// como impresso no banco.
+// ---------------------------------------------------------------------------
+export function useAutoprint(settings: AppSettings) {
+  const qc = useQueryClient();
+  const markAsPrinted = useMarkAsPrinted();
+  const updateStatus = useUpdateOrderStatus();
+  // Ref para evitar reimprimir o mesmo pedido se o hook re-subscribir
+  const printedIds = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!settings.autoPrint) return;
+
+    const channel = supabase
+      .channel('orders-autoprint')
+      .on(
+        'postgres_changes' as any,
+        { event: 'INSERT', schema: 'public', table: 'orders' },
+        async (payload: any) => {
+          const newOrder = payload.new;
+          if (!newOrder?.id) return;
+
+          // Evita imprimir o mesmo pedido duas vezes (ex: reconexão do canal)
+          if (printedIds.current.has(newOrder.id)) return;
+          printedIds.current.add(newOrder.id);
+
+          // Busca o pedido completo com itens e adicionais
+          const { data } = await supabase
+            .from('orders')
+            .select(`
+              *,
+              items:order_items(
+                *,
+                addons:order_addons(*)
+              )
+            `)
+            .eq('id', newOrder.id)
+            .single();
+
+          if (!data) return;
+
+          // Mapeia para o tipo Order (snake_case → camelCase)
+          const order: Order = {
+            id: data.id,
+            number: data.number,
+            customerName: data.customer_name,
+            address: data.address,
+            phone: data.phone,
+            cnpj: data.cnpj || '',
+            deliveryFee: Number(data.delivery_fee),
+            totalAmount: Number(data.total_amount),
+            changeFor: Number(data.change_for),
+            status: data.status,
+            paymentMethod: data.payment_method,
+            isPrinted: data.is_printed,
+            createdAt: data.created_at,
+            cancelledBy: data.cancelled_by,
+            cancelledAt: data.cancelled_at,
+            lastEditedBy: data.last_edited_by,
+            lastEditedAt: data.last_edited_at,
+            observation: data.observation,
+            originalSnapshot: data.original_snapshot,
+            isPickup: data.is_pickup,
+            items: (data.items || []).map((item: any) => ({
+              id: item.id,
+              productCode: item.product_code ?? '',
+              categoryId: item.category_id ?? null,
+              product: item.product_name,
+              quantity: item.quantity,
+              unitPrice: Number(item.unit_price),
+              total: Number(item.total),
+              observation: item.observation,
+              addons: (item.addons || []).map((addon: any) => ({
+                name: addon.name,
+                price: Number(addon.price),
+              })),
+            })),
+          };
+
+          // Imprime o pedido
+          printOrder(order, settings);
+          toast.success(`🖨️ Pedido #${order.number} recebido e enviado para impressão!`, {
+            duration: 8000,
+          });
+
+          // Marca como impresso e avança status
+          markAsPrinted.mutate(order.id);
+          if (order.status === 'pending') {
+            updateStatus.mutate({ id: order.id, status: 'preparing' });
+          }
+
+          // Atualiza a lista de pedidos na tela
+          qc.invalidateQueries({ queryKey: ['orders'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.autoPrint, settings.targetPrinter, settings.printPaperWidth, settings.printFontSize]);
 }

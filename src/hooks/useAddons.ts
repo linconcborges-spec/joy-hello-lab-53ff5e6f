@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getCachedData, setCachedData } from "@/lib/offlineStorage";
 
 export interface Addon {
   id: string;
@@ -15,29 +16,40 @@ export function useAddons() {
   return useQuery({
     queryKey: ["addons"],
     queryFn: async () => {
-      const { data: addons, error } = await supabase
-        .from("addons")
-        .select("id, code, name, price, category_id")
-        .order("code", { ascending: true });
-      if (error) throw error;
+      try {
+        const { data: addons, error } = await supabase
+          .from("addons")
+          .select("id, code, name, price, category_id")
+          .order("code", { ascending: true });
+        if (error) throw error;
 
-      // Fetch multi-category associations (graceful fallback if table doesn't exist)
-      const { data: addonCategories } = await supabase
-        .from("addon_categories")
-        .select("addon_id, category_id");
+        // Fetch multi-category associations (graceful fallback if table doesn't exist)
+        const { data: addonCategories } = await supabase
+          .from("addon_categories")
+          .select("addon_id, category_id");
 
-      // Build a map: addon_id -> category_ids[]
-      const acMap: Record<string, string[]> = {};
-      (addonCategories ?? []).forEach((ac: any) => {
-        if (!acMap[ac.addon_id]) acMap[ac.addon_id] = [];
-        acMap[ac.addon_id].push(ac.category_id);
-      });
+        // Build a map: addon_id -> category_ids[]
+        const acMap: Record<string, string[]> = {};
+        (addonCategories ?? []).forEach((ac: any) => {
+          if (!acMap[ac.addon_id]) acMap[ac.addon_id] = [];
+          acMap[ac.addon_id].push(ac.category_id);
+        });
 
-      return (addons ?? []).map((a: any) => ({
-        ...a,
-        // Use junction table if available, otherwise fall back to single category_id
-        category_ids: acMap[a.id] ?? (a.category_id ? [a.category_id] : []),
-      })) as Addon[];
+        const result = (addons ?? []).map((a: any) => ({
+          ...a,
+          // Use junction table if available, otherwise fall back to single category_id
+          category_ids: acMap[a.id] ?? (a.category_id ? [a.category_id] : []),
+        })) as Addon[];
+
+        // Salva no cache local para uso offline
+        setCachedData('addons', result);
+        return result;
+      } catch (err) {
+        // Offline: retorna cache local se disponível
+        const cached = getCachedData<Addon[]>('addons');
+        if (cached) return cached;
+        throw err;
+      }
     },
   });
 }

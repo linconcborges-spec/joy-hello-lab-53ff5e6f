@@ -9,17 +9,22 @@ import CustomerMenu from "./pages/CustomerMenu.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { InstallPWA } from "@/components/InstallPWA";
 import { PWALifecycle } from "@/components/PWALifecycle";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { useOfflineSync } from "@/hooks/useOfflineSync";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
+/** Wrapper interno para usar hooks dentro do QueryClientProvider */
+function AppContent() {
+  useOfflineSync();
+  return (
     <AuthProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <InstallPWA />
         <PWALifecycle />
+        <OfflineIndicator />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
@@ -30,6 +35,12 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
+  );
+}
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AppContent />
   </QueryClientProvider>
 );
 
