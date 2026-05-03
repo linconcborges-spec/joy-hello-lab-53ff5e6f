@@ -119,7 +119,8 @@ export function useSettings() {
   const qc = useQueryClient();
 
   useEffect(() => {
-    const channel = supabase.channel('schema-settings-changes')
+    const channel = supabase
+      .channel('schema-settings-changes')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'settings' },

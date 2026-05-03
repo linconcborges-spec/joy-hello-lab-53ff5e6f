@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      addon_categories: {
+        Row: {
+          addon_id: string
+          category_id: string
+        }
+        Insert: {
+          addon_id: string
+          category_id: string
+        }
+        Update: {
+          addon_id?: string
+          category_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "addon_categories_addon_id_fkey"
+            columns: ["addon_id"]
+            isOneToOne: false
+            referencedRelation: "addons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "addon_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       addons: {
         Row: {
           category_id: string | null
@@ -54,16 +84,19 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
+          sort_order: number | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           name: string
+          sort_order?: number | null
         }
         Update: {
           created_at?: string | null
           id?: string
           name?: string
+          sort_order?: number | null
         }
         Relationships: []
       }
@@ -272,6 +305,36 @@ export type Database = {
         }
         Relationships: []
       }
+      product_categories: {
+        Row: {
+          category_id: string
+          product_id: string
+        }
+        Insert: {
+          category_id: string
+          product_id: string
+        }
+        Update: {
+          category_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_categories_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category_id: string | null
@@ -280,8 +343,10 @@ export type Database = {
           description: string | null
           id: string
           image_url: string | null
+          is_visible: boolean | null
           name: string
           price: number
+          sort_order: number | null
         }
         Insert: {
           category_id?: string | null
@@ -290,8 +355,10 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          is_visible?: boolean | null
           name: string
           price?: number
+          sort_order?: number | null
         }
         Update: {
           category_id?: string | null
@@ -300,8 +367,10 @@ export type Database = {
           description?: string | null
           id?: string
           image_url?: string | null
+          is_visible?: boolean | null
           name?: string
           price?: number
+          sort_order?: number | null
         }
         Relationships: [
           {
