@@ -119,8 +119,9 @@ export function useSettings() {
   const qc = useQueryClient();
 
   useEffect(() => {
-    const channel = supabase
-      .channel('schema-settings-changes')
+    // Usando um nome de canal único por instância para evitar erros de "already subscribed"
+    const channelId = `settings-changes-${Math.random().toString(36).substring(7)}`;
+    const channel = supabase.channel(channelId)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'settings' },

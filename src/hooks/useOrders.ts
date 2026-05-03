@@ -424,8 +424,9 @@ export function useAutoprint(settings: AppSettings) {
   useEffect(() => {
     if (!settings.autoPrint) return;
 
+    const channelId = `orders-autoprint-${Math.random().toString(36).substring(7)}`;
     const channel = supabase
-      .channel('orders-autoprint')
+      .channel(channelId)
       .on(
         'postgres_changes' as any,
         { event: 'INSERT', schema: 'public', table: 'orders' },
