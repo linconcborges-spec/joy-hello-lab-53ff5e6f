@@ -12,6 +12,13 @@ export function PWALifecycle() {
   } = useRegisterSW({
     onRegistered(r) {
       console.log("SW Registered: ", r);
+      if (r) {
+        // Verifica atualizações a cada hora
+        setInterval(() => {
+          console.log("Verificando atualizações do PWA...");
+          r.update();
+        }, 60 * 60 * 1000);
+      }
     },
     onRegisterError(error) {
       console.log("SW registration error", error);
@@ -44,7 +51,8 @@ export function PWALifecycle() {
             variant="default" 
             className="h-9 bg-orange-600 hover:bg-orange-700 text-white font-black uppercase text-[10px] px-4 shadow-lg shadow-orange-500/20"
             onClick={() => {
-              console.log("Atualizando Service Worker...");
+              console.log("Botão de atualizar clicado. Chamando updateServiceWorker(true)...");
+              setNeedRefresh(false); // Limpa o estado para evitar loops
               updateServiceWorker(true);
             }}
           >
@@ -64,7 +72,7 @@ export function PWALifecycle() {
         ),
       });
     }
-  }, [needRefresh, updateServiceWorker]);
+  }, [needRefresh, updateServiceWorker, setNeedRefresh]);
 
   return null;
 }

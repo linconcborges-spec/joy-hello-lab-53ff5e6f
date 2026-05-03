@@ -44,12 +44,23 @@ export default defineConfig(({ mode }) => ({
             purpose: 'any maskable'
           },
           {
-             src: 'icon.svg',
-             sizes: 'any',
-             type: 'image/svg+xml',
-             purpose: 'any'
+            src: 'icon.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'any'
           }
         ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: false, // Mantemos falso para o 'prompt' funcionar
+        sourcemap: true
+      },
+      devOptions: {
+        enabled: false, // Mude para true se quiser testar PWA em dev mode
+        type: 'module'
       }
     })
   ].filter(Boolean),
