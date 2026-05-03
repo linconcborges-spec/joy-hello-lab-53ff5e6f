@@ -528,7 +528,7 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
     return orderData;
   };
 
-  const processSubmission = (authorizedBy?: string, shouldPrint: boolean = true, overrideData?: any) => {
+  const processSubmission = async (authorizedBy?: string, shouldPrint: boolean = true, overrideData?: any) => {
     let orderData = overrideData || pendingOrderData || prepareOrderData(authorizedBy);
 
     // Se for um novo pedido, definir o status inicial baseado na impressão
@@ -550,7 +550,7 @@ export function NewOrderForm({ onSubmit, onCancel, onOpenCustomers, initialOrder
         number: printNumber,
         createdAt: initialOrder?.createdAt || new Date().toISOString(),
       };
-      printOrder(orderToPrint, settings);
+      await printOrder(orderToPrint, settings);
       toast.success("Pedido enviado para a impressora!");
     } else {
       toast.success("Pedido salvo! Aguardando impressão.");

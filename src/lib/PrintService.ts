@@ -1,9 +1,73 @@
 import type { Order } from "@/types/order";
 import type { AppSettings } from "@/hooks/useSettings";
 
-export function printOrder(order: Order, settings: AppSettings) {
-  const printWindow = window.open("", "_blank", "width=800,height=600");
-  if (!printWindow) return;
+export async function printOrder(order: Order, settings: AppSettings) {
+  // ─── TENTATIVA DE IMPRESSÃO SILENCIOSA (TAURI / DESKTOP) ─────────────────
+  const isTauri = (window as any).__TAURI_INTERNALS__ !== undefined;
+  
+  if (isTauri && settings.targetPrinter) {
+    try {
+      const { invoke } = await import("@tauri-apps/api/tauri");
+      
+      // Formata o pedido em texto simples para a impressora
+      const date = new Date(order.createdAt).toLocaleString("pt-BR");
+      const itemsText = order.items.map(item => 
+        `X ${item.quantity} ${item.product}\n` +
+        (item.addons && item.addons.length > 0 ? item.addons.map(a => `  + ${a.name}`).join('\n') + '\n' : '') +
+        (item.observation ? `  OBS: ${item.observation}\n` : '')
+      ).join('\n');
+
+      const textContent = 
+`--------------------------------
+${settings.storeName.toUpperCase()}
+--------------------------------
+DATA: ${date}
+${order.isPickup ? 'RETIRADA' : 'DELIVERY'}
+PEDIDO NR: ${order.number}
+--------------------------------
+CLIENTE: ${order.customerName || "AVULSO"}
+FONE: ${order.phone || ""}
+END: ${order.isPickup ? "RETIRADA" : (order.address || "")}
+--------------------------------
+ITENS:
+${itemsText}
+--------------------------------
+PAGAMENTO: ${order.paymentMethod.toUpperCase()}
+TAXA ENTREGA: R$ ${order.deliveryFee.toFixed(2)}
+TOTAL: R$ ${order.totalAmount.toFixed(2)}
+${order.changeFor > 0 ? `TROCO PARA: R$ ${order.changeFor.toFixed(2)}` : ''}
+--------------------------------
+${order.observation ? `OBS: ${order.observation}\n--------------------------------` : ''}
+ESTE NAO E UM DOCUMENTO FISCAL
+--------------------------------
+\n\n\n\n`; // Espaços para o corte de papel
+
+      await invoke("silent_print", { 
+        printerName: settings.targetPrinter, 
+        content: textContent 
+      });
+      
+      return; // Sucesso na impressão silenciosa, interrompe aqui.
+    } catch (error) {
+      console.error("Erro na impressão silenciosa, tentando método tradicional:", error);
+      // Se der erro, ele continua para o método do iframe como fallback
+    }
+  }
+
+  // ─── MÉTODO TRADICIONAL (IFRAME / NAVEGADOR) ─────────────────────────────
+  // Cria um iframe escondido para evitar bloqueio de pop-ups
+  const iframeId = "print-iframe";
+  let iframe = document.getElementById(iframeId) as HTMLIFrameElement;
+  
+  if (!iframe) {
+    iframe = document.createElement("iframe");
+    iframe.id = iframeId;
+    iframe.style.position = "absolute";
+    iframe.style.width = "0px";
+    iframe.style.height = "0px";
+    iframe.style.border = "none";
+    document.body.appendChild(iframe);
+  }
 
   const date = new Date(order.createdAt).toLocaleString("pt-BR");
   
@@ -14,13 +78,13 @@ export function printOrder(order: Order, settings: AppSettings) {
         <title>Pedido #${order.number}</title>
         <style>
           @page {
-            margin: ${settings.printMargin};
-            size: ${settings.printPaperWidth} auto;
+            margin: ${settings.printMargin || '0mm'};
+            size: ${settings.printPaperWidth || '80mm'} auto;
           }
           body {
             font-family: Arial, Helvetica, sans-serif;
             font-size: ${settings.printFontSize || '14px'};
-            width: ${settings.printPaperWidth};
+            width: 100%;
             margin: 0;
             padding: 0;
             color: #000;
@@ -30,6 +94,7 @@ export function printOrder(order: Order, settings: AppSettings) {
           }
           .container {
             padding: 2px 5px;
+            width: calc(100% - 10px);
           }
           .text-center { text-align: center; }
           .bold { font-weight: bold; }
@@ -181,17 +246,20 @@ export function printOrder(order: Order, settings: AppSettings) {
             <div>Este documento não tem valor fiscal.</div>
           </div>
         </div>
-        <script>
-          window.focus();
-          setTimeout(() => {
-            window.print();
-            window.close();
-          }, 500);
-        </script>
       </body>
     </html>
   `;
 
-  printWindow.document.write(html);
-  printWindow.document.close();
+  const doc = iframe.contentWindow?.document || iframe.contentDocument;
+  if (doc) {
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    // Aguarda carregar e dispara a impressão
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    }, 500);
+  }
 }

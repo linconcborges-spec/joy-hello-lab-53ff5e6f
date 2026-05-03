@@ -492,7 +492,7 @@ export function useAutoprint(settings: AppSettings) {
           };
 
           // Imprime o pedido
-          printOrder(order, settings);
+          await printOrder(order, settings);
           toast.success(`🖨️ Pedido #${order.number} recebido e enviado para impressão!`, {
             duration: 8000,
           });
