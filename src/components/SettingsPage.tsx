@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Plus, Pencil, Trash2, Save, X, Eye, EyeOff, Shield, User, Download, Moon, Sun, Store, Clock, Instagram, Facebook, Phone, MapPin, Bike, ToggleLeft, ToggleRight, Printer } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Save, X, Eye, EyeOff, Shield, User, Download, Moon, Sun, Store, Clock, Instagram, Facebook, Phone, MapPin, Bike, ToggleLeft, ToggleRight, Printer, RefreshCw } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -318,6 +318,46 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                 </div>
               </CardContent>
             </Card>
+
+            {isAdmin && (
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base text-primary">Sistema e Versão</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-orange-500/5 border border-orange-500/20">
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-orange-600">Versão Atual</p>
+                      <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-tight">v{__APP_VERSION__}</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      className="gap-2 h-11 border-orange-500/30 text-orange-600 hover:bg-orange-500/10"
+                      onClick={async () => {
+                        toast.info("Verificando se há uma nova versão...", { id: "pwa-update" });
+                        if ('serviceWorker' in navigator) {
+                          try {
+                            const registration = await navigator.serviceWorker.getRegistration();
+                            if (registration) {
+                              await registration.update();
+                              setTimeout(() => {
+                                toast.success("Busca concluída! Se houver uma nova versão, um aviso aparecerá em instantes.", { id: "pwa-update" });
+                              }, 1500);
+                            } else {
+                              toast.error("Service Worker não encontrado.", { id: "pwa-update" });
+                            }
+                          } catch (err) {
+                            toast.error("Erro ao verificar atualizações.", { id: "pwa-update" });
+                          }
+                        }
+                      }}
+                    >
+                      <RefreshCw className="h-4 w-4" /> Verificar Atualizações
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {isAdmin && (
               <Card>
