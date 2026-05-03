@@ -11,6 +11,7 @@ import { InstallPWA } from "@/components/InstallPWA";
 import { PWALifecycle } from "@/components/PWALifecycle";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
+import { VersionWatermark } from "@/components/VersionWatermark";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ function AppContent() {
         <InstallPWA />
         <PWALifecycle />
         <OfflineIndicator />
+        <VersionWatermark />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
