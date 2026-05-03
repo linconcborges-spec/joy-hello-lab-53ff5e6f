@@ -5,8 +5,13 @@ export async function printOrder(order: Order, settings: AppSettings) {
   // ─── TENTATIVA DE IMPRESSÃO SILENCIOSA (TAURI / DESKTOP) ─────────────────
   const isTauri = (window as any).__TAURI_INTERNALS__ !== undefined;
   
+  console.log("Iniciando processo de impressão...");
+  console.log("Ambiente Tauri detectado:", isTauri);
+  console.log("Impressora configurada:", settings.targetPrinter);
+
   if (isTauri && settings.targetPrinter) {
     try {
+      console.log("Tentando impressão silenciosa para:", settings.targetPrinter);
       const { invoke } = await import("@tauri-apps/api/tauri");
       
       // Formata o pedido em texto simples para a impressora
