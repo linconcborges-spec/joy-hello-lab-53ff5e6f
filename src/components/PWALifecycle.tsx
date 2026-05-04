@@ -25,6 +25,18 @@ export function PWALifecycle() {
     },
   });
 
+  // Verificação imediata ao montar o componente
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then(registration => {
+        if (registration) {
+          console.log("Verificação inicial de atualização...");
+          registration.update();
+        }
+      });
+    }
+  }, []);
+
   const close = () => {
     setOfflineReady(false);
     setNeedRefresh(false);

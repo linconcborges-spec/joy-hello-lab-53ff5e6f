@@ -57,7 +57,13 @@ export default defineConfig(({ mode }) => ({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: false, // Mantemos falso para o 'prompt' funcionar
-        sourcemap: true
+        sourcemap: true,
+        runtimeCaching: [
+          {
+            urlPattern: /sw\.js$/,
+            handler: 'NetworkOnly',
+          }
+        ]
       },
       devOptions: {
         enabled: false, // Mude para true se quiser testar PWA em dev mode
