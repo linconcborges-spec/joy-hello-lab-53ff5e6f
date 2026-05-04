@@ -44,7 +44,7 @@ type Product = {
 };
 
 export default function CustomerMenu() {
-  const { settings } = useSettings();
+  const { settings, isCurrentlyOpen } = useSettings();
   const { data: addons = [] } = useAddons();
   const addOrder = useAddOrder();
 
@@ -133,7 +133,7 @@ export default function CustomerMenu() {
     }
   };
 
-  const isStoreOpen = settings.menuOpen ?? true;
+  const isStoreOpen = isCurrentlyOpen;
 
   const handleAddToCart = () => {
     if (!isStoreOpen) {

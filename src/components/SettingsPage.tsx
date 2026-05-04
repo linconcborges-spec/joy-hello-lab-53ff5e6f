@@ -45,7 +45,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const addEmployee = useAddEmployee();
   const updateEmployee = useUpdateEmployee();
   const deleteEmployee = useDeleteEmployee();
-  const { settings, updateSettings } = useSettings();
+  const { settings, updateSettings, isCurrentlyOpen } = useSettings();
 
   // ─── General settings state ──────────────────────────────────────────────
   const [storeName, setStoreName] = useState(settings.storeName);
@@ -414,25 +414,32 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
           <TabsContent value="digital" className="space-y-4 mt-4">
 
             {/* Status aberto/fechado */}
-            <Card className={cn("border-2 transition-colors", menuOpen ? "border-emerald-500/40 bg-emerald-50/30 dark:bg-emerald-950/20" : "border-destructive/40 bg-red-50/30 dark:bg-red-950/10")}>
+            <Card className={cn("border-2 transition-colors", isCurrentlyOpen ? "border-emerald-500/40 bg-emerald-50/30 dark:bg-emerald-950/20" : "border-destructive/40 bg-red-50/30 dark:bg-red-950/10")}>
               <CardContent className="flex items-center justify-between p-5">
                 <div className="space-y-1">
                   <p className="font-black text-base uppercase tracking-tight">
-                    {menuOpen ? "🟢 Loja Aberta" : "🔴 Loja Fechada"}
+                    {isCurrentlyOpen ? "🟢 Loja Aberta" : "🔴 Loja Fechada"}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {menuOpen ? "Clientes podem visualizar e fazer pedidos pelo menu digital." : "O menu está visível, mas novos pedidos estão bloqueados."}
+                    {!menuOpen 
+                      ? "A loja foi fechada manualmente por um administrador." 
+                      : !isCurrentlyOpen 
+                        ? "A loja está fechada automaticamente pelo horário de funcionamento." 
+                        : "Clientes podem visualizar e fazer pedidos pelo menu digital."}
                   </p>
                 </div>
-                <Switch
-                  checked={menuOpen}
-                  onCheckedChange={(v) => {
-                    setMenuOpen(v);
-                    updateSettings({ menuOpen: v });
-                    toast.success(v ? "Loja aberta!" : "Loja fechada!");
-                  }}
-                  className="scale-125"
-                />
+                <div className="flex flex-col items-end gap-2">
+                  <Switch
+                    checked={menuOpen}
+                    onCheckedChange={(v) => {
+                      setMenuOpen(v);
+                      updateSettings({ menuOpen: v });
+                      toast.success(v ? "Operação ativada!" : "Operação desativada!");
+                    }}
+                    className="scale-125"
+                  />
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Controle Manual</span>
+                </div>
               </CardContent>
             </Card>
 

@@ -115,6 +115,34 @@ function parseSettings(rows: { key: string; value: string }[]): AppSettings {
   return settings;
 }
 
+/**
+ * Verifica se a loja deve estar aberta agora com base nos horários configurados
+ */
+export function isWithinBusinessHours(hours: BusinessHours[]): boolean {
+  if (!hours || hours.length !== 7) return true;
+
+  const now = new Date();
+  const day = now.getDay(); // 0 = Domingo, 1 = Segunda, ...
+  const today = hours[day];
+
+  if (!today || !today.enabled) return false;
+
+  const [h, m] = [now.getHours(), now.getMinutes()];
+  const currentMinutes = h * 60 + m;
+
+  const [openH, openM] = today.open.split(':').map(Number);
+  const [closeH, closeM] = today.close.split(':').map(Number);
+  const openMinutes = openH * 60 + openM;
+  const closeMinutes = (closeH * 60 + closeM) || (23 * 60 + 59);
+
+  if (closeMinutes < openMinutes) {
+    // Caso o horário passe da meia-noite (ex: 18:00 às 02:00)
+    return currentMinutes >= openMinutes || currentMinutes <= closeMinutes;
+  }
+
+  return currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
+}
+
 export function useSettings() {
   const qc = useQueryClient();
 
@@ -187,5 +215,7 @@ export function useSettings() {
     [qc, mutation]
   );
 
-  return { settings, updateSettings, isLoading };
+  const isCurrentlyOpen = settings.menuOpen && isWithinBusinessHours(settings.businessHours);
+
+  return { settings, updateSettings, isLoading, isCurrentlyOpen };
 }
