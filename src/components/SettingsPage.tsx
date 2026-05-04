@@ -46,6 +46,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const updateEmployee = useUpdateEmployee();
   const deleteEmployee = useDeleteEmployee();
   const { settings, updateSettings, isCurrentlyOpen } = useSettings();
+  const [showResetDialog, setShowResetDialog] = useState(false);
 
   // ─── General settings state ──────────────────────────────────────────────
   const [storeName, setStoreName] = useState(settings.storeName);
@@ -378,30 +379,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                       <Button 
                         variant="ghost" 
                         className="gap-2 h-11 text-muted-foreground hover:text-destructive hover:bg-destructive/5 border border-transparent hover:border-destructive/20"
-                        onClick={async () => {
-                          if (confirm("Isso limpará todos os caches e dados locais. Você precisará fazer login novamente. Deseja continuar?")) {
-                            toast.loading("Limpando dados...");
-                            
-                            // 1. Limpa caches
-                            if ('caches' in window) {
-                              const keys = await caches.keys();
-                              for (const key of keys) await caches.delete(key);
-                            }
-                            
-                            // 2. Desregistra SW
-                            if ('serviceWorker' in navigator) {
-                              const registrations = await navigator.serviceWorker.getRegistration();
-                              for (const reg of registrations) await reg.unregister();
-                            }
-                            
-                            // 3. Limpa storage
-                            localStorage.clear();
-                            sessionStorage.clear();
-                            
-                            // 4. Reload forçado
-                            window.location.href = window.location.origin + '?reset=' + Date.now();
-                          }
-                        }}
+                        onClick={() => setShowResetDialog(true)}
                       >
                         <Trash2 className="h-4 w-4" /> Redefinir App
                       </Button>
@@ -716,7 +694,62 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
+      </main>
+
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContent className="rounded-[2rem] border-0">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-black uppercase italic tracking-tighter">
+              Atenção Total! 🚨
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm font-medium">
+              Isso limpará todos os caches e dados locais do seu navegador. 
+              Você será desconectado e o sistema será reiniciado do zero. 
+              Deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
+            <AlertDialogCancel className="rounded-xl border-slate-100 font-bold uppercase text-[10px]">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              className="rounded-xl bg-destructive hover:bg-destructive/90 font-black uppercase text-[10px] italic tracking-widest shadow-lg shadow-destructive/20"
+              onClick={async () => {
+                const tId = toast.loading("Limpando tudo...");
+                
+                try {
+                  // 1. Limpa caches
+                  if ('caches' in window) {
+                    const keys = await caches.keys();
+                    for (const key of keys) await caches.delete(key);
+                  }
+                  
+                  // 2. Desregistra SW
+                  if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistration();
+                    for (const reg of registrations) await reg.unregister();
+                  }
+                  
+                  // 3. Limpa storage
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  
+                  toast.success("Limpeza concluída!", { id: tId });
+                  
+                  // 4. Reload forçado
+                  setTimeout(() => {
+                    window.location.href = window.location.origin + '?reset=' + Date.now();
+                  }, 1000);
+                } catch (err) {
+                  toast.error("Erro na limpeza profunda.", { id: tId });
+                }
+              }}
+            >
+              Sim, Redefinir Agora
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
-}
+};
