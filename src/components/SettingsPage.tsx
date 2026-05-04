@@ -694,7 +694,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
+      </div>
 
       <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
         <AlertDialogContent className="rounded-[2rem] border-0">
