@@ -726,7 +726,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                   
                   // 2. Desregistra SW
                   if ('serviceWorker' in navigator) {
-                    const registrations = await navigator.serviceWorker.getRegistration();
+                    const registrations = await navigator.serviceWorker.getRegistrations();
                     for (const reg of registrations) await reg.unregister();
                   }
                   
