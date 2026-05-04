@@ -329,53 +329,86 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                     <p className="text-sm font-bold text-orange-600">Versão Atual</p>
                     <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-tight">v{__APP_VERSION__}</p>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    className="gap-2 h-11 border-orange-500/30 text-orange-600 hover:bg-orange-500/10"
-                    onClick={async () => {
-                      const toastId = "pwa-update";
-                      toast.info("Verificando versão no servidor...", { id: toastId });
-                      
-                      try {
-                        const response = await fetch(`/version.json?t=${Date.now()}`);
-                        const data = await response.json();
-                        const serverVersion = data.version;
-                        const currentVersion = __APP_VERSION__;
-
-                        if (serverVersion !== currentVersion) {
-                          toast.success(`Nova versão ${serverVersion} encontrada! Atualizando...`, { id: toastId });
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        variant="outline" 
+                        className="gap-2 h-11 border-orange-500/30 text-orange-600 hover:bg-orange-500/10"
+                        onClick={async () => {
+                          const toastId = "pwa-update";
+                          toast.info("Verificando versão no servidor...", { id: toastId });
                           
-                          if ('serviceWorker' in navigator) {
-                            const registration = await navigator.serviceWorker.getRegistration();
-                            if (registration) {
-                              await registration.update();
-                              if (registration.waiting) {
-                                registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                          try {
+                            const response = await fetch(`/version.json?t=${Date.now()}`);
+                            const data = await response.json();
+                            const serverVersion = data.version;
+                            const currentVersion = __APP_VERSION__;
+
+                            if (serverVersion !== currentVersion) {
+                              toast.success(`Nova versão ${serverVersion} encontrada! Atualizando...`, { id: toastId });
+                              
+                              if ('serviceWorker' in navigator) {
+                                const registration = await navigator.serviceWorker.getRegistration();
+                                if (registration) {
+                                  await registration.update();
+                                  if (registration.waiting) {
+                                    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                                  }
+                                }
+                              }
+                              
+                              setTimeout(() => {
+                                window.location.reload();
+                              }, 2000);
+                            } else {
+                              toast.success("Você já está na versão mais recente!", { id: toastId });
+                              if ('serviceWorker' in navigator) {
+                                const reg = await navigator.serviceWorker.getRegistration();
+                                reg?.update();
                               }
                             }
+                          } catch (err) {
+                            console.error("Erro ao verificar versão:", err);
+                            toast.error("Erro ao conectar com o servidor.", { id: toastId });
                           }
-                          
-                          setTimeout(() => {
-                            window.location.reload();
-                          }, 2000);
-                        } else {
-                          toast.success("Você já está na versão mais recente!", { id: toastId });
-                          if ('serviceWorker' in navigator) {
-                            const reg = await navigator.serviceWorker.getRegistration();
-                            reg?.update();
+                        }}
+                      >
+                        <RefreshCw className="h-4 w-4" /> Verificar Atualizações
+                      </Button>
+
+                      <Button 
+                        variant="ghost" 
+                        className="gap-2 h-11 text-muted-foreground hover:text-destructive hover:bg-destructive/5 border border-transparent hover:border-destructive/20"
+                        onClick={async () => {
+                          if (confirm("Isso limpará todos os caches e dados locais. Você precisará fazer login novamente. Deseja continuar?")) {
+                            toast.loading("Limpando dados...");
+                            
+                            // 1. Limpa caches
+                            if ('caches' in window) {
+                              const keys = await caches.keys();
+                              for (const key of keys) await caches.delete(key);
+                            }
+                            
+                            // 2. Desregistra SW
+                            if ('serviceWorker' in navigator) {
+                              const registrations = await navigator.serviceWorker.getRegistration();
+                              for (const reg of registrations) await reg.unregister();
+                            }
+                            
+                            // 3. Limpa storage
+                            localStorage.clear();
+                            sessionStorage.clear();
+                            
+                            // 4. Reload forçado
+                            window.location.href = window.location.origin + '?reset=' + Date.now();
                           }
-                        }
-                      } catch (err) {
-                        console.error("Erro ao verificar versão:", err);
-                        toast.error("Erro ao conectar com o servidor.", { id: toastId });
-                      }
-                    }}
-                  >
-                    <RefreshCw className="h-4 w-4" /> Verificar Atualizações
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" /> Redefinir App
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
             {isAdmin && (
               <Card>
