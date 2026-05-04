@@ -334,21 +334,43 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                       variant="outline" 
                       className="gap-2 h-11 border-orange-500/30 text-orange-600 hover:bg-orange-500/10"
                       onClick={async () => {
-                        toast.info("Verificando se há uma nova versão...", { id: "pwa-update" });
+                        const toastId = "pwa-update";
+                        toast.info("Conectando ao servidor...", { id: toastId });
+                        
                         if ('serviceWorker' in navigator) {
                           try {
                             const registration = await navigator.serviceWorker.getRegistration();
                             if (registration) {
+                              // 1. Verifica se já existe uma versão baixada esperando
+                              if (registration.waiting) {
+                                toast.success("Nova versão pronta! Reiniciando...", { id: toastId });
+                                registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                                window.location.reload();
+                                return;
+                              }
+
+                              // 2. Força a busca no servidor
                               await registration.update();
+                              
+                              // 3. Aguarda um pouco para ver se algo foi encontrado
                               setTimeout(() => {
-                                toast.success("Busca concluída! Se houver uma nova versão, um aviso aparecerá em instantes.", { id: "pwa-update" });
-                              }, 1500);
+                                if (registration.waiting) {
+                                  toast.success("Nova versão encontrada! Reiniciando...", { id: toastId });
+                                  registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                                  window.location.reload();
+                                } else {
+                                  toast.success("Você já está na versão mais recente!", { id: toastId });
+                                }
+                              }, 2500);
                             } else {
-                              toast.error("Service Worker não encontrado.", { id: "pwa-update" });
+                              toast.error("Serviço de atualização não encontrado.", { id: toastId });
                             }
                           } catch (err) {
-                            toast.error("Erro ao verificar atualizações.", { id: "pwa-update" });
+                            console.error("Erro na atualização:", err);
+                            toast.error("Erro ao buscar atualizações no servidor.", { id: toastId });
                           }
+                        } else {
+                          toast.error("Seu navegador não suporta atualizações automáticas.", { id: toastId });
                         }
                       }}
                     >
