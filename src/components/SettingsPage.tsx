@@ -319,67 +319,65 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
               </CardContent>
             </Card>
 
-            {isAdmin && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base text-primary">Sistema e Versão</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-orange-500/5 border border-orange-500/20">
-                    <div className="space-y-1">
-                      <p className="text-sm font-bold text-orange-600">Versão Atual</p>
-                      <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-tight">v{__APP_VERSION__}</p>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      className="gap-2 h-11 border-orange-500/30 text-orange-600 hover:bg-orange-500/10"
-                      onClick={async () => {
-                        const toastId = "pwa-update";
-                        toast.info("Conectando ao servidor...", { id: toastId });
-                        
-                        if ('serviceWorker' in navigator) {
-                          try {
-                            const registration = await navigator.serviceWorker.getRegistration();
-                            if (registration) {
-                              // 1. Verifica se já existe uma versão baixada esperando
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base text-primary">Sistema e Versão</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-orange-500/5 border border-orange-500/20">
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-orange-600">Versão Atual</p>
+                    <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-tight">v{__APP_VERSION__}</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="gap-2 h-11 border-orange-500/30 text-orange-600 hover:bg-orange-500/10"
+                    onClick={async () => {
+                      const toastId = "pwa-update";
+                      toast.info("Conectando ao servidor...", { id: toastId });
+                      
+                      if ('serviceWorker' in navigator) {
+                        try {
+                          const registration = await navigator.serviceWorker.getRegistration();
+                          if (registration) {
+                            // 1. Verifica se já existe uma versão baixada esperando
+                            if (registration.waiting) {
+                              toast.success("Nova versão pronta! Reiniciando...", { id: toastId });
+                              registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                              window.location.reload();
+                              return;
+                            }
+
+                            // 2. Força a busca no servidor
+                            await registration.update();
+                            
+                            // 3. Aguarda um pouco para ver se algo foi encontrado
+                            setTimeout(() => {
                               if (registration.waiting) {
-                                toast.success("Nova versão pronta! Reiniciando...", { id: toastId });
+                                toast.success("Nova versão encontrada! Reiniciando...", { id: toastId });
                                 registration.waiting.postMessage({ type: 'SKIP_WAITING' });
                                 window.location.reload();
-                                return;
+                              } else {
+                                toast.success("Você já está na versão mais recente!", { id: toastId });
                               }
-
-                              // 2. Força a busca no servidor
-                              await registration.update();
-                              
-                              // 3. Aguarda um pouco para ver se algo foi encontrado
-                              setTimeout(() => {
-                                if (registration.waiting) {
-                                  toast.success("Nova versão encontrada! Reiniciando...", { id: toastId });
-                                  registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-                                  window.location.reload();
-                                } else {
-                                  toast.success("Você já está na versão mais recente!", { id: toastId });
-                                }
-                              }, 2500);
-                            } else {
-                              toast.error("Serviço de atualização não encontrado.", { id: toastId });
-                            }
-                          } catch (err) {
-                            console.error("Erro na atualização:", err);
-                            toast.error("Erro ao buscar atualizações no servidor.", { id: toastId });
+                            }, 2500);
+                          } else {
+                            toast.error("Serviço de atualização não encontrado.", { id: toastId });
                           }
-                        } else {
-                          toast.error("Seu navegador não suporta atualizações automáticas.", { id: toastId });
+                        } catch (err) {
+                          console.error("Erro na atualização:", err);
+                          toast.error("Erro ao buscar atualizações no servidor.", { id: toastId });
                         }
-                      }}
-                    >
-                      <RefreshCw className="h-4 w-4" /> Verificar Atualizações
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                      } else {
+                        toast.error("Seu navegador não suporta atualizações automáticas.", { id: toastId });
+                      }
+                    }}
+                  >
+                    <RefreshCw className="h-4 w-4" /> Verificar Atualizações
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
             {isAdmin && (
               <Card>
