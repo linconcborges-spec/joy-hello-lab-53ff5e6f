@@ -334,42 +334,40 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
                     className="gap-2 h-11 border-orange-500/30 text-orange-600 hover:bg-orange-500/10"
                     onClick={async () => {
                       const toastId = "pwa-update";
-                      toast.info("Conectando ao servidor...", { id: toastId });
+                      toast.info("Verificando versão no servidor...", { id: toastId });
                       
-                      if ('serviceWorker' in navigator) {
-                        try {
-                          const registration = await navigator.serviceWorker.getRegistration();
-                          if (registration) {
-                            // 1. Verifica se já existe uma versão baixada esperando
-                            if (registration.waiting) {
-                              toast.success("Nova versão pronta! Reiniciando...", { id: toastId });
-                              registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-                              window.location.reload();
-                              return;
-                            }
+                      try {
+                        const response = await fetch(`/version.json?t=${Date.now()}`);
+                        const data = await response.json();
+                        const serverVersion = data.version;
+                        const currentVersion = __APP_VERSION__;
 
-                            // 2. Força a busca no servidor
-                            await registration.update();
-                            
-                            // 3. Aguarda um pouco para ver se algo foi encontrado
-                            setTimeout(() => {
+                        if (serverVersion !== currentVersion) {
+                          toast.success(`Nova versão ${serverVersion} encontrada! Atualizando...`, { id: toastId });
+                          
+                          if ('serviceWorker' in navigator) {
+                            const registration = await navigator.serviceWorker.getRegistration();
+                            if (registration) {
+                              await registration.update();
                               if (registration.waiting) {
-                                toast.success("Nova versão encontrada! Reiniciando...", { id: toastId });
                                 registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-                                window.location.reload();
-                              } else {
-                                toast.success("Você já está na versão mais recente!", { id: toastId });
                               }
-                            }, 2500);
-                          } else {
-                            toast.error("Serviço de atualização não encontrado.", { id: toastId });
+                            }
                           }
-                        } catch (err) {
-                          console.error("Erro na atualização:", err);
-                          toast.error("Erro ao buscar atualizações no servidor.", { id: toastId });
+                          
+                          setTimeout(() => {
+                            window.location.reload();
+                          }, 2000);
+                        } else {
+                          toast.success("Você já está na versão mais recente!", { id: toastId });
+                          if ('serviceWorker' in navigator) {
+                            const reg = await navigator.serviceWorker.getRegistration();
+                            reg?.update();
+                          }
                         }
-                      } else {
-                        toast.error("Seu navegador não suporta atualizações automáticas.", { id: toastId });
+                      } catch (err) {
+                        console.error("Erro ao verificar versão:", err);
+                        toast.error("Erro ao conectar com o servidor.", { id: toastId });
                       }
                     }}
                   >
