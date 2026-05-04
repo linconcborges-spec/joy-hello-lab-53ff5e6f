@@ -2,9 +2,37 @@ import type { Order } from "@/types/order";
 import type { AppSettings } from "@/hooks/useSettings";
 
 export async function printOrder(order: Order, settings: AppSettings) {
-  // ─── TENTATIVA DE IMPRESSÃO SILENCIOSA (TAURI / DESKTOP) ─────────────────
+  // ─── ALERTA VISUAL (PISCAR BARRA DE TAREFAS / TÍTULO) ────────────────────
   const isTauri = (window as any).__TAURI_INTERNALS__ !== undefined;
-  
+
+  if (isTauri) {
+    try {
+      const { appWindow, UserAttentionType } = await import("@tauri-apps/api/window");
+      await appWindow.requestUserAttention(UserAttentionType.Critical);
+    } catch (e) {
+      console.error("Erro ao solicitar atenção no Tauri:", e);
+    }
+  } else {
+    // Fallback para Navegador: Piscar o título da aba
+    const originalTitle = document.title;
+    let isFlash = false;
+    const interval = setInterval(() => {
+      document.title = isFlash ? "🚨 NOVO PEDIDO!" : originalTitle;
+      isFlash = !isFlash;
+    }, 1000);
+    
+    const stopFlash = () => {
+      clearInterval(interval);
+      document.title = originalTitle;
+      window.removeEventListener('focus', stopFlash);
+      window.removeEventListener('click', stopFlash);
+    };
+    
+    window.addEventListener('focus', stopFlash);
+    window.addEventListener('click', stopFlash);
+  }
+
+  // ─── TENTATIVA DE IMPRESSÃO SILENCIOSA (TAURI / DESKTOP) ─────────────────
   console.log("Iniciando processo de impressão...");
   console.log("Ambiente Tauri detectado:", isTauri);
   console.log("Impressora configurada:", settings.targetPrinter);
