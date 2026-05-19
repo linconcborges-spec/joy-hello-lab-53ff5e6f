@@ -10,14 +10,11 @@ import NotFound from "./pages/NotFound.tsx";
 import { InstallPWA } from "@/components/InstallPWA";
 import { PWALifecycle } from "@/components/PWALifecycle";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
-import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { VersionWatermark } from "@/components/VersionWatermark";
 
 const queryClient = new QueryClient();
 
-/** Wrapper interno para usar hooks dentro do QueryClientProvider */
 function AppContent() {
-  useOfflineSync();
   return (
     <AuthProvider>
       <TooltipProvider>

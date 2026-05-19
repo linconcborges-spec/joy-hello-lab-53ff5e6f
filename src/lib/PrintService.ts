@@ -250,7 +250,7 @@ ESTE NAO E UM DOCUMENTO FISCAL
           <div>
             <div>FORMA DE PAGAMENTO:</div>
             <div>1: R$ ${order.totalAmount.toFixed(2).replace('.', ',')} - ${order.paymentMethod === 'cash' ? 'DINHEIRO' : order.paymentMethod === 'card' ? 'CARTÃO' : 'PIX'}</div>
-            ${order.changeFor > 0 ? `
+            ${order.changeFor > order.totalAmount ? `
               <div>VALOR DO TROCO: R$ ${(order.changeFor - order.totalAmount).toFixed(2).replace('.', ',')}</div>
             ` : ''}
           </div>

@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getOfflineQueue, removeFromOfflineQueue } from '@/lib/offlineStorage';
 import { useOnlineStatus } from './useOnlineStatus';
 import { toast } from 'sonner';
+import { getCycleStart } from '@/lib/cycleUtils';
 
 /**
  * Hook que monitora a reconexão com a internet e sincroniza
@@ -29,114 +30,107 @@ export function useOfflineSync() {
       let synced = 0;
       let failed = 0;
 
-      for (const offlineOrder of queue) {
-        try {
-          // 1. Descobrir o próximo número real no Supabase
-          const cycleStart = getCycleStart();
-          const { data: lastOrders } = await supabase
-            .from('orders')
-            .select('number')
-            .gte('created_at', cycleStart)
-            .order('number', { ascending: false })
-            .limit(1);
+      try {
+        for (const offlineOrder of queue) {
+          try {
+            // 1. Descobrir o próximo número real no Supabase
+            const cycleStart = getCycleStart();
+            const { data: lastOrders } = await supabase
+              .from('orders')
+              .select('number')
+              .gte('created_at', cycleStart)
+              .order('number', { ascending: false })
+              .limit(1);
 
-          const nextNumber =
-            lastOrders && lastOrders.length > 0 ? lastOrders[0].number + 1 : 1;
+            const nextNumber =
+              lastOrders && lastOrders.length > 0 ? lastOrders[0].number + 1 : 1;
 
-          const od = offlineOrder.orderData;
+            const od = offlineOrder.orderData;
 
-          // 2. Inserir pedido no Supabase
-          const { data: order, error: orderError } = await supabase
-            .from('orders')
-            .insert({
-              number: nextNumber,
-              customer_name: od.customerName,
-              address: od.address,
-              phone: od.phone,
-              cnpj: od.cnpj || null,
-              delivery_fee: od.deliveryFee,
-              total_amount: od.totalAmount,
-              change_for: od.changeFor,
-              status: od.status,
-              payment_method: od.paymentMethod,
-              is_printed: od.isPrinted ?? true,
-              observation: od.observation || null,
-              created_at: offlineOrder.createdAt, // preserva timestamp original
-            })
-            .select()
-            .single();
-
-          if (orderError) throw orderError;
-
-          // 3. Inserir itens e adicionais
-          for (const item of od.items) {
-            const { data: insertedItem, error: itemError } = await supabase
-              .from('order_items')
+            // 2. Inserir pedido no Supabase
+            const { data: order, error: orderError } = await supabase
+              .from('orders')
               .insert({
-                order_id: order.id,
-                product_code: item.productCode || null,
-                category_id: item.categoryId || null,
-                product_name: item.product,
-                quantity: item.quantity,
-                unit_price: item.unitPrice,
-                total: item.total,
-                observation: item.observation || null,
+                number: nextNumber,
+                customer_name: od.customerName,
+                address: od.address,
+                phone: od.phone,
+                cnpj: od.cnpj || null,
+                delivery_fee: od.deliveryFee,
+                total_amount: od.totalAmount,
+                change_for: od.changeFor,
+                status: od.status,
+                payment_method: od.paymentMethod,
+                is_printed: od.isPrinted ?? true,
+                observation: od.observation || null,
+                created_at: offlineOrder.createdAt,
               })
               .select()
               .single();
 
-            if (itemError) throw itemError;
+            if (orderError) throw orderError;
 
-            if (item.addons && item.addons.length > 0) {
-              await supabase.from('order_addons').insert(
-                item.addons.map((addon: any) => ({
-                  order_item_id: insertedItem.id,
-                  name: addon.name,
-                  price: addon.price,
-                }))
-              );
+            // 3. Inserir itens e adicionais
+            for (const item of od.items) {
+              const { data: insertedItem, error: itemError } = await supabase
+                .from('order_items')
+                .insert({
+                  order_id: order.id,
+                  product_code: item.productCode || null,
+                  category_id: item.categoryId || null,
+                  product_name: item.product,
+                  quantity: item.quantity,
+                  unit_price: item.unitPrice,
+                  total: item.total,
+                  observation: item.observation || null,
+                })
+                .select()
+                .single();
+
+              if (itemError) throw itemError;
+
+              if (item.addons && item.addons.length > 0) {
+                const { error: addonError } = await supabase.from('order_addons').insert(
+                  item.addons.map((addon: any) => ({
+                    order_item_id: insertedItem.id,
+                    name: addon.name,
+                    price: addon.price,
+                  }))
+                );
+                if (addonError) throw addonError;
+              }
             }
+
+            // 4. Remove da fila local após sucesso
+            removeFromOfflineQueue(offlineOrder.tempId);
+            synced++;
+          } catch (err) {
+            console.error('[OfflineSync] Falha ao sincronizar pedido:', err);
+            failed++;
           }
-
-          // 4. Remove da fila local após sucesso
-          removeFromOfflineQueue(offlineOrder.tempId);
-          synced++;
-        } catch (err) {
-          console.error('[OfflineSync] Falha ao sincronizar pedido:', err);
-          failed++;
         }
-      }
 
-      // Invalida cache para atualizar o Kanban com os pedidos sincronizados
-      qc.invalidateQueries({ queryKey: ['orders'] });
+        // Invalida cache para atualizar o Kanban com os pedidos sincronizados
+        qc.invalidateQueries({ queryKey: ['orders'] });
 
-      if (synced > 0) {
-        toast.success(
-          `✅ ${synced} pedido${synced > 1 ? 's' : ''} offline sincronizado${synced > 1 ? 's' : ''}!`,
-          { duration: 5000 }
-        );
+        if (synced > 0) {
+          toast.success(
+            `✅ ${synced} pedido${synced > 1 ? 's' : ''} offline sincronizado${synced > 1 ? 's' : ''}!`,
+            { duration: 5000 }
+          );
+        }
+        if (failed > 0) {
+          toast.error(
+            `⚠️ ${failed} pedido${failed > 1 ? 's' : ''} não pud${failed > 1 ? 'eram' : 'e'} ser sincronizado${failed > 1 ? 's' : ''}. Verifique a conexão.`,
+            { duration: 8000 }
+          );
+        }
+      } finally {
+        syncingRef.current = false;
       }
-      if (failed > 0) {
-        toast.error(
-          `⚠️ ${failed} pedido${failed > 1 ? 's' : ''} não pud${failed > 1 ? 'eram' : 'e'} ser sincronizado${failed > 1 ? 's' : ''}. Verifique a conexão.`,
-          { duration: 8000 }
-        );
-      }
-
-      syncingRef.current = false;
     };
 
     sync();
   }, [isOnline, qc]);
 }
 
-/** Calcula início do ciclo atual (04:50h) — igual ao useOrders.ts */
-function getCycleStart(): string {
-  const now = new Date();
-  const cycleStart = new Date(now);
-  cycleStart.setHours(4, 50, 0, 0);
-  if (now < cycleStart) {
-    cycleStart.setDate(cycleStart.getDate() - 1);
-  }
-  return cycleStart.toISOString();
-}

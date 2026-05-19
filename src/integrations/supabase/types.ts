@@ -132,22 +132,24 @@ export type Database = {
       }
       employees: {
         Row: {
+          auth_id: string | null
           created_at: string | null
           id: string
           name: string
-          password: string
           role: string
           username: string
         }
         Insert: {
+          auth_id?: string | null
           created_at?: string | null
           id?: string
           name: string
-          password: string
+          password?: string
           role?: string
           username: string
         }
         Update: {
+          auth_id?: string | null
           created_at?: string | null
           id?: string
           name?: string

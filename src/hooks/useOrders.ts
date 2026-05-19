@@ -12,21 +12,7 @@ import {
   getNextLocalOrderNumber,
   syncLocalOrderCounter,
 } from "@/lib/offlineStorage";
-
-/**
- * Retorna a data de início do ciclo atual (04:50 da madrugada)
- */
-function getCycleStart() {
-  const now = new Date();
-  const cycleStart = new Date(now);
-  cycleStart.setHours(4, 50, 0, 0);
-  
-  // Se ainda não deu 04:50 hoje, o ciclo começou ontem às 04:50
-  if (now < cycleStart) {
-    cycleStart.setDate(cycleStart.getDate() - 1);
-  }
-  return cycleStart.toISOString();
-}
+import { getCycleStart } from "@/lib/cycleUtils";
 
 export function useOrders(startDate?: string, endDate?: string) {
   const start = startDate || getCycleStart();

@@ -26,3 +26,10 @@ dist-ssr
 # Tauri
 src-tauri/target
 src-tauri/icons
+
+# Variáveis de ambiente (não commitar)
+.env
+.env.local
+
+# Migration backup (contém dados de clientes — não commitar)
+scripts/backup.json

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toEmployeeEmail } from "@/lib/authUtils";
 import bcrypt from "bcryptjs";
 
 interface AuthUser {
@@ -19,79 +20,109 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const SESSION_KEY = "imperio-auth-user";
+async function fetchEmployeeByAuthId(authId: string): Promise<AuthUser | null> {
+  const { data, error } = await supabase
+    .from("employees" as any)
+    .select("id, name, username, role")
+    .eq("auth_id", authId)
+    .single();
+
+  if (error || !data) return null;
+  const d = data as any;
+  return { id: d.id, name: d.name, username: d.username, role: d.role };
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Restaurar sessão do sessionStorage
   useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem(SESSION_KEY);
-      if (stored) {
-        setUser(JSON.parse(stored));
+    // Restaura sessão existente do Supabase Auth
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const emp = await fetchEmployeeByAuthId(session.user.id);
+        setUser(emp);
       }
-    } catch {
-      // ignore
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_OUT" || !session?.user) {
+        setUser(null);
+      } else if (session?.user) {
+        const emp = await fetchEmployeeByAuthId(session.user.id);
+        setUser(emp);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
-    // Buscar o funcionário pelo login (case-insensitive)
-    const { data, error } = await supabase
+    const email = toEmployeeEmail(username.trim().toLowerCase());
+
+    // 1. Tentativa via Supabase Auth
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (!signInError && signInData.user) {
+      const emp = await fetchEmployeeByAuthId(signInData.user.id);
+      if (emp) {
+        setUser(emp);
+        return true;
+      }
+    }
+
+    // 2. Fallback de migração: funcionário ainda não tem auth_id
+    //    Verifica credenciais antigas (bcrypt / texto plano) e migra automaticamente.
+    //    REQUER que "Confirm email" esteja DESATIVADO no Supabase Dashboard (Auth > Settings).
+    const { data: empData, error: empError } = await supabase
       .from("employees" as any)
-      .select("id, name, username, password, role")
+      .select("id, name, username, password, role, auth_id")
       .eq("username", username.trim().toLowerCase())
       .single();
 
-    if (error || !data) {
-      console.error("Erro ao buscar usuário ou usuário não encontrado:", error);
+    if (empError || !empData) return false;
+
+    const d = empData as any;
+    if (d.auth_id) {
+      // Tem auth_id mas o signInWithPassword falhou → senha errada
       return false;
     }
 
-    const dbPassword = (data as any).password;
-    
-    try {
-      // Aceita vários prefixos comuns de bcrypt ($2a$, $2b$, $2y$)
-      const isHash = dbPassword && /^\$2[ayb]\$/.test(dbPassword);
-      
-      let isMatch = false;
-      if (isHash) {
-        isMatch = bcrypt.compareSync(password, dbPassword);
-      } else {
-        // Fallback para texto plano
-        isMatch = dbPassword === password;
-        
-        // Se bateu no texto plano, migrar para hash automaticamente para segurança
-        if (isMatch) {
-          const newHash = bcrypt.hashSync(password, 10);
-          await supabase.from("employees" as any).update({ password: newHash }).eq("id", (data as any).id);
-        }
-      }
+    // Verifica senha antiga (bcrypt ou texto plano)
+    const storedPassword = d.password as string;
+    const isHash = storedPassword && /^\$2[ayb]\$/.test(storedPassword);
+    const isMatch = isHash
+      ? bcrypt.compareSync(password, storedPassword)
+      : storedPassword === password;
 
-      if (!isMatch) return false;
-    } catch (e) {
-      console.error("Erro na validação de senha:", e);
+    if (!isMatch) return false;
+
+    // Cria o usuário no Supabase Auth e vincula ao employee
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
+    if (signUpError || !signUpData.user) {
+      console.error("[Auth] Falha ao criar usuário no Supabase Auth:", signUpError);
       return false;
     }
 
-    const authUser: AuthUser = {
-      id: (data as any).id,
-      name: (data as any).name,
-      username: (data as any).username,
-      role: (data as any).role,
-    };
+    await supabase
+      .from("employees" as any)
+      .update({ auth_id: signUpData.user.id, password: "" })
+      .eq("id", d.id);
 
-    setUser(authUser);
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(authUser));
-    return true;
+    // Faz login com as credenciais recém-criadas
+    const { data: finalSignIn } = await supabase.auth.signInWithPassword({ email, password });
+    if (finalSignIn.user) {
+      setUser({ id: d.id, name: d.name, username: d.username, role: d.role });
+      return true;
+    }
+
+    return false;
   }, []);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    sessionStorage.removeItem(SESSION_KEY);
   }, []);
 
   return (
