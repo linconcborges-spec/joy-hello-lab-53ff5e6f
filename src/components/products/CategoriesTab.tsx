@@ -110,7 +110,7 @@ export function CategoriesTab({ newTrigger }: CategoriesTabProps) {
                           </Button>
                         </div>
                       ) : (
-                        <span className="font-medium">{c.name}</span>
+                        <span className="font-medium uppercase">{c.name}</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
