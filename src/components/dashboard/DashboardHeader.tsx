@@ -147,6 +147,18 @@ export function DashboardHeader({
           <ExternalLink className="h-5 w-5" />
         </Button>
 
+        {isAdmin && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={onOpenFinancialDashboard}
+            title="Dashboard Financeiro"
+            className="h-12 w-12 rounded-2xl bg-card border-border/40 shadow-sm transition-all active:scale-90"
+          >
+            <BarChart2 className="h-5 w-5" />
+          </Button>
+        )}
+
         <div className="hidden lg:block h-10 w-px bg-border/20 mx-1" />
 
         <Button onClick={() => onNavigate("new")} className="hidden lg:flex h-14 rounded-2xl px-8 shadow-xl shadow-primary/20 font-black uppercase text-xs gap-3 transform hover:-translate-y-0.5 transition-transform">

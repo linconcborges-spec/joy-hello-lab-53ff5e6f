@@ -12,6 +12,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { KanbanBoard } from "@/components/dashboard/KanbanBoard";
 import { HistoryTable } from "@/components/dashboard/HistoryTable";
 import { BottomNav } from "@/components/dashboard/BottomNav";
+import { FinancialDashboard } from "@/components/dashboard/FinancialDashboard";
 import {
   useOrders, useAddOrder, useUpdateOrder, useUpdateOrderStatus,
   useCancelOrder, useMarkAsPrinted, useDeleteOrder, useAutoprint,
@@ -49,6 +50,7 @@ const Index = () => {
     to: new Date(),
   });
   const [isMobile, setIsMobile] = useState(false);
+  const [financialOpen, setFinancialOpen] = useState(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024);
@@ -181,7 +183,10 @@ const Index = () => {
           dateRange={dateRange}
           setDateRange={setDateRange}
           onNavigate={(v) => setView(v)}
+          onOpenFinancialDashboard={() => setFinancialOpen(true)}
         />
+
+        <FinancialDashboard open={financialOpen} onClose={() => setFinancialOpen(false)} />
 
         <div className="flex justify-center w-full pb-20 md:pb-0">
           {isHistoryView ? (
