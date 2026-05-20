@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Plus, Trash2, UtensilsCrossed, CloudUpload, Loader2, GripVertical, ChevronRight, ChevronDown, Eye, EyeOff, Pencil, X, MoreVertical } from "lucide-react";
+import { Plus, Trash2, UtensilsCrossed, CloudUpload, Loader2, GripVertical, ChevronRight, ChevronDown, Eye, EyeOff, Pencil, X, MoreVertical, PackageX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useProducts, useAddProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
 import { useCategories, useUpdateCategory, useDeleteCategory, useAddCategory } from "@/hooks/useCategories";
 import { useStorage } from "@/hooks/useStorage";
+import { useSettings } from "@/hooks/useSettings";
 import { AssignProductsDialog } from "./AssignProductsDialog";
 
 interface ProductsTabProps {
@@ -36,6 +37,15 @@ export function ProductsTab({ newTrigger }: ProductsTabProps) {
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
   const { uploadImage, isUploading } = useStorage();
+  const { settings, updateSettings } = useSettings();
+  const outOfStockProducts: string[] = settings.outOfStockProducts ?? [];
+
+  const toggleOutOfStock = (productId: string) => {
+    const updated = outOfStockProducts.includes(productId)
+      ? outOfStockProducts.filter(id => id !== productId)
+      : [...outOfStockProducts, productId];
+    updateSettings({ outOfStockProducts: updated });
+  };
 
   const [search, setSearch] = useState("");
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
@@ -317,6 +327,8 @@ export function ProductsTab({ newTrigger }: ProductsTabProps) {
                           deleteProduct={deleteProduct}
                           updateProduct={updateProduct}
                           handleDragEnd={handleDragEnd}
+                          outOfStockProducts={outOfStockProducts}
+                          toggleOutOfStock={toggleOutOfStock}
                         />
                       );
                     })}
@@ -458,6 +470,7 @@ function SortableCategoryItem({
   editingCategoryId, editingCategoryName, setEditingCategoryId, setEditingCategoryName,
   updateCategory, setAssigningCategory, setShowNewProduct, setNewProductCategoryId,
   deleteCategory, openEditSheet, deleteProduct, updateProduct, handleDragEnd,
+  outOfStockProducts, toggleOutOfStock,
 }: {
   cat: any; catProducts: any[]; sensors: any; expandedCategories: Record<string, boolean>;
   toggleCategoryCollapse: (id: string) => void; editingCategoryId: string | null;
@@ -467,6 +480,7 @@ function SortableCategoryItem({
   setNewProductCategoryId: (id: string) => void; deleteCategory: any;
   openEditSheet: (p: any) => void; deleteProduct: any; updateProduct: any;
   handleDragEnd: (event: DragEndEvent, catProducts: any[]) => void;
+  outOfStockProducts: string[]; toggleOutOfStock: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
@@ -562,6 +576,8 @@ function SortableCategoryItem({
                     onEdit={openEditSheet}
                     onDelete={(id) => deleteProduct.mutate(id)}
                     onToggleVisible={(p) => updateProduct.mutate({ id: p.id, is_visible: !p.is_visible })}
+                    isOutOfStock={outOfStockProducts.includes(p.id)}
+                    onToggleStock={() => toggleOutOfStock(p.id)}
                   />
                 ))}
               </SortableContext>
@@ -579,11 +595,15 @@ function SortableProductCard({
   onEdit,
   onDelete,
   onToggleVisible,
+  isOutOfStock,
+  onToggleStock,
 }: {
   product: any;
   onEdit: (p: any) => void;
   onDelete: (id: string) => void;
   onToggleVisible: (p: any) => void;
+  isOutOfStock: boolean;
+  onToggleStock: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: p.id });
 
@@ -599,7 +619,8 @@ function SortableProductCard({
       style={style}
       className={cn(
         "group flex items-center gap-3 bg-card px-3 py-2.5 rounded-xl border border-border/30 hover:border-border/60 transition-colors",
-        !p.is_visible && "opacity-50"
+        !p.is_visible && "opacity-50",
+        isOutOfStock && "border-orange-200 bg-orange-50/30"
       )}
     >
       {/* Handle de arrastar */}
@@ -624,7 +645,12 @@ function SortableProductCard({
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="font-semibold text-xs truncate">{p.code ? `${p.code} — ` : ""}{p.name}</p>
-        <p className="text-[11px] text-muted-foreground truncate">{p.description || "Sem descrição"}</p>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <p className="text-[11px] text-muted-foreground truncate">{p.description || "Sem descrição"}</p>
+          {isOutOfStock && (
+            <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 bg-orange-100 text-orange-600 rounded-full">Esgotado</span>
+          )}
+        </div>
       </div>
 
       {/* Preço */}
@@ -634,6 +660,12 @@ function SortableProductCard({
 
       {/* Ações no hover */}
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <Button
+          variant="ghost" size="icon" className={cn("h-7 w-7", isOutOfStock ? "text-orange-500 hover:text-orange-700" : "text-muted-foreground/50 hover:text-foreground")}
+          onClick={onToggleStock} title={isOutOfStock ? "Marcar disponível" : "Marcar esgotado"}
+        >
+          <PackageX className="h-3.5 w-3.5" />
+        </Button>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onToggleVisible(p)} title={p.is_visible ? "Ocultar" : "Exibir"}>
           {p.is_visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
         </Button>

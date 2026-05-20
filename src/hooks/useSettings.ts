@@ -31,6 +31,7 @@ export interface AppSettings {
   whatsappNumber: string;
   businessHours: BusinessHours[];
   autoPrint: boolean;
+  outOfStockProducts: string[];
 }
 
 const DEFAULT_BUSINESS_HOURS: BusinessHours[] = [
@@ -64,6 +65,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   whatsappNumber: "",
   businessHours: DEFAULT_BUSINESS_HOURS,
   autoPrint: false,
+  outOfStockProducts: [],
 };
 
 const KEY_MAP: Record<string, keyof AppSettings> = {
@@ -87,6 +89,7 @@ const KEY_MAP: Record<string, keyof AppSettings> = {
   whatsapp_number: "whatsappNumber",
   business_hours: "businessHours",
   auto_print: "autoPrint",
+  out_of_stock_products: "outOfStockProducts",
 };
 
 const REVERSE_KEY_MAP: Record<keyof AppSettings, string> = Object.fromEntries(
@@ -107,6 +110,12 @@ function parseSettings(rows: { key: string; value: string }[]): AppSettings {
         (settings as any)[field] = JSON.parse(row.value);
       } catch {
         (settings as any)[field] = DEFAULT_BUSINESS_HOURS;
+      }
+    } else if (field === "outOfStockProducts") {
+      try {
+        (settings as any)[field] = JSON.parse(row.value);
+      } catch {
+        (settings as any)[field] = [];
       }
     } else {
       (settings as any)[field] = row.value;

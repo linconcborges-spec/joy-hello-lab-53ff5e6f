@@ -129,6 +129,8 @@ export default function CustomerMenu() {
   };
 
   const isStoreOpen = isCurrentlyOpen;
+  const outOfStock: string[] = settings.outOfStockProducts ?? [];
+  const isEsgotado = (id: string) => outOfStock.includes(id);
 
   const handleAddToCart = () => {
     if (!isStoreOpen) {
@@ -353,6 +355,19 @@ export default function CustomerMenu() {
         </div>
       )}
 
+      {/* ── Banner loja fechada ── */}
+      {!isStoreOpen && (
+        <div className="mx-4 mt-3 bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3">
+          <div className="h-10 w-10 bg-red-100 rounded-xl flex items-center justify-center shrink-0">
+            <Clock className="h-5 w-5 text-red-600" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-red-700">Estamos fechados agora</p>
+            <p className="text-xs text-red-400 mt-0.5">Fora do horário de atendimento. Você pode navegar pelo cardápio.</p>
+          </div>
+        </div>
+      )}
+
       {/* ── Products ── */}
       <div className="mt-2 space-y-2">
         {search.trim() ? (
@@ -366,11 +381,9 @@ export default function CustomerMenu() {
             ) : (
               <div className="divide-y divide-gray-50">
                 {filteredProducts.map(p => (
-                  <ProductRow key={p.id} product={p} onSelect={() => {
-                    setSelectedProduct(p);
-                    setSelectedAddons([]);
-                    setQuantity(1);
-                    setItemObservation("");
+                  <ProductRow key={p.id} product={p} isOutOfStock={isEsgotado(p.id)} onSelect={() => {
+                    if (isEsgotado(p.id)) { toast.error("Produto esgotado no momento."); return; }
+                    setSelectedProduct(p); setSelectedAddons([]); setQuantity(1); setItemObservation("");
                   }} />
                 ))}
               </div>
@@ -390,11 +403,9 @@ export default function CustomerMenu() {
                 </div>
                 <div className="flex gap-3 overflow-x-auto px-4 no-scrollbar pb-1">
                   {products.slice(0, 8).map(p => (
-                    <FeaturedCard key={p.id} product={p} onSelect={() => {
-                      setSelectedProduct(p);
-                      setSelectedAddons([]);
-                      setQuantity(1);
-                      setItemObservation("");
+                    <FeaturedCard key={p.id} product={p} isOutOfStock={isEsgotado(p.id)} onSelect={() => {
+                      if (isEsgotado(p.id)) { toast.error("Produto esgotado no momento."); return; }
+                      setSelectedProduct(p); setSelectedAddons([]); setQuantity(1); setItemObservation("");
                     }} />
                   ))}
                 </div>
@@ -415,11 +426,9 @@ export default function CustomerMenu() {
                   {/* Grid 2 colunas */}
                   <div className="grid grid-cols-2 gap-3 px-4">
                     {catProducts.map(p => (
-                      <ProductCard key={p.id} product={p} onSelect={() => {
-                        setSelectedProduct(p);
-                        setSelectedAddons([]);
-                        setQuantity(1);
-                        setItemObservation("");
+                      <ProductCard key={p.id} product={p} isOutOfStock={isEsgotado(p.id)} onSelect={() => {
+                        if (isEsgotado(p.id)) { toast.error("Produto esgotado no momento."); return; }
+                        setSelectedProduct(p); setSelectedAddons([]); setQuantity(1); setItemObservation("");
                       }} />
                     ))}
                   </div>
@@ -756,11 +765,11 @@ export default function CustomerMenu() {
 }
 
 /* Card grande para "Em Destaque" — scroll horizontal */
-function FeaturedCard({ product, onSelect }: { product: Product; onSelect: () => void }) {
+function FeaturedCard({ product, onSelect, isOutOfStock }: { product: Product; onSelect: () => void; isOutOfStock?: boolean }) {
   return (
     <button
       onClick={onSelect}
-      className="shrink-0 w-28 rounded-xl bg-white border border-gray-100 overflow-hidden shadow-sm active:scale-95 transition-all text-left"
+      className={cn("shrink-0 w-28 rounded-xl bg-white border border-gray-100 overflow-hidden shadow-sm active:scale-95 transition-all text-left", isOutOfStock && "opacity-60")}
     >
       <div className="relative w-full h-20 bg-gray-100">
         {product.image_url ? (
@@ -770,9 +779,15 @@ function FeaturedCard({ product, onSelect }: { product: Product; onSelect: () =>
             <UtensilsCrossed className="h-8 w-8 text-gray-300" />
           </div>
         )}
-        <div className="absolute bottom-1.5 right-1.5 h-7 w-7 bg-red-600 rounded-full flex items-center justify-center shadow">
-          <Plus className="h-3.5 w-3.5 text-white" />
-        </div>
+        {isOutOfStock ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+            <span className="text-[10px] font-bold text-white bg-gray-800/80 px-2 py-0.5 rounded-full">Esgotado</span>
+          </div>
+        ) : (
+          <div className="absolute bottom-1.5 right-1.5 h-7 w-7 bg-red-600 rounded-full flex items-center justify-center shadow">
+            <Plus className="h-3.5 w-3.5 text-white" />
+          </div>
+        )}
       </div>
       <div className="p-2.5">
         <p className="text-[11px] font-semibold text-gray-900 line-clamp-2 leading-tight">{product.name}</p>
@@ -783,11 +798,11 @@ function FeaturedCard({ product, onSelect }: { product: Product; onSelect: () =>
 }
 
 /* Card grid 2 colunas — estilo OlaClick */
-function ProductCard({ product, onSelect }: { product: Product; onSelect: () => void }) {
+function ProductCard({ product, onSelect, isOutOfStock }: { product: Product; onSelect: () => void; isOutOfStock?: boolean }) {
   return (
     <button
       onClick={onSelect}
-      className="rounded-xl bg-white border border-gray-100 overflow-hidden shadow-sm active:scale-95 transition-all text-left w-full"
+      className={cn("rounded-xl bg-white border border-gray-100 overflow-hidden shadow-sm active:scale-95 transition-all text-left w-full", isOutOfStock && "opacity-60")}
     >
       {/* Imagem com altura fixa */}
       <div className="relative w-full h-20 bg-gray-100">
@@ -798,9 +813,15 @@ function ProductCard({ product, onSelect }: { product: Product; onSelect: () => 
             <UtensilsCrossed className="h-8 w-8 text-gray-200" />
           </div>
         )}
-        <div className="absolute bottom-1.5 right-1.5 h-7 w-7 bg-red-600 rounded-full flex items-center justify-center shadow-md">
-          <Plus className="h-3.5 w-3.5 text-white" />
-        </div>
+        {isOutOfStock ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+            <span className="text-[10px] font-bold text-white bg-gray-800/80 px-2 py-0.5 rounded-full">Esgotado</span>
+          </div>
+        ) : (
+          <div className="absolute bottom-1.5 right-1.5 h-7 w-7 bg-red-600 rounded-full flex items-center justify-center shadow-md">
+            <Plus className="h-3.5 w-3.5 text-white" />
+          </div>
+        )}
       </div>
       {/* Info abaixo */}
       <div className="p-2.5">
@@ -811,15 +832,20 @@ function ProductCard({ product, onSelect }: { product: Product; onSelect: () => 
   );
 }
 
-function ProductRow({ product, onSelect }: { product: Product; onSelect: () => void }) {
+function ProductRow({ product, onSelect, isOutOfStock }: { product: Product; onSelect: () => void; isOutOfStock?: boolean }) {
   return (
     <button
       onClick={onSelect}
-      className="w-full flex items-center gap-4 px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
+      className={cn("w-full flex items-center gap-4 px-4 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left", isOutOfStock && "opacity-60")}
     >
       {/* Text */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 leading-snug">{product.name}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-sm font-semibold text-gray-900 leading-snug">{product.name}</p>
+          {isOutOfStock && (
+            <span className="text-[10px] font-bold px-2 py-0.5 bg-gray-200 text-gray-500 rounded-full">Esgotado</span>
+          )}
+        </div>
         {product.description && (
           <p className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">{product.description}</p>
         )}
@@ -839,10 +865,11 @@ function ProductRow({ product, onSelect }: { product: Product; onSelect: () => v
             </div>
           )}
         </div>
-        {/* + button over image bottom-right */}
-        <div className="absolute -bottom-2 -right-2 h-8 w-8 bg-red-600 rounded-full flex items-center justify-center shadow-md">
-          <Plus className="h-4 w-4 text-white" />
-        </div>
+        {!isOutOfStock && (
+          <div className="absolute -bottom-2 -right-2 h-8 w-8 bg-red-600 rounded-full flex items-center justify-center shadow-md">
+            <Plus className="h-4 w-4 text-white" />
+          </div>
+        )}
       </div>
     </button>
   );
