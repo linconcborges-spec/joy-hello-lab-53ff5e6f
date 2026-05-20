@@ -447,75 +447,93 @@ export default function CustomerMenu() {
         </div>
       )}
 
-      {/* ── Item Selection Drawer ── */}
+      {/* ── Item Selection Drawer — estilo OlaClick ── */}
       <Drawer open={!!selectedProduct} onOpenChange={(o) => !o && setSelectedProduct(null)}>
-        <DrawerContent className="bg-white rounded-t-3xl border-0 max-h-[92vh] outline-none">
-          <div className="mx-auto w-10 h-1 bg-gray-200 rounded-full mt-3 mb-1" />
+        <DrawerContent className="bg-white border-0 max-h-[96vh] outline-none rounded-t-2xl">
           {selectedProduct && (
-            <div className="flex flex-col overflow-hidden">
-              {/* Product image */}
-              {selectedProduct.image_url && (
-                <div className="w-full h-52 bg-gray-100 overflow-hidden">
-                  <img src={selectedProduct.image_url} alt={selectedProduct.name} className="w-full h-full object-cover" />
-                </div>
-              )}
+            <div className="flex flex-col h-full overflow-hidden">
 
-              <div className="px-5 pt-5 pb-2 border-b border-gray-100">
-                <h2 className="text-xl font-bold text-gray-900">{selectedProduct.name}</h2>
-                {selectedProduct.description && (
-                  <p className="text-sm text-gray-500 mt-1 leading-relaxed">{selectedProduct.description}</p>
+              {/* Imagem + fechar */}
+              <div className="relative w-full bg-gray-100 shrink-0" style={{ height: selectedProduct.image_url ? 220 : 0 }}>
+                {selectedProduct.image_url && (
+                  <img src={selectedProduct.image_url} alt={selectedProduct.name} className="w-full h-full object-cover" />
                 )}
-                <p className="text-lg font-bold text-gray-900 mt-2">
-                  R$ {Number(selectedProduct.price).toFixed(2)}
-                </p>
+                <button
+                  onClick={() => setSelectedProduct(null)}
+                  className="absolute top-3 right-3 h-8 w-8 bg-white rounded-full shadow flex items-center justify-center"
+                >
+                  <X className="h-4 w-4 text-gray-600" />
+                </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6 no-scrollbar">
-                {/* Addons */}
+              {/* Scroll area */}
+              <div className="flex-1 overflow-y-auto no-scrollbar">
+
+                {/* Nome + preço + descrição */}
+                <div className="px-5 pt-5 pb-4 border-b border-gray-100">
+                  <h2 className="text-xl font-bold text-gray-900 text-center uppercase tracking-wide">
+                    {selectedProduct.name}
+                  </h2>
+                  {selectedProduct.description && (
+                    <p className="text-sm text-gray-500 mt-2 text-center leading-relaxed">
+                      {selectedProduct.description}
+                      {" "}
+                      <span className="text-gray-400 text-xs">(IMAGEM ILUSTRATIVA)</span>
+                    </p>
+                  )}
+                  <p className="text-2xl font-bold text-gray-900 mt-3 text-center">
+                    R$ {Number(selectedProduct.price).toFixed(2).replace(".", ",")}
+                  </p>
+                </div>
+
+                {/* Acréscimos */}
                 {addons.filter(a => !a.category_id || a.category_id === selectedProduct.category_id).length > 0 && (
                   <div>
-                    <div className="flex items-center justify-between mb-3">
+                    {/* Cabeçalho seção */}
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                       <div>
-                        <p className="text-sm font-bold text-gray-900">Adicionais</p>
-                        <p className="text-xs text-gray-400">Escolha os extras</p>
+                        <p className="text-base font-bold text-gray-900">Acréscimos:</p>
+                        <p className="text-xs text-red-600 font-medium mt-0.5">
+                          Selecione até {addons.length} opções
+                        </p>
                       </div>
-                      <span className="text-[10px] font-semibold text-gray-400 bg-gray-100 px-2 py-1 rounded-full">Opcional</span>
                     </div>
-                    <div className="space-y-2">
-                      {addons
-                        .filter(a => !a.category_id || a.category_id === selectedProduct.category_id)
-                        .map(addon => {
-                          const isSelected = selectedAddons.some(a => a.name === addon.name);
-                          return (
+
+                    {/* Lista de addons */}
+                    {addons
+                      .filter(a => !a.category_id || a.category_id === selectedProduct.category_id)
+                      .map(addon => {
+                        const isSelected = selectedAddons.some(a => a.name === addon.name);
+                        return (
+                          <div
+                            key={addon.id}
+                            className="flex items-center justify-between px-5 py-4 border-b border-gray-50"
+                          >
+                            <div>
+                              <p className="text-sm font-bold text-gray-800 uppercase tracking-wide">{addon.name}</p>
+                              <p className="text-xs text-gray-500 mt-0.5">+ R$ {Number(addon.price).toFixed(2).replace(".", ",")}</p>
+                            </div>
                             <button
-                              key={addon.id}
                               onClick={() => toggleAddon(addon)}
                               className={cn(
-                                "w-full flex items-center justify-between p-4 rounded-xl border transition-all",
-                                isSelected ? "border-red-500 bg-red-50" : "border-gray-100 bg-white"
+                                "h-8 w-8 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
+                                isSelected
+                                  ? "border-red-600 bg-red-600 text-white"
+                                  : "border-gray-300 text-gray-400 hover:border-red-400"
                               )}
                             >
-                              <div className="flex items-center gap-3 text-left">
-                                <div className={cn(
-                                  "h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0",
-                                  isSelected ? "border-red-600 bg-red-600" : "border-gray-300"
-                                )}>
-                                  {isSelected && <Check className="h-3 w-3 text-white" />}
-                                </div>
-                                <span className="text-sm font-medium text-gray-800">{addon.name}</span>
-                              </div>
-                              <span className="text-sm font-semibold text-gray-700">+ R$ {Number(addon.price).toFixed(2)}</span>
+                              {isSelected ? <Minus className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
                             </button>
-                          );
-                        })
-                      }
-                    </div>
+                          </div>
+                        );
+                      })
+                    }
                   </div>
                 )}
 
-                {/* Observation */}
-                <div>
-                  <p className="text-sm font-bold text-gray-900 mb-1">Alguma observação?</p>
+                {/* Observação */}
+                <div className="px-5 py-5">
+                  <p className="text-base font-bold text-gray-900 mb-1">Alguma observação?</p>
                   <p className="text-xs text-gray-400 mb-3">Ex: sem cebola, sem molho, ponto da carne</p>
                   <textarea
                     value={itemObservation}
@@ -527,19 +545,19 @@ export default function CustomerMenu() {
                 </div>
               </div>
 
-              {/* Footer */}
-              <div className="px-5 pb-10 pt-3 border-t border-gray-100 flex items-center gap-3">
-                <div className="flex items-center gap-2 bg-gray-100 rounded-xl p-1">
+              {/* Footer sticky — quantidade + botão */}
+              <div className="px-5 pb-8 pt-3 border-t border-gray-100 bg-white flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-3 py-2 shrink-0">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="h-9 w-9 bg-white rounded-lg shadow-sm flex items-center justify-center text-gray-700"
+                    className="h-7 w-7 flex items-center justify-center text-gray-500"
                   >
                     <Minus className="h-4 w-4" />
                   </button>
-                  <span className="text-base font-bold w-7 text-center">{quantity}</span>
+                  <span className="text-base font-bold w-5 text-center">{quantity}</span>
                   <button
                     onClick={() => setQuantity(quantity + 1)}
-                    className="h-9 w-9 bg-red-600 text-white rounded-lg shadow-sm flex items-center justify-center"
+                    className="h-7 w-7 flex items-center justify-center text-gray-500"
                   >
                     <Plus className="h-4 w-4" />
                   </button>
@@ -549,11 +567,10 @@ export default function CustomerMenu() {
                   className="flex-1 h-12 bg-red-600 text-white rounded-xl font-bold text-sm flex items-center justify-between px-5 active:scale-95 transition-all"
                 >
                   <span>Adicionar</span>
-                  <span>
-                    R$ {((Number(selectedProduct.price) + selectedAddons.reduce((s, a) => s + a.price, 0)) * quantity).toFixed(2)}
-                  </span>
+                  <span>R$ {((Number(selectedProduct.price) + selectedAddons.reduce((s, a) => s + a.price, 0)) * quantity).toFixed(2).replace(".", ",")}</span>
                 </button>
               </div>
+
             </div>
           )}
         </DrawerContent>
