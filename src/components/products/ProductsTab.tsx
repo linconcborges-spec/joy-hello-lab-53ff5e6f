@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Plus, Trash2, UtensilsCrossed, CloudUpload, Loader2, GripVertical, ChevronRight, ChevronDown, ChevronUp, Eye, EyeOff, Pencil, X, MoreVertical } from "lucide-react";
+import { Plus, Trash2, UtensilsCrossed, CloudUpload, Loader2, GripVertical, ChevronRight, ChevronDown, Eye, EyeOff, Pencil, X, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -137,33 +137,6 @@ export function ProductsTab({ newTrigger }: ProductsTabProps) {
     );
   };
 
-  const handleMoveCategory = async (cat: any, direction: "up" | "down") => {
-    const sorted = categories.map(c => ({ ...c })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-    const needsNormalization = new Set(sorted.map(c => c.sort_order)).size !== sorted.length || sorted.some(c => c.sort_order == null);
-    if (needsNormalization) sorted.forEach((c, i) => { c.sort_order = i * 10; });
-    const idx = sorted.findIndex(c => c.id === cat.id);
-    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-    if (swapIdx >= 0 && swapIdx < sorted.length) {
-      const current = sorted[idx];
-      const target = sorted[swapIdx];
-      const temp = current.sort_order;
-      current.sort_order = target.sort_order;
-      target.sort_order = temp;
-      try {
-        if (needsNormalization) {
-          await Promise.all(sorted.map(c => updateCategory.mutateAsync({ id: c.id, sort_order: c.sort_order })));
-        } else {
-          await Promise.all([
-            updateCategory.mutateAsync({ id: current.id, sort_order: current.sort_order }),
-            updateCategory.mutateAsync({ id: target.id, sort_order: target.sort_order }),
-          ]);
-        }
-      } catch (err) {
-        console.error("Move error:", err);
-      }
-    }
-  };
-
   const handleDuplicateProduct = (p: any) => {
     addProduct.mutate({
       ...p,
@@ -187,13 +160,26 @@ export function ProductsTab({ newTrigger }: ProductsTabProps) {
     const newIndex = catProducts.findIndex(p => p.id === over.id);
     const reordered = arrayMove(catProducts, oldIndex, newIndex);
 
-    // Salva sort_order de cada produto afetado
     reordered.forEach((p, i) => {
       if (p.sort_order !== i) {
         updateProduct.mutate({ id: p.id, sort_order: i });
       }
     });
   }, [updateProduct]);
+
+  const handleCategoryDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const sorted = [...categories].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    const oldIndex = sorted.findIndex(c => c.id === active.id);
+    const newIndex = sorted.findIndex(c => c.id === over.id);
+    const reordered = arrayMove(sorted, oldIndex, newIndex);
+
+    reordered.forEach((c, i) => {
+      updateCategory.mutate({ id: c.id, sort_order: i * 10 });
+    });
+  }, [categories, updateCategory]);
 
   return (
     <>
@@ -300,116 +286,44 @@ export function ProductsTab({ newTrigger }: ProductsTabProps) {
           </div>
         ) : (
           <>
-            {[...categories].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map((cat) => {
-              const catProducts = filteredProducts
-                .filter(p => (p.category_ids ?? [p.category_id].filter(Boolean)).includes(cat.id))
-                .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-
-              if (catProducts.length === 0 && search) return null;
-
+            {(() => {
+              const sortedCats = [...categories].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
               return (
-                <div key={cat.id} className="space-y-2 group/cat">
-                  {/* Cabeçalho categoria */}
-                  <div className="flex items-center justify-between bg-muted/40 px-3 py-2 rounded-xl border border-border/30">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {/* Chevron — só quando não está editando */}
-                      {editingCategoryId !== cat.id && (
-                        <div className="text-muted-foreground/50 cursor-pointer shrink-0" onClick={() => toggleCategoryCollapse(cat.id)}>
-                          {!expandedCategories[cat.id] ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        </div>
-                      )}
-
-                      {editingCategoryId === cat.id ? (
-                        /* Input de renomear */
-                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                          <Input
-                            value={editingCategoryName}
-                            onChange={(e) => setEditingCategoryName(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                updateCategory.mutate({ id: cat.id, name: editingCategoryName.trim() });
-                                setEditingCategoryId(null);
-                              }
-                              if (e.key === "Escape") setEditingCategoryId(null);
-                            }}
-                            className="h-7 text-xs font-bold uppercase flex-1"
-                            autoFocus
-                          />
-                          <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => {
-                            updateCategory.mutate({ id: cat.id, name: editingCategoryName.trim() });
-                            setEditingCategoryId(null);
-                          }}>
-                            <svg className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
-                          </Button>
-                          <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => setEditingCategoryId(null)}>
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      ) : (
-                        /* Nome normal + lápis */
-                        <div className="flex items-center gap-2 cursor-pointer select-none flex-1 min-w-0" onClick={() => toggleCategoryCollapse(cat.id)}>
-                          <h3 className="font-bold text-sm uppercase tracking-tight truncate">{cat.name}</h3>
-                          <Badge variant="outline" className="text-[10px] h-5 px-1.5 shrink-0">{catProducts.length}</Badge>
-                          <Button
-                            size="icon" variant="ghost"
-                            className="h-6 w-6 shrink-0 opacity-0 group-hover/cat:opacity-100 transition-opacity"
-                            onClick={(e) => { e.stopPropagation(); setEditingCategoryId(cat.id); setEditingCategoryName(cat.name); }}
-                            title="Renomear categoria"
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-
-                    {editingCategoryId !== cat.id && (
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMoveCategory(cat, "up")}><ChevronUp className="h-3.5 w-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMoveCategory(cat, "down")}><ChevronDown className="h-3.5 w-3.5" /></Button>
-                        <Button variant="outline" size="sm" onClick={() => setAssigningCategory(cat.id)} className="h-7 text-[10px] uppercase font-bold gap-1 ml-1">
-                          <Plus className="h-3 w-3" /> Existente
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => { setShowNewProduct(true); setNewProductCategoryId(cat.id); }} className="h-7 text-[10px] uppercase font-bold gap-1">
-                          <Plus className="h-3 w-3" /> Novo
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem className="text-destructive font-bold text-xs" onClick={() => deleteCategory.mutate(cat.id)}>Excluir Categoria</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    )}
-                  </div>
-
-                  {expandedCategories[cat.id] && (
-                    <div className="space-y-1.5 pl-1">
-                      {catProducts.length === 0 ? (
-                        <div className="text-center py-5 border border-dashed rounded-xl opacity-30">
-                          <p className="text-xs font-bold uppercase">Nenhum produto nesta categoria</p>
-                        </div>
-                      ) : (
-                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleDragEnd(e, catProducts)}>
-                          <SortableContext items={catProducts.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                            {catProducts.map(p => (
-                              <SortableProductCard
-                                key={p.id}
-                                product={p}
-                                onEdit={openEditSheet}
-                                onDelete={(id) => deleteProduct.mutate(id)}
-                                onToggleVisible={(p) => updateProduct.mutate({ id: p.id, is_visible: !p.is_visible })}
-                              />
-                            ))}
-                          </SortableContext>
-                        </DndContext>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
+                  <SortableContext items={sortedCats.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                    {sortedCats.map((cat) => {
+                      const catProducts = filteredProducts
+                        .filter(p => (p.category_ids ?? [p.category_id].filter(Boolean)).includes(cat.id))
+                        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+                      if (catProducts.length === 0 && search) return null;
+                      return (
+                        <SortableCategoryItem
+                          key={cat.id}
+                          cat={cat}
+                          catProducts={catProducts}
+                          sensors={sensors}
+                          expandedCategories={expandedCategories}
+                          toggleCategoryCollapse={toggleCategoryCollapse}
+                          editingCategoryId={editingCategoryId}
+                          editingCategoryName={editingCategoryName}
+                          setEditingCategoryId={setEditingCategoryId}
+                          setEditingCategoryName={setEditingCategoryName}
+                          updateCategory={updateCategory}
+                          setAssigningCategory={setAssigningCategory}
+                          setShowNewProduct={setShowNewProduct}
+                          setNewProductCategoryId={setNewProductCategoryId}
+                          deleteCategory={deleteCategory}
+                          openEditSheet={openEditSheet}
+                          deleteProduct={deleteProduct}
+                          updateProduct={updateProduct}
+                          handleDragEnd={handleDragEnd}
+                        />
+                      );
+                    })}
+                  </SortableContext>
+                </DndContext>
               );
-            })}
+            })()}
 
             {/* Sem categoria */}
             {(() => {
@@ -424,7 +338,22 @@ export function ProductsTab({ newTrigger }: ProductsTabProps) {
                     <Badge variant="outline" className="text-[10px] h-5 px-1.5">{unassigned.length}</Badge>
                   </div>
                   <div className="space-y-1.5">
-                    {unassigned.map(renderProductCard)}
+                    {unassigned.map(p => (
+                      <div key={p.id} className="group flex items-center gap-3 bg-card px-3 py-2.5 rounded-xl border border-border/30 hover:border-border/60 transition-colors">
+                        <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden border shrink-0">
+                          {p.image_url ? <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" /> : <UtensilsCrossed className="h-4 w-4 text-muted-foreground/30" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-xs truncate">{p.code ? `${p.code} — ` : ""}{p.name}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">{p.description || "Sem descrição"}</p>
+                        </div>
+                        <span className="font-bold text-sm text-rose-600 shrink-0">R$ {Number(p.price).toFixed(2)}</span>
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditSheet(p)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteProduct.mutate(p.id)} title="Excluir"><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               );
@@ -523,7 +452,128 @@ export function ProductsTab({ newTrigger }: ProductsTabProps) {
   );
 }
 
-// ── Componente de card arrastável ──────────────────────────────────────────
+// ── Categoria arrastável ───────────────────────────────────────────────────
+function SortableCategoryItem({
+  cat, catProducts, sensors, expandedCategories, toggleCategoryCollapse,
+  editingCategoryId, editingCategoryName, setEditingCategoryId, setEditingCategoryName,
+  updateCategory, setAssigningCategory, setShowNewProduct, setNewProductCategoryId,
+  deleteCategory, openEditSheet, deleteProduct, updateProduct, handleDragEnd,
+}: {
+  cat: any; catProducts: any[]; sensors: any; expandedCategories: Record<string, boolean>;
+  toggleCategoryCollapse: (id: string) => void; editingCategoryId: string | null;
+  editingCategoryName: string; setEditingCategoryId: (id: string | null) => void;
+  setEditingCategoryName: (n: string) => void; updateCategory: any;
+  setAssigningCategory: (id: string) => void; setShowNewProduct: (v: boolean) => void;
+  setNewProductCategoryId: (id: string) => void; deleteCategory: any;
+  openEditSheet: (p: any) => void; deleteProduct: any; updateProduct: any;
+  handleDragEnd: (event: DragEndEvent, catProducts: any[]) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  const isEditing = editingCategoryId === cat.id;
+
+  return (
+    <div ref={setNodeRef} style={style} className="space-y-2">
+      <div className="flex items-center justify-between bg-muted/40 px-3 py-2 rounded-xl border border-border/30">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {!isEditing && (
+            <button
+              {...attributes} {...listeners}
+              className="cursor-grab active:cursor-grabbing text-muted-foreground/30 hover:text-muted-foreground/60 shrink-0 touch-none"
+              tabIndex={-1}
+            >
+              <GripVertical className="h-4 w-4" />
+            </button>
+          )}
+          {!isEditing && (
+            <div className="text-muted-foreground/50 cursor-pointer shrink-0" onClick={() => toggleCategoryCollapse(cat.id)}>
+              {!expandedCategories[cat.id] ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </div>
+          )}
+
+          {isEditing ? (
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <Input
+                value={editingCategoryName}
+                onChange={(e) => setEditingCategoryName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") { updateCategory.mutate({ id: cat.id, name: editingCategoryName.trim() }); setEditingCategoryId(null); }
+                  if (e.key === "Escape") setEditingCategoryId(null);
+                }}
+                className="h-7 text-xs font-bold uppercase flex-1"
+                autoFocus
+              />
+              <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => { updateCategory.mutate({ id: cat.id, name: editingCategoryName.trim() }); setEditingCategoryId(null); }}>
+                <svg className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+              </Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => setEditingCategoryId(null)}>
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 cursor-pointer select-none flex-1 min-w-0" onClick={() => toggleCategoryCollapse(cat.id)}>
+              <h3 className="font-bold text-sm uppercase tracking-tight truncate">{cat.name}</h3>
+              <Badge variant="outline" className="text-[10px] h-5 px-1.5 shrink-0">{catProducts.length}</Badge>
+              <Button
+                size="icon" variant="ghost"
+                className="h-6 w-6 shrink-0 text-muted-foreground/40 hover:text-foreground transition-colors"
+                onClick={(e) => { e.stopPropagation(); setEditingCategoryId(cat.id); setEditingCategoryName(cat.name); }}
+                title="Renomear categoria"
+              >
+                <Pencil className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {!isEditing && (
+          <div className="flex items-center gap-1 shrink-0">
+            <Button variant="outline" size="sm" onClick={() => setAssigningCategory(cat.id)} className="h-7 text-[10px] uppercase font-bold gap-1 ml-1">
+              <Plus className="h-3 w-3" /> Existente
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => { setShowNewProduct(true); setNewProductCategoryId(cat.id); }} className="h-7 text-[10px] uppercase font-bold gap-1">
+              <Plus className="h-3 w-3" /> Novo
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem className="text-destructive font-bold text-xs" onClick={() => deleteCategory.mutate(cat.id)}>Excluir Categoria</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+      </div>
+
+      {expandedCategories[cat.id] && (
+        <div className="space-y-1.5 pl-1">
+          {catProducts.length === 0 ? (
+            <div className="text-center py-5 border border-dashed rounded-xl opacity-30">
+              <p className="text-xs font-bold uppercase">Nenhum produto nesta categoria</p>
+            </div>
+          ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleDragEnd(e, catProducts)}>
+              <SortableContext items={catProducts.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                {catProducts.map(p => (
+                  <SortableProductCard
+                    key={p.id}
+                    product={p}
+                    onEdit={openEditSheet}
+                    onDelete={(id) => deleteProduct.mutate(id)}
+                    onToggleVisible={(p) => updateProduct.mutate({ id: p.id, is_visible: !p.is_visible })}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Produto arrastável ─────────────────────────────────────────────────────
 function SortableProductCard({
   product: p,
   onEdit,
