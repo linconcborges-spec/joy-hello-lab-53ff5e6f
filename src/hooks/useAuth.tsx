@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import { supabase } from "@/integrations/supabase/client";
 import { toEmployeeEmail } from "@/lib/authUtils";
 import bcrypt from "bcryptjs";
+import { toast } from "sonner";
 
 const LOCAL_SESSION_KEY = "_emp_session_v1";
 
@@ -128,26 +129,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         8000
       );
 
-      if (empError || !empData) return false;
+      if (empError || !empData) {
+        console.error("[Auth] Erro ao buscar funcionário:", empError?.message, empError?.code);
+        toast.error(`Erro de acesso ao banco: ${empError?.message ?? "funcionário não encontrado"}`, { id: "auth-db-err" });
+        return false;
+      }
 
       const d = empData as any;
       if (d.auth_id) {
-        // Tem auth_id mas signInWithPassword falhou (ex: e-mail não confirmado ou senha dessincronizada)
+        // Tem auth_id mas signInWithPassword falhou — informa o erro de Auth real
+        console.warn("[Auth] signInError:", signInError?.message, "| status:", signInError?.status);
+        toast.info(`Auth: ${signInError?.message ?? "falha"}`, { id: "auth-supabase-err" });
+
         // Tenta verificar contra employees.password como fallback
-        if (d.password) {
-          const isHashFb = /^\$2[ayb]\$/.test(d.password);
-          const isMatchFb = isHashFb
-            ? bcrypt.compareSync(password, d.password)
-            : d.password === password;
-          if (isMatchFb) {
-            const emp = { id: d.id, name: d.name, username: d.username, role: d.role };
-            try {
-              localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify({ ...emp, exp: Date.now() + 24 * 3600 * 1000 }));
-            } catch { /* ok */ }
-            setUser(emp);
-            return true;
-          }
+        if (!d.password) {
+          toast.error("Senha não encontrada no banco. Peça ao admin para salvar a senha novamente.", { id: "auth-nopw" });
+          return false;
         }
+
+        const isHashFb = /^\$2[ayb]\$/.test(d.password);
+        const isMatchFb = isHashFb
+          ? bcrypt.compareSync(password, d.password)
+          : d.password === password;
+        console.log("[Auth] Fallback bcrypt — isHash:", isHashFb, "| isMatch:", isMatchFb);
+
+        if (isMatchFb) {
+          const emp = { id: d.id, name: d.name, username: d.username, role: d.role };
+          try {
+            localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify({ ...emp, exp: Date.now() + 24 * 3600 * 1000 }));
+          } catch { /* ok */ }
+          setUser(emp);
+          return true;
+        }
+        toast.error("Senha local não confere. Tente salvar a senha novamente nas configurações.", { id: "auth-mismatch" });
         return false;
       }
 
