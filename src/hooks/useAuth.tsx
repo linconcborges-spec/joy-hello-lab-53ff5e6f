@@ -110,10 +110,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Auth OK — busca o employee vinculado
         const emp = await withTimeout(fetchEmployeeByAuthId(signInData.user.id), 5000);
         if (emp) {
+          // Persiste sessão local (supabase client tem persistSession:false)
+          try {
+            localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify({
+              id: emp.id, name: emp.name, username: emp.username, role: emp.role,
+              exp: Date.now() + 24 * 3600 * 1000,
+            }));
+          } catch { /* ok */ }
           setUser(emp);
           return true;
         }
-        // Auth OK mas employee não encontrado — não cai no fallback de migração
         return false;
       }
 
