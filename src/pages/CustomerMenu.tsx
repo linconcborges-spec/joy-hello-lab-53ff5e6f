@@ -195,11 +195,12 @@ export default function CustomerMenu() {
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans pb-32">
+    <div className="max-w-md mx-auto bg-gray-100 min-h-screen">
 
       {/* ── Banner + Store Info ── */}
       <div className="bg-white">
         {/* Cover Image */}
-        <div className="relative h-48 w-full bg-gray-200 overflow-hidden">
+        <div className="relative h-32 w-full bg-gray-200 overflow-hidden">
           <img
             src={settings.bannerUrl || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop"}
             alt="banner"
@@ -750,6 +751,7 @@ export default function CustomerMenu() {
         </DrawerContent>
       </Drawer>
     </div>
+    </div>
   );
 }
 
@@ -758,9 +760,9 @@ function FeaturedCard({ product, onSelect }: { product: Product; onSelect: () =>
   return (
     <button
       onClick={onSelect}
-      className="shrink-0 w-32 rounded-xl bg-white border border-gray-100 overflow-hidden shadow-sm active:scale-95 transition-all text-left"
+      className="shrink-0 w-28 rounded-xl bg-white border border-gray-100 overflow-hidden shadow-sm active:scale-95 transition-all text-left"
     >
-      <div className="relative w-full h-24 bg-gray-100">
+      <div className="relative w-full h-20 bg-gray-100">
         {product.image_url ? (
           <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
         ) : (
@@ -788,7 +790,7 @@ function ProductCard({ product, onSelect }: { product: Product; onSelect: () => 
       className="rounded-xl bg-white border border-gray-100 overflow-hidden shadow-sm active:scale-95 transition-all text-left w-full"
     >
       {/* Imagem com altura fixa */}
-      <div className="relative w-full h-24 bg-gray-100">
+      <div className="relative w-full h-20 bg-gray-100">
         {product.image_url ? (
           <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
         ) : (
