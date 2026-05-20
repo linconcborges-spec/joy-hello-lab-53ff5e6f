@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toEmployeeEmail } from "@/lib/authUtils";
-import bcrypt from "bcryptjs";
 import { toast } from "sonner";
 
 const LOCAL_SESSION_KEY = "_emp_session_v1";
@@ -118,87 +117,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
 
-      // 2. Fallback de migração: funcionário ainda não tem auth_id
-      //    REQUER que "Confirm email" esteja DESATIVADO no Supabase Dashboard.
-      const { data: empData, error: empError } = await withTimeout(
-        supabase
-          .from("employees" as any)
-          .select("id, name, username, password, role, auth_id")
-          .eq("username", username.trim().toLowerCase())
-          .single(),
+      // 2. Fallback via RPC verify_employee_login (SECURITY DEFINER — ignora RLS)
+      //    pgcrypto.crypt() faz a comparação bcrypt no servidor, sem ler senha no cliente
+      const { data: rpcRows, error: rpcError } = await withTimeout(
+        supabase.rpc("verify_employee_login", {
+          p_username: username.trim().toLowerCase(),
+          p_password: password,
+        }),
         8000
       );
 
-      if (empError || !empData) {
-        console.error("[Auth] Erro ao buscar funcionário:", empError?.message, empError?.code);
-        toast.error(`Erro de acesso ao banco: ${empError?.message ?? "funcionário não encontrado"}`, { id: "auth-db-err" });
+      if (rpcError) {
+        console.error("[Auth] verify_employee_login erro:", rpcError.message);
+        toast.error(`Erro de verificação: ${rpcError.message}`, { id: "auth-rpc-err" });
         return false;
       }
 
-      const d = empData as any;
-      if (d.auth_id) {
-        // Tem auth_id mas signInWithPassword falhou — informa o erro de Auth real
-        console.warn("[Auth] signInError:", signInError?.message, "| status:", signInError?.status);
-        toast.info(`Auth: ${signInError?.message ?? "falha"}`, { id: "auth-supabase-err" });
-
-        // Tenta verificar contra employees.password como fallback
-        if (!d.password) {
-          toast.error("Senha não encontrada no banco. Peça ao admin para salvar a senha novamente.", { id: "auth-nopw" });
-          return false;
-        }
-
-        const isHashFb = /^\$2[ayb]\$/.test(d.password);
-        const isMatchFb = isHashFb
-          ? bcrypt.compareSync(password, d.password)
-          : d.password === password;
-        console.log("[Auth] Fallback bcrypt — isHash:", isHashFb, "| isMatch:", isMatchFb);
-
-        if (isMatchFb) {
-          const emp = { id: d.id, name: d.name, username: d.username, role: d.role };
-          try {
-            localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify({ ...emp, exp: Date.now() + 24 * 3600 * 1000 }));
-          } catch { /* ok */ }
-          setUser(emp);
-          return true;
-        }
-        toast.error("Senha local não confere. Tente salvar a senha novamente nas configurações.", { id: "auth-mismatch" });
+      const rows = rpcRows as Array<{ id: string; name: string; username: string; role: string }> | null;
+      if (!rows || rows.length === 0) {
+        // Senha errada ou funcionário não existe — mensagem genérica por segurança
         return false;
       }
 
-      // Verifica senha antiga (bcrypt ou texto plano)
-      const storedPassword = d.password as string;
-      const isHash = storedPassword && /^\$2[ayb]\$/.test(storedPassword);
-      const isMatch = isHash
-        ? bcrypt.compareSync(password, storedPassword)
-        : storedPassword === password;
-
-      if (!isMatch) return false;
-
-      // Cria usuário no Supabase Auth e vincula ao employee
-      const { data: signUpData, error: signUpError } = await withTimeout(
-        supabase.auth.signUp({ email, password }),
-        8000
-      );
-      if (signUpError || !signUpData.user) {
-        console.error("[Auth] Falha ao criar usuário no Supabase Auth:", signUpError);
-        return false;
-      }
-
-      await supabase
-        .from("employees" as any)
-        .update({ auth_id: signUpData.user.id, password: "" })
-        .eq("id", d.id);
-
-      const { data: finalSignIn } = await withTimeout(
-        supabase.auth.signInWithPassword({ email, password }),
-        8000
-      );
-      if (finalSignIn.user) {
-        setUser({ id: d.id, name: d.name, username: d.username, role: d.role });
-        return true;
-      }
-
-      return false;
+      const emp = rows[0];
+      try {
+        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify({
+          id: emp.id, name: emp.name, username: emp.username, role: emp.role,
+          exp: Date.now() + 24 * 3600 * 1000,
+        }));
+      } catch { /* ok */ }
+      setUser({ id: emp.id, name: emp.name, username: emp.username, role: emp.role });
+      return true;
     } catch {
       // timeout ou erro de rede
       return false;
