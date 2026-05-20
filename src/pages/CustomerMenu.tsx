@@ -758,9 +758,9 @@ function FeaturedCard({ product, onSelect }: { product: Product; onSelect: () =>
   return (
     <button
       onClick={onSelect}
-      className="shrink-0 w-36 rounded-2xl bg-white border border-gray-100 overflow-hidden shadow-sm hover:shadow-md active:scale-95 transition-all text-left"
+      className="shrink-0 w-32 rounded-xl bg-white border border-gray-100 overflow-hidden shadow-sm active:scale-95 transition-all text-left"
     >
-      <div className="relative w-full h-28 bg-gray-100">
+      <div className="relative w-full h-24 bg-gray-100">
         {product.image_url ? (
           <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
         ) : (
@@ -785,28 +785,25 @@ function ProductCard({ product, onSelect }: { product: Product; onSelect: () => 
   return (
     <button
       onClick={onSelect}
-      className="rounded-2xl bg-white border border-gray-100 overflow-hidden shadow-sm hover:shadow-md active:scale-95 transition-all text-left w-full"
+      className="rounded-xl bg-white border border-gray-100 overflow-hidden shadow-sm active:scale-95 transition-all text-left w-full"
     >
-      {/* Imagem ocupa ~58% da altura */}
-      <div className="relative w-full aspect-[4/3] bg-gray-100">
+      {/* Imagem com altura fixa */}
+      <div className="relative w-full h-24 bg-gray-100">
         {product.image_url ? (
           <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <UtensilsCrossed className="h-10 w-10 text-gray-200" />
+            <UtensilsCrossed className="h-8 w-8 text-gray-200" />
           </div>
         )}
-        <div className="absolute bottom-2 right-2 h-8 w-8 bg-red-600 rounded-full flex items-center justify-center shadow-md">
-          <Plus className="h-4 w-4 text-white" />
+        <div className="absolute bottom-1.5 right-1.5 h-7 w-7 bg-red-600 rounded-full flex items-center justify-center shadow-md">
+          <Plus className="h-3.5 w-3.5 text-white" />
         </div>
       </div>
       {/* Info abaixo */}
-      <div className="p-3">
-        <p className="text-xs font-semibold text-gray-900 line-clamp-2 leading-snug">{product.name}</p>
-        {product.description && (
-          <p className="text-[10px] text-gray-400 mt-1 line-clamp-1">{product.description}</p>
-        )}
-        <p className="text-sm font-bold text-gray-900 mt-2">R$ {Number(product.price).toFixed(2)}</p>
+      <div className="p-2.5">
+        <p className="text-[11px] font-semibold text-gray-900 line-clamp-2 leading-snug">{product.name}</p>
+        <p className="text-xs font-bold text-gray-900 mt-1.5">R$ {Number(product.price).toFixed(2)}</p>
       </div>
     </button>
   );
