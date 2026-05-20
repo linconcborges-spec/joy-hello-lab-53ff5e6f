@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toEmployeeEmail } from "@/lib/authUtils";
 import bcrypt from "bcryptjs";
 
+const LOCAL_SESSION_KEY = "_emp_session_v1";
+
 function withTimeout<T>(promise: PromiseLike<T>, ms: number): Promise<T> {
   return Promise.race([
     Promise.resolve(promise),
@@ -44,6 +46,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Restaura sessão local imediatamente (síncrono) — cobre funcionários sem Supabase Auth
+    try {
+      const raw = localStorage.getItem(LOCAL_SESSION_KEY);
+      if (raw) {
+        const s = JSON.parse(raw);
+        if (s.exp > Date.now()) {
+          setUser({ id: s.id, name: s.name, username: s.username, role: s.role });
+        } else {
+          localStorage.removeItem(LOCAL_SESSION_KEY);
+        }
+      }
+    } catch { /* localStorage indisponível */ }
+
     // Timeout de segurança: se o Supabase não responder em 5s, libera a tela
     const timeout = setTimeout(() => setIsLoading(false), 5000);
 
@@ -54,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(emp);
         }
       } catch {
-        // falha ao buscar employee — trata como não autenticado
+        // falha ao buscar employee — mantém sessão local se houver
       } finally {
         clearTimeout(timeout);
         setIsLoading(false);
@@ -67,13 +82,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_OUT") {
         setUser(null);
+        try { localStorage.removeItem(LOCAL_SESSION_KEY); } catch { /* ok */ }
       } else if (session?.user) {
         try {
           const emp = await withTimeout(fetchEmployeeByAuthId(session.user.id), 8000);
           if (emp) setUser(emp);
-          // se emp for null (auth_id sem employee), não altera — login já tratou isso
         } catch {
-          // timeout ou erro de rede: mantém o usuário atual em vez de deslogá-lo
+          // timeout ou erro de rede: mantém o usuário atual
         }
       }
     });
@@ -117,7 +132,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const d = empData as any;
       if (d.auth_id) {
-        // Tem auth_id mas signInWithPassword falhou → senha errada
+        // Tem auth_id mas signInWithPassword falhou (ex: e-mail não confirmado ou senha dessincronizada)
+        // Tenta verificar contra employees.password como fallback
+        if (d.password) {
+          const isHashFb = /^\$2[ayb]\$/.test(d.password);
+          const isMatchFb = isHashFb
+            ? bcrypt.compareSync(password, d.password)
+            : d.password === password;
+          if (isMatchFb) {
+            const emp = { id: d.id, name: d.name, username: d.username, role: d.role };
+            try {
+              localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify({ ...emp, exp: Date.now() + 24 * 3600 * 1000 }));
+            } catch { /* ok */ }
+            setUser(emp);
+            return true;
+          }
+        }
         return false;
       }
 
@@ -162,6 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    try { localStorage.removeItem(LOCAL_SESSION_KEY); } catch { /* ok */ }
     await supabase.auth.signOut();
     setUser(null);
   }, []);

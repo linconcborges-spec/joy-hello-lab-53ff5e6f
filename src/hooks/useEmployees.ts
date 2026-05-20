@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { authCheckClient } from "@/integrations/supabase/authCheckClient";
 import { toast } from "sonner";
 import { toEmployeeEmail } from "@/lib/authUtils";
+import bcrypt from "bcryptjs";
 
 export interface Employee {
   id: string;
@@ -46,6 +47,8 @@ export function useAddEmployee() {
         throw signUpError ?? new Error("Falha ao criar usuário no Supabase Auth");
       }
 
+      const hashedPassword = bcrypt.hashSync(employee.password, 10);
+
       const { data, error } = await supabase
         .from("employees" as any)
         .insert({
@@ -53,7 +56,7 @@ export function useAddEmployee() {
           username: employee.username.toLowerCase().trim(),
           role: employee.role,
           auth_id: signUpData.user.id,
-          password: "",
+          password: hashedPassword,
         } as any)
         .select("id, name, username, role, auth_id")
         .single();
@@ -82,7 +85,7 @@ export function useUpdateEmployee() {
       id,
       auth_id,
       password,
-      ...data
+      ...rest
     }: {
       id: string;
       auth_id?: string | null;
@@ -91,21 +94,27 @@ export function useUpdateEmployee() {
       password?: string;
       role?: string;
     }) => {
-      // Atualiza dados básicos do employee
-      if (Object.keys(data).length > 0) {
+      // Monta o update: dados básicos + hash da nova senha (se fornecida)
+      const updates: any = { ...rest };
+      if (password?.trim()) {
+        updates.password = bcrypt.hashSync(password, 10);
+      }
+
+      if (Object.keys(updates).length > 0) {
         const { error } = await supabase
           .from("employees" as any)
-          .update(data)
+          .update(updates)
           .eq("id", id);
         if (error) throw error;
       }
 
-      // Troca de senha via Edge Function (requer auth_id + admin autenticado)
+      // Tenta atualizar também no Supabase Auth via Edge Function (best-effort)
       if (password && auth_id) {
         const { error: fnError } = await supabase.functions.invoke("update-employee-password", {
           body: { auth_id, new_password: password },
         });
-        if (fnError) throw fnError;
+        if (fnError) console.error("[useUpdateEmployee] Edge function:", fnError.message);
+        // Não joga erro: employees.password já foi atualizado como fallback
       }
     },
     onSuccess: () => {
