@@ -37,12 +37,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Restaura sessão existente do Supabase Auth
+    // Timeout de segurança: se o Supabase não responder em 8s, libera a tela
+    const timeout = setTimeout(() => setIsLoading(false), 8000);
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const emp = await fetchEmployeeByAuthId(session.user.id);
-        setUser(emp);
+      try {
+        if (session?.user) {
+          const emp = await fetchEmployeeByAuthId(session.user.id);
+          setUser(emp);
+        }
+      } catch {
+        // falha ao buscar employee — trata como não autenticado
+      } finally {
+        clearTimeout(timeout);
+        setIsLoading(false);
       }
+    }).catch(() => {
+      clearTimeout(timeout);
       setIsLoading(false);
     });
 
@@ -50,12 +61,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === "SIGNED_OUT" || !session?.user) {
         setUser(null);
       } else if (session?.user) {
-        const emp = await fetchEmployeeByAuthId(session.user.id);
-        setUser(emp);
+        try {
+          const emp = await fetchEmployeeByAuthId(session.user.id);
+          setUser(emp);
+        } catch {
+          setUser(null);
+        }
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => { subscription.unsubscribe(); clearTimeout(timeout); };
   }, []);
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
