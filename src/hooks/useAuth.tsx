@@ -3,6 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toEmployeeEmail } from "@/lib/authUtils";
 import bcrypt from "bcryptjs";
 
+function withTimeout<T>(promise: PromiseLike<T>, ms: number): Promise<T> {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+  ]);
+}
+
 interface AuthUser {
   id: string;
   name: string;
@@ -37,13 +44,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Timeout de segurança: se o Supabase não responder em 8s, libera a tela
-    const timeout = setTimeout(() => setIsLoading(false), 8000);
+    // Timeout de segurança: se o Supabase não responder em 5s, libera a tela
+    const timeout = setTimeout(() => setIsLoading(false), 5000);
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    withTimeout(supabase.auth.getSession(), 4000).then(async ({ data: { session } }) => {
       try {
         if (session?.user) {
-          const emp = await fetchEmployeeByAuthId(session.user.id);
+          const emp = await withTimeout(fetchEmployeeByAuthId(session.user.id), 4000);
           setUser(emp);
         }
       } catch {
@@ -62,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
       } else if (session?.user) {
         try {
-          const emp = await fetchEmployeeByAuthId(session.user.id);
+          const emp = await withTimeout(fetchEmployeeByAuthId(session.user.id), 4000);
           setUser(emp);
         } catch {
           setUser(null);
@@ -76,63 +83,81 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     const email = toEmployeeEmail(username.trim().toLowerCase());
 
-    // 1. Tentativa via Supabase Auth
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      // 1. Tentativa via Supabase Auth (caminho normal)
+      const { data: signInData, error: signInError } = await withTimeout(
+        supabase.auth.signInWithPassword({ email, password }),
+        8000
+      );
 
-    if (!signInError && signInData.user) {
-      const emp = await fetchEmployeeByAuthId(signInData.user.id);
-      if (emp) {
-        setUser(emp);
+      if (!signInError && signInData.user) {
+        // Auth OK — busca o employee vinculado
+        const emp = await withTimeout(fetchEmployeeByAuthId(signInData.user.id), 5000);
+        if (emp) {
+          setUser(emp);
+          return true;
+        }
+        // Auth OK mas employee não encontrado — não cai no fallback de migração
+        return false;
+      }
+
+      // 2. Fallback de migração: funcionário ainda não tem auth_id
+      //    REQUER que "Confirm email" esteja DESATIVADO no Supabase Dashboard.
+      const { data: empData, error: empError } = await withTimeout(
+        supabase
+          .from("employees" as any)
+          .select("id, name, username, password, role, auth_id")
+          .eq("username", username.trim().toLowerCase())
+          .single(),
+        8000
+      );
+
+      if (empError || !empData) return false;
+
+      const d = empData as any;
+      if (d.auth_id) {
+        // Tem auth_id mas signInWithPassword falhou → senha errada
+        return false;
+      }
+
+      // Verifica senha antiga (bcrypt ou texto plano)
+      const storedPassword = d.password as string;
+      const isHash = storedPassword && /^\$2[ayb]\$/.test(storedPassword);
+      const isMatch = isHash
+        ? bcrypt.compareSync(password, storedPassword)
+        : storedPassword === password;
+
+      if (!isMatch) return false;
+
+      // Cria usuário no Supabase Auth e vincula ao employee
+      const { data: signUpData, error: signUpError } = await withTimeout(
+        supabase.auth.signUp({ email, password }),
+        8000
+      );
+      if (signUpError || !signUpData.user) {
+        console.error("[Auth] Falha ao criar usuário no Supabase Auth:", signUpError);
+        return false;
+      }
+
+      await supabase
+        .from("employees" as any)
+        .update({ auth_id: signUpData.user.id, password: "" })
+        .eq("id", d.id);
+
+      const { data: finalSignIn } = await withTimeout(
+        supabase.auth.signInWithPassword({ email, password }),
+        8000
+      );
+      if (finalSignIn.user) {
+        setUser({ id: d.id, name: d.name, username: d.username, role: d.role });
         return true;
       }
-    }
 
-    // 2. Fallback de migração: funcionário ainda não tem auth_id
-    //    Verifica credenciais antigas (bcrypt / texto plano) e migra automaticamente.
-    //    REQUER que "Confirm email" esteja DESATIVADO no Supabase Dashboard (Auth > Settings).
-    const { data: empData, error: empError } = await supabase
-      .from("employees" as any)
-      .select("id, name, username, password, role, auth_id")
-      .eq("username", username.trim().toLowerCase())
-      .single();
-
-    if (empError || !empData) return false;
-
-    const d = empData as any;
-    if (d.auth_id) {
-      // Tem auth_id mas o signInWithPassword falhou → senha errada
+      return false;
+    } catch {
+      // timeout ou erro de rede
       return false;
     }
-
-    // Verifica senha antiga (bcrypt ou texto plano)
-    const storedPassword = d.password as string;
-    const isHash = storedPassword && /^\$2[ayb]\$/.test(storedPassword);
-    const isMatch = isHash
-      ? bcrypt.compareSync(password, storedPassword)
-      : storedPassword === password;
-
-    if (!isMatch) return false;
-
-    // Cria o usuário no Supabase Auth e vincula ao employee
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
-    if (signUpError || !signUpData.user) {
-      console.error("[Auth] Falha ao criar usuário no Supabase Auth:", signUpError);
-      return false;
-    }
-
-    await supabase
-      .from("employees" as any)
-      .update({ auth_id: signUpData.user.id, password: "" })
-      .eq("id", d.id);
-
-    // Faz login com as credenciais recém-criadas
-    const { data: finalSignIn } = await supabase.auth.signInWithPassword({ email, password });
-    if (finalSignIn.user) {
-      setUser({ id: d.id, name: d.name, username: d.username, role: d.role });
-      return true;
-    }
-
-    return false;
   }, []);
 
   const logout = useCallback(async () => {
