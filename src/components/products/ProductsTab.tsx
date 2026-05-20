@@ -58,6 +58,8 @@ export function ProductsTab({ newTrigger }: ProductsTabProps) {
   const [editProductCategoryIds, setEditProductCategoryIds] = useState<string[]>([]);
 
   const [assigningCategory, setAssigningCategory] = useState<string | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
@@ -306,34 +308,80 @@ export function ProductsTab({ newTrigger }: ProductsTabProps) {
               if (catProducts.length === 0 && search) return null;
 
               return (
-                <div key={cat.id} className="space-y-2">
+                <div key={cat.id} className="space-y-2 group/cat">
                   {/* Cabeçalho categoria */}
                   <div className="flex items-center justify-between bg-muted/40 px-3 py-2 rounded-xl border border-border/30">
-                    <div className="flex items-center gap-2 flex-1 cursor-pointer select-none" onClick={() => toggleCategoryCollapse(cat.id)}>
-                      <div className="text-muted-foreground/50">
-                        {!expandedCategories[cat.id] ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {/* Chevron — só quando não está editando */}
+                      {editingCategoryId !== cat.id && (
+                        <div className="text-muted-foreground/50 cursor-pointer shrink-0" onClick={() => toggleCategoryCollapse(cat.id)}>
+                          {!expandedCategories[cat.id] ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </div>
+                      )}
+
+                      {editingCategoryId === cat.id ? (
+                        /* Input de renomear */
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                          <Input
+                            value={editingCategoryName}
+                            onChange={(e) => setEditingCategoryName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                updateCategory.mutate({ id: cat.id, name: editingCategoryName.trim() });
+                                setEditingCategoryId(null);
+                              }
+                              if (e.key === "Escape") setEditingCategoryId(null);
+                            }}
+                            className="h-7 text-xs font-bold uppercase flex-1"
+                            autoFocus
+                          />
+                          <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => {
+                            updateCategory.mutate({ id: cat.id, name: editingCategoryName.trim() });
+                            setEditingCategoryId(null);
+                          }}>
+                            <svg className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => setEditingCategoryId(null)}>
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ) : (
+                        /* Nome normal + lápis */
+                        <div className="flex items-center gap-2 cursor-pointer select-none flex-1 min-w-0" onClick={() => toggleCategoryCollapse(cat.id)}>
+                          <h3 className="font-bold text-sm uppercase tracking-tight truncate">{cat.name}</h3>
+                          <Badge variant="outline" className="text-[10px] h-5 px-1.5 shrink-0">{catProducts.length}</Badge>
+                          <Button
+                            size="icon" variant="ghost"
+                            className="h-6 w-6 shrink-0 opacity-0 group-hover/cat:opacity-100 transition-opacity"
+                            onClick={(e) => { e.stopPropagation(); setEditingCategoryId(cat.id); setEditingCategoryName(cat.name); }}
+                            title="Renomear categoria"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {editingCategoryId !== cat.id && (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMoveCategory(cat, "up")}><ChevronUp className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMoveCategory(cat, "down")}><ChevronDown className="h-3.5 w-3.5" /></Button>
+                        <Button variant="outline" size="sm" onClick={() => setAssigningCategory(cat.id)} className="h-7 text-[10px] uppercase font-bold gap-1 ml-1">
+                          <Plus className="h-3 w-3" /> Existente
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => { setShowNewProduct(true); setNewProductCategoryId(cat.id); }} className="h-7 text-[10px] uppercase font-bold gap-1">
+                          <Plus className="h-3 w-3" /> Novo
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem className="text-destructive font-bold text-xs" onClick={() => deleteCategory.mutate(cat.id)}>Excluir Categoria</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                      <h3 className="font-bold text-sm uppercase tracking-tight">{cat.name}</h3>
-                      <Badge variant="outline" className="text-[10px] h-5 px-1.5">{catProducts.length}</Badge>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMoveCategory(cat, "up")}><ChevronUp className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleMoveCategory(cat, "down")}><ChevronDown className="h-3.5 w-3.5" /></Button>
-                      <Button variant="outline" size="sm" onClick={() => setAssigningCategory(cat.id)} className="h-7 text-[10px] uppercase font-bold gap-1 ml-1">
-                        <Plus className="h-3 w-3" /> Existente
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => { setShowNewProduct(true); setNewProductCategoryId(cat.id); }} className="h-7 text-[10px] uppercase font-bold gap-1">
-                        <Plus className="h-3 w-3" /> Novo
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-3.5 w-3.5" /></Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem className="text-destructive font-bold text-xs" onClick={() => deleteCategory.mutate(cat.id)}>Excluir Categoria</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                    )}
                   </div>
 
                   {expandedCategories[cat.id] && (
