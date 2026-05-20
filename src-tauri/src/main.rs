@@ -40,8 +40,10 @@ fn silent_print(printer_name: String, content: String) -> Result<String, String>
         let mut temp_file = std::env::temp_dir();
         temp_file.push("print_temp.txt");
         
-        // Salva o conteúdo em um arquivo temporário
+        // Salva o conteúdo em um arquivo temporário com BOM UTF-8
+        // para que o PowerShell (5.1) reconheça a codificação corretamente
         let mut file = std::fs::File::create(&temp_file).map_err(|e| e.to_string())?;
+        file.write_all(b"\xEF\xBB\xBF").map_err(|e| e.to_string())?; // BOM UTF-8
         file.write_all(content.as_bytes()).map_err(|e| e.to_string())?;
 
         // Comando PowerShell para imprimir silenciosamente
@@ -49,7 +51,7 @@ fn silent_print(printer_name: String, content: String) -> Result<String, String>
         let status = Command::new("powershell")
             .args(&[
                 "-Command",
-                &format!("Get-Content -Path '{}' | Out-Printer -Name '{}'", temp_file.display(), printer_name)
+                &format!("Get-Content -Path '{}'| Out-Printer -Name '{}'", temp_file.display(), printer_name)
             ])
             .output()
             .map_err(|e| e.to_string())?;

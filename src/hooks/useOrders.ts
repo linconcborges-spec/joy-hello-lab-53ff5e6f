@@ -424,18 +424,35 @@ export function useAutoprint(settings: AppSettings) {
           if (printedIds.current.has(newOrder.id)) return;
           printedIds.current.add(newOrder.id);
 
-          // Busca o pedido completo com itens e adicionais
-          const { data } = await supabase
-            .from('orders')
-            .select(`
-              *,
-              items:order_items(
+          // Pedido já foi impresso pelo formulário (is_printed = true no INSERT)
+          if (newOrder.is_printed) return;
+
+          // Busca o pedido completo com itens e adicionais.
+          // Aguarda até que os itens estejam estáveis no banco (race condition:
+          // o INSERT de orders dispara o Realtime antes de order_items e
+          // order_addons serem inseridos pelo useAddOrder).
+          let data: any = null;
+          let prevItemCount = -1;
+          for (let attempt = 0; attempt < 6; attempt++) {
+            await new Promise(resolve => setTimeout(resolve, 700));
+            const { data: result } = await supabase
+              .from('orders')
+              .select(`
                 *,
-                addons:order_addons(*)
-              )
-            `)
-            .eq('id', newOrder.id)
-            .single();
+                items:order_items(
+                  *,
+                  addons:order_addons(*)
+                )
+              `)
+              .eq('id', newOrder.id)
+              .single();
+            data = result;
+            const currentCount = data?.items?.length ?? 0;
+            // Para quando a contagem de itens não muda entre duas tentativas
+            // consecutivas (indica que a inserção terminou)
+            if (currentCount > 0 && currentCount === prevItemCount) break;
+            prevItemCount = currentCount;
+          }
 
           if (!data) return;
 

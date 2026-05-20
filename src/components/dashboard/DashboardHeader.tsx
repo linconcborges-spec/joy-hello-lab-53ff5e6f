@@ -1,7 +1,7 @@
 import {
   UtensilsCrossed, Users, Package, Settings, Clock,
   LayoutDashboard, ExternalLink, Sun, Moon,
-  Calendar as CalendarIcon, Search, Plus,
+  Calendar as CalendarIcon, Search, Plus, BarChart2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ interface DashboardHeaderProps {
   dateRange: { from: Date | undefined; to: Date | undefined };
   setDateRange: (r: any) => void;
   onNavigate: (view: "new" | "customers" | "products" | "settings") => void;
+  onOpenFinancialDashboard: () => void;
 }
 
 export function DashboardHeader({
@@ -38,6 +39,7 @@ export function DashboardHeader({
   isHistoryView, onToggleHistoryView,
   dateRange, setDateRange,
   onNavigate,
+  onOpenFinancialDashboard,
 }: DashboardHeaderProps) {
   return (
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 text-center lg:text-left">
