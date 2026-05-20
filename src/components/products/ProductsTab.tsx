@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Plus, Trash2, UtensilsCrossed, CloudUpload, Loader2, GripVertical, ChevronRight, ChevronDown, ChevronUp, Eye, EyeOff, Pencil, X } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Plus, Trash2, UtensilsCrossed, CloudUpload, Loader2, GripVertical, ChevronRight, ChevronDown, ChevronUp, Eye, EyeOff, Pencil, X, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,12 +10,17 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, verticalListSortingStrategy, useSortable, arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useProducts, useAddProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
-import { useCategories, useUpdateCategory, useDeleteCategory } from "@/hooks/useCategories";
-import { useAddCategory } from "@/hooks/useCategories";
+import { useCategories, useUpdateCategory, useDeleteCategory, useAddCategory } from "@/hooks/useCategories";
 import { useStorage } from "@/hooks/useStorage";
 import { AssignProductsDialog } from "./AssignProductsDialog";
-import { MoreVertical } from "lucide-react";
 
 interface ProductsTabProps {
   newTrigger: number;
@@ -170,45 +175,23 @@ export function ProductsTab({ newTrigger }: ProductsTabProps) {
     (p) => !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.code.toString().includes(search)
   );
 
-  const renderProductCard = (p: any) => (
-    <div key={p.id} className={cn(
-      "group flex items-center gap-3 bg-card px-3 py-2.5 rounded-xl border border-border/30 hover:border-border/60 transition-all",
-      !p.is_visible && "opacity-50"
-    )}>
-      {/* Thumbnail */}
-      <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden border shrink-0">
-        {p.image_url ? (
-          <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
-        ) : (
-          <UtensilsCrossed className="h-4 w-4 text-muted-foreground/30" />
-        )}
-      </div>
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-xs truncate">{p.code ? `${p.code} — ` : ""}{p.name}</p>
-        <p className="text-[11px] text-muted-foreground truncate">{p.description || "Sem descrição"}</p>
-      </div>
+  const handleDragEnd = useCallback((event: DragEndEvent, catProducts: any[]) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-      {/* Preço */}
-      <span className={cn("font-bold text-sm shrink-0", p.is_visible ? "text-rose-600" : "text-muted-foreground")}>
-        R$ {Number(p.price).toFixed(2)}
-      </span>
+    const oldIndex = catProducts.findIndex(p => p.id === active.id);
+    const newIndex = catProducts.findIndex(p => p.id === over.id);
+    const reordered = arrayMove(catProducts, oldIndex, newIndex);
 
-      {/* Ações — aparecem no hover */}
-      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateProduct.mutate({ id: p.id, is_visible: !p.is_visible })} title={p.is_visible ? "Ocultar" : "Exibir"}>
-          {p.is_visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-        </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditSheet(p)} title="Editar">
-          <Pencil className="h-3.5 w-3.5" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteProduct.mutate(p.id)} title="Excluir">
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-      </div>
-    </div>
-  );
+    // Salva sort_order de cada produto afetado
+    reordered.forEach((p, i) => {
+      if (p.sort_order !== i) {
+        updateProduct.mutate({ id: p.id, sort_order: i });
+      }
+    });
+  }, [updateProduct]);
 
   return (
     <>
@@ -318,7 +301,7 @@ export function ProductsTab({ newTrigger }: ProductsTabProps) {
             {[...categories].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).map((cat) => {
               const catProducts = filteredProducts
                 .filter(p => (p.category_ids ?? [p.category_id].filter(Boolean)).includes(cat.id))
-                .sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0));
+                .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
               if (catProducts.length === 0 && search) return null;
 
@@ -355,11 +338,24 @@ export function ProductsTab({ newTrigger }: ProductsTabProps) {
 
                   {expandedCategories[cat.id] && (
                     <div className="space-y-1.5 pl-1">
-                      {catProducts.map(renderProductCard)}
-                      {catProducts.length === 0 && (
+                      {catProducts.length === 0 ? (
                         <div className="text-center py-5 border border-dashed rounded-xl opacity-30">
                           <p className="text-xs font-bold uppercase">Nenhum produto nesta categoria</p>
                         </div>
+                      ) : (
+                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleDragEnd(e, catProducts)}>
+                          <SortableContext items={catProducts.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                            {catProducts.map(p => (
+                              <SortableProductCard
+                                key={p.id}
+                                product={p}
+                                onEdit={openEditSheet}
+                                onDelete={(id) => deleteProduct.mutate(id)}
+                                onToggleVisible={(p) => updateProduct.mutate({ id: p.id, is_visible: !p.is_visible })}
+                              />
+                            ))}
+                          </SortableContext>
+                        </DndContext>
                       )}
                     </div>
                   )}
@@ -476,5 +472,80 @@ export function ProductsTab({ newTrigger }: ProductsTabProps) {
         getCategoryName={getCategoryName}
       />
     </>
+  );
+}
+
+// ── Componente de card arrastável ──────────────────────────────────────────
+function SortableProductCard({
+  product: p,
+  onEdit,
+  onDelete,
+  onToggleVisible,
+}: {
+  product: any;
+  onEdit: (p: any) => void;
+  onDelete: (id: string) => void;
+  onToggleVisible: (p: any) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: p.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "group flex items-center gap-3 bg-card px-3 py-2.5 rounded-xl border border-border/30 hover:border-border/60 transition-colors",
+        !p.is_visible && "opacity-50"
+      )}
+    >
+      {/* Handle de arrastar */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing text-muted-foreground/30 hover:text-muted-foreground/60 shrink-0 touch-none"
+        tabIndex={-1}
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+
+      {/* Thumbnail */}
+      <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center overflow-hidden border shrink-0">
+        {p.image_url ? (
+          <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
+        ) : (
+          <UtensilsCrossed className="h-4 w-4 text-muted-foreground/30" />
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-xs truncate">{p.code ? `${p.code} — ` : ""}{p.name}</p>
+        <p className="text-[11px] text-muted-foreground truncate">{p.description || "Sem descrição"}</p>
+      </div>
+
+      {/* Preço */}
+      <span className={cn("font-bold text-sm shrink-0", p.is_visible ? "text-rose-600" : "text-muted-foreground")}>
+        R$ {Number(p.price).toFixed(2)}
+      </span>
+
+      {/* Ações no hover */}
+      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onToggleVisible(p)} title={p.is_visible ? "Ocultar" : "Exibir"}>
+          {p.is_visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+        </Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(p)} title="Editar">
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => onDelete(p.id)} title="Excluir">
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
   );
 }
