@@ -65,14 +65,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_OUT" || !session?.user) {
+      if (event === "SIGNED_OUT") {
         setUser(null);
       } else if (session?.user) {
         try {
-          const emp = await withTimeout(fetchEmployeeByAuthId(session.user.id), 4000);
-          setUser(emp);
+          const emp = await withTimeout(fetchEmployeeByAuthId(session.user.id), 8000);
+          if (emp) setUser(emp);
+          // se emp for null (auth_id sem employee), não altera — login já tratou isso
         } catch {
-          setUser(null);
+          // timeout ou erro de rede: mantém o usuário atual em vez de deslogá-lo
         }
       }
     });
