@@ -14,11 +14,12 @@ import {
 } from "@/lib/offlineStorage";
 import { getCycleStart } from "@/lib/cycleUtils";
 
-export function useOrders(startDate?: string, endDate?: string) {
+export function useOrders(startDate?: string, endDate?: string, enabled = true) {
   const start = startDate || getCycleStart();
-  
+
   return useQuery({
     queryKey: ["orders", start, endDate],
+    enabled,
     queryFn: async () => {
       try {
         let query = supabase

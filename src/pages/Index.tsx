@@ -78,7 +78,8 @@ const Index = () => {
 
   const { data: orders = [], isLoading: ordersLoading } = useOrders(
     isHistoryView ? dateRange.from?.toISOString() : undefined,
-    isHistoryView ? dateRange.to?.toISOString() : undefined
+    isHistoryView ? dateRange.to?.toISOString() : undefined,
+    !authLoading && !!user
   );
   const addOrderMutation = useAddOrder();
   const updateOrderMutation = useUpdateOrder();

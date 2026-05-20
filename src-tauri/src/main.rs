@@ -47,11 +47,18 @@ fn silent_print(printer_name: String, content: String) -> Result<String, String>
         file.write_all(content.as_bytes()).map_err(|e| e.to_string())?;
 
         // Comando PowerShell para imprimir silenciosamente
-        // Get-Content lê o arquivo e Out-Printer envia para a impressora especificada
+        // Se printer_name estiver vazio, usa a impressora padrão do Windows
+        let ps_command = if printer_name.is_empty() {
+            format!("Get-Content -Path '{}' | Out-Printer", temp_file.display())
+        } else {
+            format!("Get-Content -Path '{}' | Out-Printer -Name '{}'", temp_file.display(), printer_name)
+        };
+
         let status = Command::new("powershell")
             .args(&[
+                "-WindowStyle", "Hidden",
                 "-Command",
-                &format!("Get-Content -Path '{}'| Out-Printer -Name '{}'", temp_file.display(), printer_name)
+                &ps_command,
             ])
             .output()
             .map_err(|e| e.to_string())?;

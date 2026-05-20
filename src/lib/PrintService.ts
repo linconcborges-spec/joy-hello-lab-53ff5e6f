@@ -37,11 +37,11 @@ export async function printOrder(order: Order, settings: AppSettings) {
   console.log("Ambiente Tauri detectado:", isTauri);
   console.log("Impressora configurada:", settings.targetPrinter);
 
-  if (isTauri && settings.targetPrinter) {
+  if (isTauri) {
     try {
-      console.log("Tentando impressão silenciosa para:", settings.targetPrinter);
+      console.log("Tentando impressão silenciosa para:", settings.targetPrinter || "(impressora padrão)");
       const { invoke } = await import("@tauri-apps/api/tauri");
-      
+
       // Formata o pedido em texto simples para a impressora
       const date = new Date(order.createdAt).toLocaleString("pt-BR");
       const itemsText = order.items.map(item => 
@@ -75,9 +75,9 @@ ESTE NAO E UM DOCUMENTO FISCAL
 --------------------------------
 \n\n\n\n`; // Espaços para o corte de papel
 
-      await invoke("silent_print", { 
-        printerName: settings.targetPrinter, 
-        content: textContent 
+      await invoke("silent_print", {
+        printerName: settings.targetPrinter || "",
+        content: textContent
       });
       
       return; // Sucesso na impressão silenciosa, interrompe aqui.
