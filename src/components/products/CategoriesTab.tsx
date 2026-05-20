@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useCategories, useAddCategory, useDeleteCategory } from "@/hooks/useCategories";
+import { useCategories, useAddCategory, useUpdateCategory, useDeleteCategory } from "@/hooks/useCategories";
 import { ConfirmDelete } from "./ConfirmDelete";
 
 interface CategoriesTabProps {
@@ -15,11 +15,15 @@ interface CategoriesTabProps {
 export function CategoriesTab({ newTrigger }: CategoriesTabProps) {
   const { data: categories = [], isLoading: loadingCategories } = useCategories();
   const addCategory = useAddCategory();
+  const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
 
   const [categorySearch, setCategorySearch] = useState("");
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   useEffect(() => {
     if (newTrigger > 0) setShowNewCategory(true);
@@ -30,6 +34,14 @@ export function CategoriesTab({ newTrigger }: CategoriesTabProps) {
     addCategory.mutate(
       { name: newCategoryName.trim() },
       { onSuccess: () => { setNewCategoryName(""); setShowNewCategory(false); } }
+    );
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingId || !editingName.trim()) return;
+    updateCategory.mutate(
+      { id: editingId, name: editingName.trim() },
+      { onSuccess: () => setEditingId(null) }
     );
   };
 
@@ -55,7 +67,7 @@ export function CategoriesTab({ newTrigger }: CategoriesTabProps) {
           <CardContent className="flex gap-2 items-end">
             <div className="space-y-1.5 flex-1">
               <Label className="text-xs">Nome da Categoria</Label>
-              <Input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Ex: Bebidas, Lanches..." />
+              <Input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Ex: Bebidas, Lanches..." onKeyDown={(e) => e.key === "Enter" && handleAddCategory()} />
             </div>
             <Button onClick={handleAddCategory} disabled={addCategory.isPending}>Salvar</Button>
           </CardContent>
@@ -71,15 +83,50 @@ export function CategoriesTab({ newTrigger }: CategoriesTabProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead className="w-24">Ações</TableHead>
+                  <TableHead className="w-28 text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredCategories.map((c) => (
                   <TableRow key={c.id}>
-                    <TableCell>{c.name}</TableCell>
                     <TableCell>
-                      <ConfirmDelete onConfirm={() => deleteCategory.mutate(c.id)} title="categoria" />
+                      {editingId === c.id ? (
+                        <div className="flex items-center gap-1.5">
+                          <Input
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleSaveEdit();
+                              if (e.key === "Escape") setEditingId(null);
+                            }}
+                            className="h-7 text-xs font-bold uppercase flex-1 max-w-xs"
+                            autoFocus
+                          />
+                          <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={handleSaveEdit} disabled={updateCategory.isPending}>
+                            <svg className="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => setEditingId(null)}>
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="font-medium">{c.name}</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {editingId !== c.id && (
+                          <Button
+                            size="icon" variant="ghost"
+                            className="h-7 w-7 text-muted-foreground/50 hover:text-foreground transition-colors"
+                            onClick={() => { setEditingId(c.id); setEditingName(c.name); }}
+                            title="Renomear"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        <ConfirmDelete onConfirm={() => deleteCategory.mutate(c.id)} title="categoria" />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
