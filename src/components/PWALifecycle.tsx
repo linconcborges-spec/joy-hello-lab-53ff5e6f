@@ -2,7 +2,6 @@ import { useRegisterSW } from "virtual:pwa-register/react";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { RefreshCw } from "lucide-react";
-import { Button } from "./ui/button";
 
 export function PWALifecycle() {
   const {
@@ -52,37 +51,40 @@ export function PWALifecycle() {
 
   useEffect(() => {
     if (needRefresh) {
-      console.log("Nova versão detectada, exibindo toast...");
-      toast("🚀 Atualização Disponível!", {
-        description: "Uma nova versão do sistema está pronta. Atualize agora para receber as melhorias.",
-        duration: Infinity,
-        position: "top-center",
-        action: (
-          <Button 
-            size="sm" 
-            variant="default" 
-            className="h-9 bg-orange-600 hover:bg-orange-700 text-white font-black uppercase text-[10px] px-4 shadow-lg shadow-orange-500/20"
-            onClick={() => {
-              console.log("Botão de atualizar clicado. Chamando updateServiceWorker(true)...");
-              setNeedRefresh(false); // Limpa o estado para evitar loops
-              updateServiceWorker(true);
-            }}
-          >
-            <RefreshCw className="h-3 w-3 mr-2 animate-spin-slow" />
-            Atualizar Agora
-          </Button>
-        ),
-        cancel: (
-          <Button 
-            size="sm" 
-            variant="ghost" 
-            className="h-9 text-[10px] uppercase font-bold text-muted-foreground"
-            onClick={close}
-          >
-            Agora Não
-          </Button>
-        ),
-      });
+      toast.custom((id) => (
+        <div className="w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 flex flex-col gap-3">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
+              <RefreshCw className="h-4 w-4 text-orange-600" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-900">Atualização disponível</p>
+              <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                Nova versão pronta. Atualize para receber as melhorias.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => toast.dismiss(id)}
+              className="flex-1 h-9 rounded-xl border border-gray-200 text-xs font-semibold text-gray-500 hover:bg-gray-50 transition-colors"
+            >
+              Agora não
+            </button>
+            <button
+              onClick={() => {
+                toast.dismiss(id);
+                setNeedRefresh(false);
+                updateServiceWorker(true);
+              }}
+              className="flex-1 h-9 rounded-xl bg-orange-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-orange-700 transition-colors"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              Atualizar agora
+            </button>
+          </div>
+        </div>
+      ), { duration: Infinity, position: "top-center" });
     }
   }, [needRefresh, updateServiceWorker, setNeedRefresh]);
 
