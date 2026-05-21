@@ -1,20 +1,56 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle2, Loader2, XCircle, Truck } from "lucide-react";
+import { CheckCircle2, Loader2, XCircle, Truck, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toEmployeeEmail } from "@/lib/authUtils";
 
-type State = "idle" | "loading" | "success" | "error" | "already_done";
+type State = "checking_auth" | "login" | "logging_in" | "confirming" | "success" | "already_done" | "error";
 
 export default function SaidaConfirmacao() {
   const { id } = useParams<{ id: string }>();
-  const [state, setState] = useState<State>("idle");
+  const [state, setState] = useState<State>("checking_auth");
   const [orderNumber, setOrderNumber] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    verificarSessaoEConfirmar();
+  }, [id]);
+
+  async function verificarSessaoEConfirmar() {
+    setState("checking_auth");
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      await confirmar();
+    } else {
+      setState("login");
+    }
+  }
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!username.trim() || !password.trim()) return;
+    setState("logging_in");
+
+    const email = toEmployeeEmail(username.trim().toLowerCase());
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      setErrorMsg("Usuário ou senha incorretos.");
+      setState("login");
+      return;
+    }
+
+    await confirmar();
+  }
 
   async function confirmar() {
     if (!id) return;
-    setState("loading");
+    setState("confirming");
 
     const { data, error } = await supabase.rpc("confirm_order_departure", {
       p_order_id: id,
@@ -42,19 +78,62 @@ export default function SaidaConfirmacao() {
     setState("success");
   }
 
-  // Auto-confirma ao abrir a página (scan direto → ação imediata)
-  useEffect(() => {
-    confirmar();
-  }, [id]);
-
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="max-w-sm w-full text-center space-y-6">
 
-        {state === "loading" && (
+        {(state === "checking_auth" || state === "confirming") && (
           <>
             <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />
-            <p className="text-lg font-bold uppercase tracking-wide">Confirmando saída...</p>
+            <p className="text-lg font-bold uppercase tracking-wide">
+              {state === "checking_auth" ? "Verificando acesso..." : "Confirmando saída..."}
+            </p>
+          </>
+        )}
+
+        {(state === "login" || state === "logging_in") && (
+          <>
+            <LogIn className="h-14 w-14 text-primary mx-auto" />
+            <div className="space-y-1">
+              <p className="text-xl font-black uppercase">Confirmar Saída</p>
+              <p className="text-sm text-muted-foreground">Entre com suas credenciais para confirmar</p>
+            </div>
+            <form onSubmit={handleLogin} className="space-y-3 text-left">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold uppercase">Usuário</Label>
+                <Input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="seu.usuario"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  disabled={state === "logging_in"}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold uppercase">Senha</Label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={state === "logging_in"}
+                />
+              </div>
+              {errorMsg && (
+                <p className="text-sm text-destructive font-semibold">{errorMsg}</p>
+              )}
+              <Button
+                type="submit"
+                className="w-full font-black uppercase"
+                disabled={state === "logging_in"}
+              >
+                {state === "logging_in"
+                  ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Entrando...</>
+                  : "Entrar e Confirmar Saída"
+                }
+              </Button>
+            </form>
           </>
         )}
 
@@ -71,9 +150,7 @@ export default function SaidaConfirmacao() {
                 </p>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              O sistema foi atualizado automaticamente.
-            </p>
+            <p className="text-xs text-muted-foreground">O sistema foi atualizado automaticamente.</p>
           </>
         )}
 
@@ -81,12 +158,8 @@ export default function SaidaConfirmacao() {
           <>
             <Truck className="h-16 w-16 text-blue-500 mx-auto" />
             <div className="space-y-1">
-              <p className="text-xl font-black uppercase tracking-wide text-blue-600">
-                Já em entrega
-              </p>
-              <p className="text-muted-foreground font-semibold">
-                Este pedido já foi confirmado anteriormente.
-              </p>
+              <p className="text-xl font-black uppercase tracking-wide text-blue-600">Já em entrega</p>
+              <p className="text-muted-foreground font-semibold">Este pedido já foi confirmado anteriormente.</p>
             </div>
           </>
         )}
@@ -95,25 +168,15 @@ export default function SaidaConfirmacao() {
           <>
             <XCircle className="h-16 w-16 text-destructive mx-auto" />
             <div className="space-y-1">
-              <p className="text-xl font-black uppercase tracking-wide text-destructive">
-                Erro ao confirmar
-              </p>
+              <p className="text-xl font-black uppercase tracking-wide text-destructive">Erro ao confirmar</p>
               <p className="text-sm text-muted-foreground">{errorMsg}</p>
             </div>
-            <Button onClick={confirmar} variant="outline" className="w-full">
+            <Button onClick={() => setState("login")} variant="outline" className="w-full">
               Tentar novamente
             </Button>
           </>
         )}
 
-        {state === "idle" && (
-          <>
-            <Truck className="h-16 w-16 text-primary mx-auto" />
-            <Button onClick={confirmar} size="lg" className="w-full font-black uppercase">
-              Confirmar Saída para Entrega
-            </Button>
-          </>
-        )}
       </div>
     </div>
   );

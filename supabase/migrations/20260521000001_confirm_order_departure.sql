@@ -36,6 +36,5 @@ BEGIN
 END;
 $$;
 
--- Permite que qualquer pessoa (anon) chame esta função via HTTP
-GRANT EXECUTE ON FUNCTION public.confirm_order_departure(UUID) TO anon;
+-- Apenas funcionários autenticados podem confirmar saída
 GRANT EXECUTE ON FUNCTION public.confirm_order_departure(UUID) TO authenticated;
