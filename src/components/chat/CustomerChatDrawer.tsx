@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const SESSION_KEY = "joy_chat_session_id";
 const NAME_KEY = "joy_chat_customer_name";
+const PHONE_KEY = "joy_chat_customer_phone";
 
 type Message = {
   id: string;
@@ -25,7 +26,9 @@ export function CustomerChatDrawer({ storeName, logoUrl }: CustomerChatDrawerPro
   const [input, setInput] = useState("");
   const [sessionId, setSessionId] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [nameInput, setNameInput] = useState("");
+  const [phoneInput, setPhoneInput] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -39,7 +42,9 @@ export function CustomerChatDrawer({ storeName, logoUrl }: CustomerChatDrawerPro
     setSessionId(sid);
 
     const name = localStorage.getItem(NAME_KEY);
+    const phone = localStorage.getItem(PHONE_KEY);
     if (name) setCustomerName(name);
+    if (phone) setCustomerPhone(phone);
   }, []);
 
   useEffect(() => {
@@ -86,16 +91,21 @@ export function CustomerChatDrawer({ storeName, logoUrl }: CustomerChatDrawerPro
     }
   }, [messages.length]);
 
-  const handleSetName = () => {
+  const isInfoComplete = customerName && customerPhone;
+
+  const handleStart = () => {
     const name = nameInput.trim();
-    if (!name) return;
+    const phone = phoneInput.trim();
+    if (!name || !phone) return;
     localStorage.setItem(NAME_KEY, name);
+    localStorage.setItem(PHONE_KEY, phone);
     setCustomerName(name);
+    setCustomerPhone(phone);
   };
 
   const handleSend = async () => {
     const text = input.trim();
-    if (!text || !sessionId || !customerName || sending) return;
+    if (!text || !sessionId || !isInfoComplete || sending) return;
     setSending(true);
     setInput("");
     await supabase.from("chat_messages").insert({
@@ -103,6 +113,7 @@ export function CustomerChatDrawer({ storeName, logoUrl }: CustomerChatDrawerPro
       sender: "customer",
       message: text,
       customer_name: customerName,
+      customer_phone: customerPhone,
     });
     setSending(false);
   };
@@ -144,24 +155,39 @@ export function CustomerChatDrawer({ storeName, logoUrl }: CustomerChatDrawerPro
             </button>
           </div>
 
-          {!customerName ? (
-            <div className="flex-1 flex flex-col items-center justify-center px-6 gap-5">
+          {!isInfoComplete ? (
+            <div className="flex-1 flex flex-col items-center justify-center px-6 gap-4">
               <div className="text-center">
                 <p className="text-2xl mb-1">👋</p>
-                <p className="text-base font-bold text-gray-900">Olá! Como você se chama?</p>
-                <p className="text-sm text-gray-400 mt-1">Assim fica mais fácil te atender.</p>
+                <p className="text-base font-bold text-gray-900">Olá! Antes de começar...</p>
+                <p className="text-sm text-gray-400 mt-1">Preencha seus dados para te atendermos melhor.</p>
               </div>
-              <input
-                value={nameInput}
-                onChange={e => setNameInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleSetName()}
-                placeholder="Seu nome"
-                className="w-full h-12 bg-gray-50 border border-gray-200 rounded-xl px-4 text-sm outline-none focus:border-red-400"
-                autoFocus
-              />
+              <div className="w-full space-y-3">
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-1.5">Seu nome *</p>
+                  <input
+                    value={nameInput}
+                    onChange={e => setNameInput(e.target.value)}
+                    placeholder="Como você se chama?"
+                    className="w-full h-12 bg-gray-50 border border-gray-200 rounded-xl px-4 text-sm outline-none focus:border-red-400"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-1.5">WhatsApp *</p>
+                  <input
+                    value={phoneInput}
+                    onChange={e => setPhoneInput(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleStart()}
+                    placeholder="(00) 00000-0000"
+                    type="tel"
+                    className="w-full h-12 bg-gray-50 border border-gray-200 rounded-xl px-4 text-sm outline-none focus:border-red-400"
+                  />
+                </div>
+              </div>
               <button
-                onClick={handleSetName}
-                disabled={!nameInput.trim()}
+                onClick={handleStart}
+                disabled={!nameInput.trim() || !phoneInput.trim()}
                 className="w-full h-12 bg-red-600 text-white rounded-xl font-bold text-sm disabled:opacity-50 active:scale-95 transition-all"
               >
                 Começar conversa

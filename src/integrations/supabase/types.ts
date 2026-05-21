@@ -107,6 +107,7 @@ export type Database = {
           sender: string
           message: string
           customer_name: string | null
+          customer_phone: string | null
           created_at: string
           read_by_admin: boolean
         }
@@ -116,6 +117,7 @@ export type Database = {
           sender: string
           message: string
           customer_name?: string | null
+          customer_phone?: string | null
           created_at?: string
           read_by_admin?: boolean
         }
@@ -125,6 +127,7 @@ export type Database = {
           sender?: string
           message?: string
           customer_name?: string | null
+          customer_phone?: string | null
           created_at?: string
           read_by_admin?: boolean
         }

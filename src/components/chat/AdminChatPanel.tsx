@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, ArrowLeft, MessageCircle } from "lucide-react";
+import { Send, ArrowLeft, MessageCircle, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +9,7 @@ type Message = {
   sender: "customer" | "admin";
   message: string;
   customer_name: string | null;
+  customer_phone: string | null;
   created_at: string;
   read_by_admin: boolean;
 };
@@ -16,6 +17,7 @@ type Message = {
 type Session = {
   session_id: string;
   customer_name: string;
+  customer_phone: string;
   last_message: string;
   last_at: string;
   unread: number;
@@ -23,6 +25,12 @@ type Session = {
 
 interface AdminChatPanelProps {
   onUnreadChange?: (count: number) => void;
+}
+
+function whatsappLink(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  const number = digits.startsWith("55") ? digits : `55${digits}`;
+  return `https://wa.me/${number}`;
 }
 
 export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
@@ -64,7 +72,6 @@ export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // Notify parent of unread count changes
   useEffect(() => {
     const unread = messages.filter(m => m.sender === "customer" && !m.read_by_admin).length;
     onUnreadChange?.(unread);
@@ -78,6 +85,7 @@ export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
     sessionMap.set(msg.session_id, {
       session_id: msg.session_id,
       customer_name: msg.customer_name || existing?.customer_name || "Cliente",
+      customer_phone: msg.customer_phone || existing?.customer_phone || "",
       last_message: isNewer ? msg.message : (existing?.last_message || ""),
       last_at: isNewer ? msg.created_at : (existing?.last_at || msg.created_at),
       unread: (existing?.unread || 0) + (msg.sender === "customer" && !msg.read_by_admin ? 1 : 0),
@@ -95,7 +103,6 @@ export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
 
   const openSession = async (sid: string) => {
     setActiveSession(sid);
-    // Mark customer messages as read
     const unreadIds = messages
       .filter(m => m.session_id === sid && m.sender === "customer" && !m.read_by_admin)
       .map(m => m.id);
@@ -134,6 +141,7 @@ export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
     const session = sessions.find(s => s.session_id === activeSession);
     return (
       <div className="flex flex-col h-full">
+        {/* Header da conversa */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40 shrink-0">
           <button
             onClick={() => setActiveSession(null)}
@@ -141,12 +149,27 @@ export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-sm shrink-0">
+          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-sm shrink-0">
             {(session?.customer_name || "C")[0].toUpperCase()}
           </div>
-          <p className="font-bold text-sm">{session?.customer_name || "Cliente"}</p>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-sm leading-tight">{session?.customer_name || "Cliente"}</p>
+            {session?.customer_phone && (
+              <a
+                href={whatsappLink(session.customer_phone)}
+                target="_blank"
+                rel="noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="flex items-center gap-1 text-green-600 text-xs font-medium hover:underline mt-0.5"
+              >
+                <Phone className="h-3 w-3" />
+                {session.customer_phone}
+              </a>
+            )}
+          </div>
         </div>
 
+        {/* Mensagens */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
           {activeMessages.length === 0 && (
             <p className="text-center text-sm text-muted-foreground py-8">Nenhuma mensagem ainda.</p>
@@ -169,6 +192,7 @@ export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
           <div ref={bottomRef} />
         </div>
 
+        {/* Input */}
         <div className="px-4 py-3 border-t border-border/40 flex gap-2 shrink-0">
           <input
             value={input}
@@ -210,7 +234,11 @@ export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold">{session.customer_name}</p>
-                <p className="text-xs text-muted-foreground truncate mt-0.5">{session.last_message}</p>
+                {session.customer_phone ? (
+                  <p className="text-xs text-green-600 font-medium mt-0.5">{session.customer_phone}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">{session.last_message}</p>
+                )}
               </div>
               {session.unread > 0 && (
                 <span className="h-5 min-w-5 px-1 bg-primary rounded-full text-[10px] font-bold text-primary-foreground flex items-center justify-center shrink-0">
