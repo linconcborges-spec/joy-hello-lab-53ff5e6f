@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index.tsx";
 import CustomerMenu from "./pages/CustomerMenu.tsx";
+import SaidaConfirmacao from "./pages/SaidaConfirmacao.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { InstallPWA } from "@/components/InstallPWA";
 import { PWALifecycle } from "@/components/PWALifecycle";
@@ -28,6 +29,7 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/cardapio" element={<CustomerMenu />} />
+            <Route path="/saida/:id" element={<SaidaConfirmacao />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

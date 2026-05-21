@@ -32,6 +32,7 @@ export interface AppSettings {
   businessHours: BusinessHours[];
   autoPrint: boolean;
   outOfStockProducts: string[];
+  publicUrl: string;
 }
 
 const DEFAULT_BUSINESS_HOURS: BusinessHours[] = [
@@ -66,6 +67,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   businessHours: DEFAULT_BUSINESS_HOURS,
   autoPrint: false,
   outOfStockProducts: [],
+  publicUrl: "",
 };
 
 const KEY_MAP: Record<string, keyof AppSettings> = {
@@ -90,6 +92,7 @@ const KEY_MAP: Record<string, keyof AppSettings> = {
   business_hours: "businessHours",
   auto_print: "autoPrint",
   out_of_stock_products: "outOfStockProducts",
+  public_url: "publicUrl",
 };
 
 const REVERSE_KEY_MAP: Record<keyof AppSettings, string> = Object.fromEntries(

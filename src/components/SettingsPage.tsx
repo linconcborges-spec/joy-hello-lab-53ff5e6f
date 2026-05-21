@@ -40,6 +40,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   const [printMarginTop, setPrintMarginTop] = useState(settings.printMarginTop || "0mm");
   const [printFontSize, setPrintFontSize] = useState(settings.printFontSize);
   const [targetPrinter, setTargetPrinter] = useState(settings.targetPrinter || "");
+  const [publicUrl, setPublicUrl] = useState(settings.publicUrl || "");
   const [logoUrl, setLogoUrl] = useState(settings.logoUrl || "");
   const [bannerUrl, setBannerUrl] = useState(settings.bannerUrl || "");
   const [autoPrint, setAutoPrint] = useState(settings.autoPrint ?? false);
@@ -69,6 +70,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
     setPrintMarginTop(settings.printMarginTop || "0mm");
     setPrintFontSize(settings.printFontSize);
     setTargetPrinter(settings.targetPrinter || "");
+    setPublicUrl(settings.publicUrl || "");
     setLogoUrl(settings.logoUrl || "");
     setBannerUrl(settings.bannerUrl || "");
     setAutoPrint(settings.autoPrint ?? false);
@@ -94,7 +96,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
   }, []);
 
   const handleSaveGeneral = () => {
-    updateSettings({ storeName, defaultDeliveryFee, printPaperWidth, printMargin, printMarginTop, printFontSize, targetPrinter, logoUrl, bannerUrl });
+    updateSettings({ storeName, defaultDeliveryFee, printPaperWidth, printMargin, printMarginTop, printFontSize, targetPrinter, publicUrl, logoUrl, bannerUrl });
     toast.success("Configurações gerais salvas!");
   };
 
@@ -132,6 +134,7 @@ export function SettingsPage({ onBack }: SettingsPageProps) {
               printMarginTop={printMarginTop} setPrintMarginTop={setPrintMarginTop}
               printFontSize={printFontSize} setPrintFontSize={setPrintFontSize}
               targetPrinter={targetPrinter} setTargetPrinter={setTargetPrinter}
+              publicUrl={publicUrl} setPublicUrl={setPublicUrl}
               logoUrl={logoUrl} setLogoUrl={setLogoUrl}
               bannerUrl={bannerUrl} setBannerUrl={setBannerUrl}
               autoPrint={autoPrint}

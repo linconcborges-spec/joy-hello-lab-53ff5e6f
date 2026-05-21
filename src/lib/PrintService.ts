@@ -39,18 +39,17 @@ export async function printOrder(order: Order, settings: AppSettings) {
 
   if (isTauri) {
     try {
-      console.log("Tentando impressão silenciosa para:", settings.targetPrinter || "(impressora padrão)");
+      console.log("Tentando impressão ESC/POS para:", settings.targetPrinter || "(impressora padrão)");
       const { invoke } = await import("@tauri-apps/api/tauri");
 
-      // Formata o pedido em texto simples para a impressora
       const date = new Date(order.createdAt).toLocaleString("pt-BR");
-      const itemsText = order.items.map(item => 
+      const itemsText = order.items.map(item =>
         `X ${item.quantity} ${item.product}\n` +
         (item.addons && item.addons.length > 0 ? item.addons.map(a => `  + ${a.name}`).join('\n') + '\n' : '') +
         (item.observation ? `  OBS: ${item.observation}\n` : '')
       ).join('\n');
 
-      const textContent = 
+      const textContent =
 `--------------------------------
 ${settings.storeName.toUpperCase()}
 --------------------------------
@@ -72,18 +71,22 @@ ${order.changeFor > 0 ? `TROCO PARA: R$ ${order.changeFor.toFixed(2)}` : ''}
 --------------------------------
 ${order.observation ? `OBS: ${order.observation}\n--------------------------------` : ''}
 ESTE NAO E UM DOCUMENTO FISCAL
---------------------------------
-\n\n\n\n`; // Espaços para o corte de papel
+--------------------------------`;
 
-      await invoke("silent_print", {
+      // QR code só para pedidos de delivery (não faz sentido em retirada)
+      const qrUrl = !order.isPickup
+        ? `${(settings as any).publicUrl || window.location.origin}/saida/${order.id}`
+        : "";
+
+      await invoke("escpos_print", {
         printerName: settings.targetPrinter || "",
-        content: textContent
+        content: textContent,
+        qrUrl,
       });
-      
-      return; // Sucesso na impressão silenciosa, interrompe aqui.
+
+      return;
     } catch (error) {
-      console.error("Erro na impressão silenciosa, tentando método tradicional:", error);
-      // Se der erro, ele continua para o método do iframe como fallback
+      console.error("Erro na impressão ESC/POS, tentando método tradicional:", error);
     }
   }
 

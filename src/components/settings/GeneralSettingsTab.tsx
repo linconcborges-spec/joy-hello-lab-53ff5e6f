@@ -19,6 +19,7 @@ interface GeneralSettingsTabProps {
   printMarginTop: string; setPrintMarginTop: (v: string) => void;
   printFontSize: string; setPrintFontSize: (v: string) => void;
   targetPrinter: string; setTargetPrinter: (v: string) => void;
+  publicUrl: string; setPublicUrl: (v: string) => void;
   logoUrl: string; setLogoUrl: (v: string) => void;
   bannerUrl: string; setBannerUrl: (v: string) => void;
   autoPrint: boolean;
@@ -40,6 +41,7 @@ export function GeneralSettingsTab({
   printMarginTop, setPrintMarginTop,
   printFontSize, setPrintFontSize,
   targetPrinter, setTargetPrinter,
+  publicUrl, setPublicUrl,
   logoUrl, setLogoUrl,
   bannerUrl, setBannerUrl,
   autoPrint,
@@ -166,6 +168,21 @@ export function GeneralSettingsTab({
               <Input value={targetPrinter} onChange={(e) => setTargetPrinter(e.target.value)} placeholder="Ex: POS-58 ou XP-80C" className="border-primary/20 bg-primary/5" />
             )}
           </div>
+          <div className="space-y-1.5 sm:col-span-3">
+            <Label className="text-xs font-bold text-primary flex items-center gap-1.5">
+              URL Pública do App <span className="font-normal text-muted-foreground">(para QR code na comanda)</span>
+            </Label>
+            <Input
+              value={publicUrl}
+              onChange={(e) => setPublicUrl(e.target.value)}
+              placeholder={`Ex: https://seuapp.vercel.app (padrão: ${window.location.origin})`}
+              className="border-primary/20 bg-primary/5 font-mono text-sm"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Deixe em branco para usar a URL atual do navegador. Necessário apenas na versão desktop (Tauri).
+            </p>
+          </div>
+
           <div className="sm:col-span-3 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border/40 mt-2">
             <div className="flex items-center gap-3">
               <Switch checked={autoPrint} onCheckedChange={onAutoPrintChange} />
