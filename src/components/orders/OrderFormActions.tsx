@@ -52,7 +52,7 @@ export function OrderFormActions({ totalAmount, initialOrder, showPrintButton, o
           onClick={onSave}
         >
           <Save className="h-4 w-4" />
-          Salvar Pedido
+          Confirmar Pedido
         </Button>
       )}
     </div>
