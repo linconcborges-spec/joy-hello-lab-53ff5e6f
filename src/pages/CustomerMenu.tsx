@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Search,
   Plus,
@@ -64,6 +64,7 @@ export default function CustomerMenu() {
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "pix">("cash");
   const [changeFor, setChangeFor] = useState("");
   const [globalObservation, setGlobalObservation] = useState("");
+  const [trackingOrder, setTrackingOrder] = useState<{ id: string; number: number; isPickup: boolean } | null>(null);
 
   const qc = useQueryClient();
 
@@ -176,14 +177,29 @@ export default function CustomerMenu() {
       observation: globalObservation,
       isPrinted: false
     }, {
-      onSuccess: () => {
+      onSuccess: (data: any) => {
         setCart([]);
         setCheckoutOpen(false);
         setGlobalObservation("");
-        toast.success("Pedido enviado com sucesso! 🚀");
+        if (data?.id) {
+          setTrackingOrder({ id: data.id, number: data.number, isPickup });
+        }
       }
     });
   };
+
+  if (trackingOrder) {
+    return (
+      <OrderTrackingView
+        orderId={trackingOrder.id}
+        orderNumber={trackingOrder.number}
+        isPickup={trackingOrder.isPickup}
+        storeName={settings.storeName}
+        logoUrl={settings.logoUrl}
+        onNewOrder={() => setTrackingOrder(null)}
+      />
+    );
+  }
 
   const scrollToCategory = (catId: string | null) => {
     setActiveCategory(catId);
@@ -872,5 +888,146 @@ function ProductRow({ product, onSelect, isOutOfStock }: { product: Product; onS
         )}
       </div>
     </button>
+  );
+}
+
+/* ─── Tela de acompanhamento do pedido em tempo real ─────────────────────── */
+type TrackingStatus = "pending" | "preparing" | "delivering" | "completed" | "cancelled";
+
+const STEPS_DELIVERY: { status: TrackingStatus; label: string; sub: string; icon: string }[] = [
+  { status: "pending",    label: "Pedido recebido",      sub: "Aguardando confirmação da cozinha", icon: "📋" },
+  { status: "preparing",  label: "Preparando",           sub: "Seu pedido está sendo preparado",   icon: "👨‍🍳" },
+  { status: "delivering", label: "Saiu para entrega",    sub: "Seu pedido está a caminho",          icon: "🛵" },
+  { status: "completed",  label: "Entregue!",            sub: "Bom apetite!",                       icon: "✅" },
+];
+
+const STEPS_PICKUP: { status: TrackingStatus; label: string; sub: string; icon: string }[] = [
+  { status: "pending",    label: "Pedido recebido",        sub: "Aguardando confirmação da cozinha", icon: "📋" },
+  { status: "preparing",  label: "Preparando",             sub: "Seu pedido está sendo preparado",   icon: "👨‍🍳" },
+  { status: "delivering", label: "Pronto para retirada!",  sub: "Pode vir buscar o seu pedido",      icon: "🔔" },
+  { status: "completed",  label: "Retirado!",              sub: "Obrigado pela preferência!",        icon: "✅" },
+];
+
+const STATUS_ORDER: TrackingStatus[] = ["pending", "preparing", "delivering", "completed"];
+
+function OrderTrackingView({
+  orderId, orderNumber, isPickup, storeName, logoUrl, onNewOrder,
+}: {
+  orderId: string;
+  orderNumber: number;
+  isPickup: boolean;
+  storeName: string;
+  logoUrl?: string;
+  onNewOrder: () => void;
+}) {
+  const [status, setStatus] = useState<TrackingStatus>("pending");
+  const [cancelled, setCancelled] = useState(false);
+  const channelRef = useRef<any>(null);
+
+  useEffect(() => {
+    supabase.from("orders").select("status").eq("id", orderId).single().then(({ data }) => {
+      if (data?.status === "cancelled") setCancelled(true);
+      else if (data?.status) setStatus(data.status as TrackingStatus);
+    });
+
+    channelRef.current = supabase
+      .channel(`tracking-${orderId}`)
+      .on("postgres_changes" as any, {
+        event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${orderId}`,
+      }, (payload: any) => {
+        const s = payload.new?.status as TrackingStatus;
+        if (s === "cancelled") setCancelled(true);
+        else if (s) setStatus(s);
+      })
+      .subscribe();
+
+    return () => { if (channelRef.current) supabase.removeChannel(channelRef.current); };
+  }, [orderId]);
+
+  const steps = isPickup ? STEPS_PICKUP : STEPS_DELIVERY;
+  const currentIdx = STATUS_ORDER.indexOf(status);
+
+  if (cancelled) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="text-5xl mb-4">😔</div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Pedido cancelado</h2>
+        <p className="text-sm text-gray-500 mb-8">Entre em contato com o estabelecimento para mais informações.</p>
+        <button onClick={onNewOrder} className="h-12 px-8 bg-red-600 text-white rounded-2xl font-bold text-sm active:scale-95 transition-all">
+          Fazer novo pedido
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="bg-white border-b border-gray-100 px-5 py-4 flex items-center gap-3">
+        {logoUrl ? (
+          <img src={logoUrl} alt={storeName} className="h-9 w-9 rounded-xl object-contain" />
+        ) : (
+          <div className="h-9 w-9 rounded-xl bg-red-600 flex items-center justify-center">
+            <UtensilsCrossed className="h-5 w-5 text-white" />
+          </div>
+        )}
+        <div>
+          <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">{storeName}</p>
+          <p className="text-base font-black text-gray-900">Pedido #{orderNumber}</p>
+        </div>
+      </div>
+
+      <div className="flex-1 px-5 py-8 flex flex-col gap-0">
+        {steps.map((step, i) => {
+          const done = i < currentIdx || status === "completed";
+          const active = i === currentIdx && status !== "completed";
+          const upcoming = i > currentIdx && status !== "completed";
+
+          return (
+            <div key={step.status} className="flex items-start gap-4">
+              <div className="flex flex-col items-center">
+                <div className={cn(
+                  "h-11 w-11 rounded-full flex items-center justify-center text-xl transition-all duration-500",
+                  done   ? "bg-green-500 shadow-md shadow-green-200" :
+                  active ? "bg-red-600 shadow-md shadow-red-200 animate-pulse" :
+                           "bg-gray-100"
+                )}>
+                  {done ? "✅" : step.icon}
+                </div>
+                {i < steps.length - 1 && (
+                  <div className={cn(
+                    "w-0.5 h-10 mt-1 transition-all duration-500",
+                    i < currentIdx ? "bg-green-400" : "bg-gray-200"
+                  )} />
+                )}
+              </div>
+              <div className={cn("pt-2.5 pb-6", upcoming && "opacity-30")}>
+                <p className={cn(
+                  "font-bold text-sm leading-tight",
+                  done ? "text-green-600" : active ? "text-red-600" : "text-gray-400"
+                )}>
+                  {step.label}
+                </p>
+                {(done || active) && (
+                  <p className="text-xs text-gray-400 mt-0.5">{step.sub}</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="px-5 pb-8">
+        {status === "completed" ? (
+          <button
+            onClick={onNewOrder}
+            className="w-full h-14 bg-red-600 text-white rounded-2xl font-bold text-base active:scale-95 transition-all shadow-lg shadow-red-200"
+          >
+            Fazer novo pedido
+          </button>
+        ) : (
+          <p className="text-center text-xs text-gray-400">Atualizando automaticamente...</p>
+        )}
+      </div>
+    </div>
   );
 }
