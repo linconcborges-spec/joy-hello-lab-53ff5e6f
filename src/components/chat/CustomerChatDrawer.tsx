@@ -10,6 +10,7 @@ const PHONE_KEY = "joy_chat_customer_phone";
 
 type Message = {
   id: string;
+  session_id: string;
   sender: "customer" | "admin";
   message: string;
   created_at: string;
@@ -52,7 +53,7 @@ export function CustomerChatDrawer({ storeName, logoUrl }: CustomerChatDrawerPro
 
     supabase
       .from("chat_messages")
-      .select("id, sender, message, created_at")
+      .select("id, session_id, sender, message, created_at")
       .eq("session_id", sessionId)
       .order("created_at", { ascending: true })
       .then(({ data }) => {
@@ -65,10 +66,10 @@ export function CustomerChatDrawer({ storeName, logoUrl }: CustomerChatDrawerPro
         event: "INSERT",
         schema: "public",
         table: "chat_messages",
-        filter: `session_id=eq.${sessionId}`,
       }, (payload: any) => {
         const msg = payload.new as Message;
-        setMessages(prev => [...prev, msg]);
+        if (msg.session_id !== sessionId) return;
+        setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
         if (msg.sender === "admin") {
           setUnreadCount(c => c + 1);
         }
@@ -108,13 +109,20 @@ export function CustomerChatDrawer({ storeName, logoUrl }: CustomerChatDrawerPro
     if (!text || !sessionId || !isInfoComplete || sending) return;
     setSending(true);
     setInput("");
-    await supabase.from("chat_messages").insert({
-      session_id: sessionId,
-      sender: "customer",
-      message: text,
-      customer_name: customerName,
-      customer_phone: customerPhone,
-    });
+    const { data } = await supabase
+      .from("chat_messages")
+      .insert({
+        session_id: sessionId,
+        sender: "customer",
+        message: text,
+        customer_name: customerName,
+        customer_phone: customerPhone,
+      })
+      .select("id, sender, message, created_at, session_id")
+      .single();
+    if (data) {
+      setMessages(prev => prev.some(m => m.id === data.id) ? prev : [...prev, data as Message]);
+    }
     setSending(false);
   };
 
