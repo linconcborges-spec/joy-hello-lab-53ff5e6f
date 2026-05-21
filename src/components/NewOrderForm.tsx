@@ -213,9 +213,9 @@ export function NewOrderForm({ onSubmit, onCancel, initialOrder }: NewOrderFormP
 
   const isTauri = (window as any).__TAURI_INTERNALS__ !== undefined;
 
-  const processSubmission = async (authorizedBy?: string, shouldPrint: boolean = true, overrideData?: any) => {
+  const processSubmission = async (authorizedBy?: string, shouldPrint: boolean = false, overrideData?: any) => {
     let orderData = overrideData || pendingOrderData || prepareOrderData(authorizedBy);
-    // No browser/mobile, nunca marca como impresso localmente — a central imprime via Realtime
+    // No browser: sempre salva sem imprimir — a central cuida da impressão via Realtime
     const printLocally = shouldPrint && isTauri;
     if (!initialOrder) {
       orderData = { ...orderData, status: printLocally ? "preparing" : "pending", isPrinted: printLocally };
@@ -225,8 +225,6 @@ export function NewOrderForm({ onSubmit, onCancel, initialOrder }: NewOrderFormP
       const orderToPrint: Order = { ...orderData as any, id: initialOrder?.id || "temp", number: printNumber, createdAt: initialOrder?.createdAt || new Date().toISOString() };
       await printOrder(orderToPrint, settings);
       toast.success("Pedido enviado para a impressora!");
-    } else if (shouldPrint) {
-      toast.success("Pedido enviado! Será impresso na central.");
     } else {
       toast.success("Pedido salvo!");
     }
@@ -243,7 +241,7 @@ export function NewOrderForm({ onSubmit, onCancel, initialOrder }: NewOrderFormP
     } else {
       const data = prepareOrderData();
       setPendingOrderData(data);
-      processSubmission(undefined, true, data);
+      processSubmission(undefined, isTauri, data);
     }
   };
 
@@ -320,6 +318,7 @@ export function NewOrderForm({ onSubmit, onCancel, initialOrder }: NewOrderFormP
       <OrderFormActions
         totalAmount={totalAmount}
         initialOrder={initialOrder}
+        showPrintButton={isTauri}
         onEditSubmit={handleFormSubmit}
         onSave={() => {
           const validItems = items.filter((i) => i.product.trim());
