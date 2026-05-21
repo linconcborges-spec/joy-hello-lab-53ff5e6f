@@ -211,18 +211,24 @@ export function NewOrderForm({ onSubmit, onCancel, initialOrder }: NewOrderFormP
     return orderData;
   };
 
+  const isTauri = (window as any).__TAURI_INTERNALS__ !== undefined;
+
   const processSubmission = async (authorizedBy?: string, shouldPrint: boolean = true, overrideData?: any) => {
     let orderData = overrideData || pendingOrderData || prepareOrderData(authorizedBy);
+    // No browser/mobile, nunca marca como impresso localmente — a central imprime via Realtime
+    const printLocally = shouldPrint && isTauri;
     if (!initialOrder) {
-      orderData = { ...orderData, status: shouldPrint ? "preparing" : "pending", isPrinted: shouldPrint };
+      orderData = { ...orderData, status: printLocally ? "preparing" : "pending", isPrinted: printLocally };
     }
-    if (shouldPrint) {
+    if (printLocally) {
       const printNumber = initialOrder?.number || getNextLocalOrderNumber();
       const orderToPrint: Order = { ...orderData as any, id: initialOrder?.id || "temp", number: printNumber, createdAt: initialOrder?.createdAt || new Date().toISOString() };
       await printOrder(orderToPrint, settings);
       toast.success("Pedido enviado para a impressora!");
+    } else if (shouldPrint) {
+      toast.success("Pedido enviado! Será impresso na central.");
     } else {
-      toast.success("Pedido salvo! Aguardando impressão.");
+      toast.success("Pedido salvo!");
     }
     onSubmit(orderData as any);
     setPendingOrderData(null);
