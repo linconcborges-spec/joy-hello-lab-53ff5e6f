@@ -100,6 +100,36 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          id: string
+          session_id: string
+          sender: string
+          message: string
+          customer_name: string | null
+          created_at: string
+          read_by_admin: boolean
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          sender: string
+          message: string
+          customer_name?: string | null
+          created_at?: string
+          read_by_admin?: boolean
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          sender?: string
+          message?: string
+          customer_name?: string | null
+          created_at?: string
+          read_by_admin?: boolean
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string

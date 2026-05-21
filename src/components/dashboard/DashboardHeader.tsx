@@ -1,7 +1,7 @@
 import {
   UtensilsCrossed, Users, Package, Settings, Clock,
   LayoutDashboard, ExternalLink, Sun, Moon,
-  Calendar as CalendarIcon, Search, Plus, BarChart2,
+  Calendar as CalendarIcon, Search, Plus, BarChart2, MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,8 +28,9 @@ interface DashboardHeaderProps {
   onToggleHistoryView: () => void;
   dateRange: { from: Date | undefined; to: Date | undefined };
   setDateRange: (r: any) => void;
-  onNavigate: (view: "new" | "customers" | "products" | "settings") => void;
+  onNavigate: (view: "new" | "customers" | "products" | "settings" | "chat") => void;
   onOpenFinancialDashboard: () => void;
+  chatUnread?: number;
 }
 
 export function DashboardHeader({
@@ -40,6 +41,7 @@ export function DashboardHeader({
   dateRange, setDateRange,
   onNavigate,
   onOpenFinancialDashboard,
+  chatUnread = 0,
 }: DashboardHeaderProps) {
   return (
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 text-center lg:text-left">
@@ -136,6 +138,17 @@ export function DashboardHeader({
         <Button variant="outline" size="icon" onClick={() => onNavigate("settings")} title="Configurações" className="h-12 w-12 rounded-2xl bg-card border-border/40 shadow-sm transition-all active:scale-90">
           <Settings className="h-5 w-5" />
         </Button>
+
+        <div className="relative">
+          <Button variant="outline" size="icon" onClick={() => onNavigate("chat")} title="Chat com clientes" className="h-12 w-12 rounded-2xl bg-card border-border/40 shadow-sm transition-all active:scale-90 text-green-600 border-green-200 hover:bg-green-50">
+            <MessageCircle className="h-5 w-5" />
+          </Button>
+          {chatUnread > 0 && (
+            <span className="absolute -top-1 -right-1 h-5 min-w-5 px-1 rounded-full bg-green-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-background pointer-events-none">
+              {chatUnread > 9 ? "9+" : chatUnread}
+            </span>
+          )}
+        </div>
 
         <Button
           variant="outline"

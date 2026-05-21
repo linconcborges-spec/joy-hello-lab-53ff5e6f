@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Package, Truck, CheckCircle2, Clock, LayoutDashboard } from "lucide-react";
+import { Package, Truck, CheckCircle2, Clock, LayoutDashboard, MessageCircle } from "lucide-react";
 import { OrderCard } from "@/components/OrderCard";
 import { AuthModal } from "@/components/AuthModal";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { AdminChatPanel } from "@/components/chat/AdminChatPanel";
 import {
   ContextMenu, ContextMenuContent, ContextMenuItem,
   ContextMenuLabel, ContextMenuSeparator, ContextMenuTrigger,
@@ -102,9 +103,10 @@ interface BottomNavProps {
   onToggleRevenue: () => void;
   isHistoryView: boolean;
   onExitHistory: () => void;
+  chatUnread?: number;
 }
 
-export function BottomNav({ todayOrders, isAdmin, showRevenue, todayRevenue, onToggleRevenue, isHistoryView, onExitHistory }: BottomNavProps) {
+export function BottomNav({ todayOrders, isAdmin, showRevenue, todayRevenue, onToggleRevenue, isHistoryView, onExitHistory, chatUnread = 0 }: BottomNavProps) {
   if (isHistoryView) {
     return (
       <div className="fixed bottom-6 right-6 z-50">
@@ -122,6 +124,27 @@ export function BottomNav({ todayOrders, isAdmin, showRevenue, todayRevenue, onT
         <BottomNavItem icon={Package} color="text-primary" count={todayOrders.filter(o => o.status === "preparing").length} status="preparing" title="Produção" />
         <BottomNavItem icon={Truck} color="text-blue-500" count={todayOrders.filter(o => o.status === "delivering").length} status="delivering" title="Entrega" />
         <BottomNavItem icon={CheckCircle2} color="text-success" count={todayOrders.filter(o => o.status === "completed").length} status="completed" title="Finalizados" />
+        <Drawer>
+          <DrawerTrigger asChild>
+            <button className="flex flex-col items-center gap-0.5 relative px-2 py-1 transform active:scale-90 transition-transform">
+              <MessageCircle className="h-6 w-6 text-green-500" />
+              <span className="text-[8px] font-black uppercase tracking-tighter opacity-70">Chat</span>
+              {chatUnread > 0 && (
+                <span className="absolute -top-1 right-2 min-w-4 h-4 px-0.5 rounded-full bg-green-500 text-white text-[8px] font-black flex items-center justify-center border-2 border-background">
+                  {chatUnread > 9 ? "9+" : chatUnread}
+                </span>
+              )}
+            </button>
+          </DrawerTrigger>
+          <DrawerContent className="h-[90vh] p-4 pt-0">
+            <DrawerHeader className="px-0">
+              <DrawerTitle className="text-xl font-black uppercase tracking-tighter text-center">Chat</DrawerTitle>
+            </DrawerHeader>
+            <div className="flex-1 overflow-hidden h-full">
+              <AdminChatPanel />
+            </div>
+          </DrawerContent>
+        </Drawer>
       </div>
       {isAdmin && (
         <>

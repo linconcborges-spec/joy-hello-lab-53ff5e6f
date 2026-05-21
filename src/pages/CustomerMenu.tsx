@@ -27,6 +27,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import { CustomerChatDrawer } from "@/components/chat/CustomerChatDrawer";
 
 type Category = { id: string; name: string };
 type Product = {
@@ -454,6 +455,9 @@ export default function CustomerMenu() {
           </>
         )}
       </div>
+
+      {/* ── Chat Flutuante ── */}
+      <CustomerChatDrawer storeName={settings.storeName} logoUrl={settings.logoUrl} />
 
       {/* ── Floating Cart Button ── */}
       {cart.length > 0 && (

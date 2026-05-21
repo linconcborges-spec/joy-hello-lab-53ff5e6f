@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, Users, Package, CheckCircle2, XCircle } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { CustomersPage } from "@/components/CustomersPage";
 import { ProductsPage } from "@/components/ProductsPage";
 import { SettingsPage } from "@/components/SettingsPage";
 import { LoginPage } from "@/components/LoginPage";
+import { AdminChatPanel } from "@/components/chat/AdminChatPanel";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { KanbanBoard } from "@/components/dashboard/KanbanBoard";
 import { HistoryTable } from "@/components/dashboard/HistoryTable";
@@ -20,9 +21,10 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useSettings } from "@/hooks/useSettings";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
+import { supabase } from "@/integrations/supabase/client";
 import { printOrder } from "@/lib/PrintService";
 
-type View = "list" | "new" | "edit" | "detail" | "customers" | "products" | "settings";
+type View = "list" | "new" | "edit" | "detail" | "customers" | "products" | "settings" | "chat";
 
 const Index = () => {
   const { user, isAdmin, logout, isLoading: authLoading } = useAuth();
@@ -51,6 +53,38 @@ const Index = () => {
   });
   const [isMobile, setIsMobile] = useState(false);
   const [financialOpen, setFinancialOpen] = useState(false);
+  const [chatUnread, setChatUnread] = useState(0);
+  const handleChatUnread = useCallback((count: number) => setChatUnread(count), []);
+
+  // Track unread chat messages globally
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("chat_messages")
+      .select("id", { count: "exact" })
+      .eq("sender", "customer")
+      .eq("read_by_admin", false)
+      .then(({ count }) => setChatUnread(count ?? 0));
+
+    const channel = supabase
+      .channel("chat-unread-counter")
+      .on("postgres_changes" as any, { event: "INSERT", schema: "public", table: "chat_messages" }, (payload: any) => {
+        if (payload.new?.sender === "customer") {
+          setChatUnread(c => c + 1);
+        }
+      })
+      .on("postgres_changes" as any, { event: "UPDATE", schema: "public", table: "chat_messages" }, () => {
+        supabase
+          .from("chat_messages")
+          .select("id", { count: "exact" })
+          .eq("sender", "customer")
+          .eq("read_by_admin", false)
+          .then(({ count }) => setChatUnread(count ?? 0));
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024);
@@ -141,6 +175,25 @@ const Index = () => {
   if (view === "products") return <ProductsPage onBack={() => setView("list")} />;
   if (view === "settings") return <SettingsPage onBack={() => setView("list")} />;
 
+  if (view === "chat") {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-border/40 bg-card">
+          <button
+            onClick={() => setView("list")}
+            className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
+          >
+            <XCircle className="h-5 w-5 text-muted-foreground" />
+          </button>
+          <h1 className="text-lg font-black uppercase tracking-tight">Chat com Clientes</h1>
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <AdminChatPanel onUnreadChange={handleChatUnread} />
+        </div>
+      </div>
+    );
+  }
+
   if (view === "detail" && selectedOrder) {
     return (
       <div className="min-h-screen bg-background p-4 sm:p-10 flex items-center justify-center">
@@ -183,8 +236,9 @@ const Index = () => {
           onToggleHistoryView={() => setIsHistoryView(v => !v)}
           dateRange={dateRange}
           setDateRange={setDateRange}
-          onNavigate={(v) => setView(v)}
+          onNavigate={(v) => setView(v as View)}
           onOpenFinancialDashboard={() => setFinancialOpen(true)}
+          chatUnread={chatUnread}
         />
 
         <FinancialDashboard open={financialOpen} onClose={() => setFinancialOpen(false)} />
@@ -257,6 +311,7 @@ const Index = () => {
           onToggleRevenue={() => setShowRevenue(v => !v)}
           isHistoryView={isHistoryView}
           onExitHistory={() => setIsHistoryView(false)}
+          chatUnread={chatUnread}
         />
       )}
     </div>
