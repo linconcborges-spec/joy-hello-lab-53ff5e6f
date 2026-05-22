@@ -12,8 +12,8 @@ export function InstallPWA() {
       toast.custom((id) => (
         <div className="w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 flex flex-col gap-3">
           <div className="flex items-start gap-3">
-            <div className="h-9 w-9 rounded-xl bg-orange-100 flex items-center justify-center shrink-0 overflow-hidden">
-              <img src="/icon.svg" alt="" className="w-6 h-6 object-contain" />
+            <div className="h-10 w-10 rounded-xl overflow-hidden shrink-0">
+              <img src="/icon-192.png" alt="" className="w-full h-full object-cover" />
             </div>
             <div>
               <p className="text-sm font-bold text-gray-900">
