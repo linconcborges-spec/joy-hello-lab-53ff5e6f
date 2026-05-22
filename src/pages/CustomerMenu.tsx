@@ -50,6 +50,7 @@ export default function CustomerMenu() {
   const [search, setSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [chatReady, setChatReady] = useState(false);
 
   // Adicionais: lazy load — só busca quando o cliente abre um produto
   const { data: addons = [] } = useQuery({
@@ -73,6 +74,11 @@ export default function CustomerMenu() {
     },
   });
   const [infoExpanded, setInfoExpanded] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setChatReady(true), 1200);
+    return () => clearTimeout(t);
+  }, []);
 
   // Selection states
   const [selectedAddons, setSelectedAddons] = useState<any[]>([]);
@@ -482,7 +488,7 @@ export default function CustomerMenu() {
       </div>
 
       {/* ── Chat Flutuante ── */}
-      <CustomerChatDrawer storeName={settings.storeName} logoUrl={settings.logoUrl} />
+      {chatReady && <CustomerChatDrawer storeName={settings.storeName} logoUrl={settings.logoUrl} />}
 
       {/* ── Floating Cart Button ── */}
       {cart.length > 0 && (
