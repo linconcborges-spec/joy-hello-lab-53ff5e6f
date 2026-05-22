@@ -21,7 +21,6 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSettings } from "@/hooks/useSettings";
-import { useAddons } from "@/hooks/useAddons";
 import { useAddOrder } from "@/hooks/useOrders";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -44,7 +43,6 @@ type Product = {
 
 export default function CustomerMenu() {
   const { settings, isCurrentlyOpen } = useSettings();
-  const { data: addons = [] } = useAddons();
   const addOrder = useAddOrder();
 
   const [cart, setCart] = useState<any[]>([]);
@@ -52,6 +50,28 @@ export default function CustomerMenu() {
   const [search, setSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+
+  // Adicionais: lazy load — só busca quando o cliente abre um produto
+  const { data: addons = [] } = useQuery({
+    queryKey: ["addons"],
+    enabled: !!selectedProduct,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const [addonsRes, acRes] = await Promise.all([
+        supabase.from("addons").select("id, code, name, price, category_id").order("code", { ascending: true }),
+        supabase.from("addon_categories").select("addon_id, category_id"),
+      ]);
+      const acMap: Record<string, string[]> = {};
+      (acRes.data ?? []).forEach((ac: any) => {
+        if (!acMap[ac.addon_id]) acMap[ac.addon_id] = [];
+        acMap[ac.addon_id].push(ac.category_id);
+      });
+      return (addonsRes.data ?? []).map((a: any) => ({
+        ...a,
+        category_ids: acMap[a.id] ?? (a.category_id ? [a.category_id] : []),
+      }));
+    },
+  });
   const [infoExpanded, setInfoExpanded] = useState(false);
 
   // Selection states
@@ -72,18 +92,13 @@ export default function CustomerMenu() {
   const qc = useQueryClient();
 
   useEffect(() => {
+    // Escuta apenas mudanças de produtos/categorias (settings já é monitorado pelo useSettings)
     const channel = supabase.channel('customer-menu-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
         qc.invalidateQueries({ queryKey: ["categories_public"] });
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
         qc.invalidateQueries({ queryKey: ["products_public"] });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'addons' }, () => {
-        qc.invalidateQueries({ queryKey: ["addons"] });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, () => {
-        qc.invalidateQueries({ queryKey: ["settings"] });
       })
       .subscribe();
 
