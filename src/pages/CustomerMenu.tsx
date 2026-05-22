@@ -19,7 +19,7 @@ import {
   Store
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabasePublic as supabase } from "@/integrations/supabase/publicClient";
 import { useSettings } from "@/hooks/useSettings";
 import { useAddOrder } from "@/hooks/useOrders";
 import { Label } from "@/components/ui/label";
