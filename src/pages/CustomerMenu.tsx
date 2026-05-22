@@ -100,57 +100,45 @@ export default function CustomerMenu() {
     staleTime: 2 * 60_000,
     retry: 1,
     queryFn: async () => {
-      // Tenta com sort_order; se a coluna não existir, tenta sem
-      const { data, error } = await supabase
-        .from("categories")
-        .select("id, name, sort_order")
-        .order("sort_order", { ascending: true });
-      if (error) {
-        const { data: fallback } = await supabase.from("categories").select("id, name");
-        return ((fallback ?? []) as any[]).map(c => ({ ...c, sort_order: 0 })) as Category[];
-      }
+      const { data } = await supabase.from("categories").select("id, name");
       return (data ?? []) as Category[];
     }
   });
 
-  const { data: products = [], isLoading: loadingProducts } = useQuery({
+  const { data: products = [], isLoading: loadingProducts, error: productsError } = useQuery({
     queryKey: ["products_public"],
     staleTime: 2 * 60_000,
     retry: 1,
     queryFn: async () => {
-      // neq(false) inclui is_visible=true E is_visible=NULL — evita tela vazia por valores NULL
-      // Tenta ordenar por sort_order; se a coluna não existir, usa code
-      let productsRes = await supabase
+      // Busca todos os produtos sem filtro de coluna que pode não existir
+      const { data: allProducts, error } = await supabase
         .from("products")
-        .select("*")
-        .neq("is_visible", false)
-        .order("sort_order", { ascending: true });
+        .select("id, name, price, code, description, image_url, category_id, is_visible, sort_order");
 
-      if (productsRes.error) {
-        productsRes = await supabase
-          .from("products")
-          .select("*")
-          .neq("is_visible", false)
-          .order("code", { ascending: true });
-      }
+      if (error) throw error;
 
-      const [pcRes] = await Promise.all([
-        supabase.from("product_categories").select("product_id, category_id"),
-      ]);
+      // Filtra client-side: mostra tudo exceto explicitamente oculto (is_visible = false)
+      const rows = (allProducts ?? []).filter((p: any) => p.is_visible !== false);
 
-      const rows: any[] = productsRes.data ?? [];
+      // Busca associações de categoria (junction table)
+      const { data: pcData } = await supabase
+        .from("product_categories")
+        .select("product_id, category_id");
+
       const pcMap: Record<string, string[]> = {};
-      (pcRes.data ?? []).forEach((pc: any) => {
+      (pcData ?? []).forEach((pc: any) => {
         if (!pcMap[pc.product_id]) pcMap[pc.product_id] = [];
         pcMap[pc.product_id].push(pc.category_id);
       });
 
-      return rows.map((p: any) => ({
-        ...p,
-        category_ids: pcMap[p.id]?.length
-          ? pcMap[p.id]
-          : (p.category_id ? [p.category_id] : []),
-      })) as Product[];
+      return rows
+        .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.code - b.code)
+        .map((p: any) => ({
+          ...p,
+          category_ids: pcMap[p.id]?.length
+            ? pcMap[p.id]
+            : (p.category_id ? [p.category_id] : []),
+        })) as Product[];
     }
   });
 
@@ -234,6 +222,23 @@ export default function CustomerMenu() {
 
   if (loadingCategories || loadingProducts) {
     return <MenuSkeleton />;
+  }
+
+  if (productsError) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6 gap-4">
+        <div className="bg-white rounded-2xl p-6 w-full max-w-sm text-center shadow">
+          <p className="text-base font-bold text-red-600 mb-2">Erro ao carregar produtos</p>
+          <p className="text-xs text-gray-500 break-all">{String((productsError as any)?.message ?? productsError)}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 h-10 px-6 bg-red-600 text-white rounded-xl text-sm font-bold"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (trackingOrder) {
