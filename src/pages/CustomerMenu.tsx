@@ -18,7 +18,7 @@ import {
   Bike,
   Store
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabasePublic as supabase } from "@/integrations/supabase/publicClient";
 import { useSettings } from "@/hooks/useSettings";
 import { useAddOrder } from "@/hooks/useOrders";
@@ -44,6 +44,7 @@ type Product = {
 export default function CustomerMenu() {
   const { settings, isCurrentlyOpen } = useSettings();
   const addOrder = useAddOrder();
+  const qc = useQueryClient();
 
   const [cart, setCart] = useState<any[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -51,6 +52,24 @@ export default function CustomerMenu() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [chatReady, setChatReady] = useState(false);
+
+  // Sincronização em tempo real: qualquer mudança no admin reflete no cardápio
+  useEffect(() => {
+    const channel = supabase
+      .channel("menu-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, () => {
+        qc.invalidateQueries({ queryKey: ["products_public"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "product_categories" }, () => {
+        qc.invalidateQueries({ queryKey: ["products_public"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "categories" }, () => {
+        qc.invalidateQueries({ queryKey: ["categories_public"] });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
 
   // Adicionais: lazy load — só busca quando o cliente abre um produto
   const { data: addons = [] } = useQuery({
@@ -97,7 +116,7 @@ export default function CustomerMenu() {
 
   const { data: categories = [], isLoading: loadingCategories } = useQuery({
     queryKey: ["categories_public"],
-    staleTime: 2 * 60_000,
+    staleTime: 30_000,
     retry: 1,
     queryFn: async () => {
       const { data } = await supabase.from("categories").select("id, name");
@@ -107,7 +126,7 @@ export default function CustomerMenu() {
 
   const { data: products = [], isLoading: loadingProducts, error: productsError } = useQuery({
     queryKey: ["products_public"],
-    staleTime: 2 * 60_000,
+    staleTime: 30_000,
     retry: 1,
     queryFn: async () => {
       // Busca todos os produtos sem filtro de coluna que pode não existir
