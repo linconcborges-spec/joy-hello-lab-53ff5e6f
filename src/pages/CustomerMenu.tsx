@@ -95,31 +95,50 @@ export default function CustomerMenu() {
   const [globalObservation, setGlobalObservation] = useState("");
   const [trackingOrder, setTrackingOrder] = useState<{ id: string; number: number; isPickup: boolean } | null>(null);
 
-  const { data: categories = [], isLoading: loadingCategories, refetch: refetchCategories } = useQuery({
+  const { data: categories = [], isLoading: loadingCategories } = useQuery({
     queryKey: ["categories_public"],
     staleTime: 2 * 60_000,
     retry: 1,
     queryFn: async () => {
-      const { data } = await supabase
+      // Tenta com sort_order; se a coluna não existir, tenta sem
+      const { data, error } = await supabase
         .from("categories")
         .select("id, name, sort_order")
         .order("sort_order", { ascending: true });
+      if (error) {
+        const { data: fallback } = await supabase.from("categories").select("id, name");
+        return ((fallback ?? []) as any[]).map(c => ({ ...c, sort_order: 0 })) as Category[];
+      }
       return (data ?? []) as Category[];
     }
   });
 
-  const { data: products = [], isLoading: loadingProducts, refetch: refetchProducts } = useQuery({
+  const { data: products = [], isLoading: loadingProducts } = useQuery({
     queryKey: ["products_public"],
     staleTime: 2 * 60_000,
     retry: 1,
     queryFn: async () => {
-      const [productsRes, pcRes] = await Promise.all([
-        supabase.from("products").select("*").eq("is_visible", true).order("sort_order", { ascending: true }),
+      // neq(false) inclui is_visible=true E is_visible=NULL — evita tela vazia por valores NULL
+      // Tenta ordenar por sort_order; se a coluna não existir, usa code
+      let productsRes = await supabase
+        .from("products")
+        .select("*")
+        .neq("is_visible", false)
+        .order("sort_order", { ascending: true });
+
+      if (productsRes.error) {
+        productsRes = await supabase
+          .from("products")
+          .select("*")
+          .neq("is_visible", false)
+          .order("code", { ascending: true });
+      }
+
+      const [pcRes] = await Promise.all([
         supabase.from("product_categories").select("product_id, category_id"),
       ]);
 
       const rows: any[] = productsRes.data ?? [];
-
       const pcMap: Record<string, string[]> = {};
       (pcRes.data ?? []).forEach((pc: any) => {
         if (!pcMap[pc.product_id]) pcMap[pc.product_id] = [];
