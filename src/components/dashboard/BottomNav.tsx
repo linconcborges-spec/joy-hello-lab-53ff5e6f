@@ -5,6 +5,7 @@ import { AuthModal } from "@/components/AuthModal";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { AdminChatPanel } from "@/components/chat/AdminChatPanel";
+import type { ChatMessage } from "@/hooks/useChatMessages";
 import {
   ContextMenu, ContextMenuContent, ContextMenuItem,
   ContextMenuLabel, ContextMenuSeparator, ContextMenuTrigger,
@@ -104,9 +105,15 @@ interface BottomNavProps {
   isHistoryView: boolean;
   onExitHistory: () => void;
   chatUnread?: number;
+  chatMessages?: ChatMessage[];
+  chatLoaded?: boolean;
+  onChatMarkRead?: (sid: string) => Promise<void>;
+  onChatAddOptimistic?: (msg: ChatMessage) => void;
+  onChatReplaceOptimistic?: (tempId: string, real: ChatMessage) => void;
+  onChatRemoveOptimistic?: (tempId: string) => void;
 }
 
-export function BottomNav({ todayOrders, isAdmin, showRevenue, todayRevenue, onToggleRevenue, isHistoryView, onExitHistory, chatUnread = 0 }: BottomNavProps) {
+export function BottomNav({ todayOrders, isAdmin, showRevenue, todayRevenue, onToggleRevenue, isHistoryView, onExitHistory, chatUnread = 0, chatMessages = [], chatLoaded = false, onChatMarkRead, onChatAddOptimistic, onChatReplaceOptimistic, onChatRemoveOptimistic }: BottomNavProps) {
   if (isHistoryView) {
     return (
       <div className="fixed bottom-6 right-6 z-50">
@@ -141,7 +148,14 @@ export function BottomNav({ todayOrders, isAdmin, showRevenue, todayRevenue, onT
               <DrawerTitle className="text-xl font-black uppercase tracking-tighter text-center">Chat</DrawerTitle>
             </DrawerHeader>
             <div className="flex-1 overflow-hidden h-full">
-              <AdminChatPanel />
+              <AdminChatPanel
+                messages={chatMessages}
+                loaded={chatLoaded}
+                onMarkRead={onChatMarkRead ?? (async () => {})}
+                onAddOptimistic={onChatAddOptimistic ?? (() => {})}
+                onReplaceOptimistic={onChatReplaceOptimistic ?? (() => {})}
+                onRemoveOptimistic={onChatRemoveOptimistic ?? (() => {})}
+              />
             </div>
           </DrawerContent>
         </Drawer>

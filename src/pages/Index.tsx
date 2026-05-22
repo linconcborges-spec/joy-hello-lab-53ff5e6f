@@ -22,8 +22,8 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useSettings } from "@/hooks/useSettings";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
-import { supabase } from "@/integrations/supabase/client";
 import { printOrder } from "@/lib/PrintService";
+import { useChatMessages } from "@/hooks/useChatMessages";
 
 type View = "list" | "new" | "edit" | "detail" | "customers" | "products" | "settings" | "chat";
 
@@ -55,38 +55,8 @@ const Index = () => {
   });
   const [isMobile, setIsMobile] = useState(false);
   const [financialOpen, setFinancialOpen] = useState(false);
-  const [chatUnread, setChatUnread] = useState(0);
-  const handleChatUnread = useCallback((count: number) => setChatUnread(count), []);
-
-  // Track unread chat messages globally
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from("chat_messages")
-      .select("id", { count: "exact" })
-      .eq("sender", "customer")
-      .eq("read_by_admin", false)
-      .then(({ count }) => setChatUnread(count ?? 0));
-
-    const channel = supabase
-      .channel("chat-unread-counter")
-      .on("postgres_changes" as any, { event: "INSERT", schema: "public", table: "chat_messages" }, (payload: any) => {
-        if (payload.new?.sender === "customer") {
-          setChatUnread(c => c + 1);
-        }
-      })
-      .on("postgres_changes" as any, { event: "UPDATE", schema: "public", table: "chat_messages" }, () => {
-        supabase
-          .from("chat_messages")
-          .select("id", { count: "exact" })
-          .eq("sender", "customer")
-          .eq("read_by_admin", false)
-          .then(({ count }) => setChatUnread(count ?? 0));
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [user]);
+  const chat = useChatMessages();
+  const chatUnread = chat.unreadCount;
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024);
@@ -191,7 +161,14 @@ const Index = () => {
           <h1 className="text-lg font-black uppercase tracking-tight">Chat com Clientes</h1>
         </div>
         <div className="flex-1 overflow-hidden">
-          <AdminChatPanel onUnreadChange={handleChatUnread} />
+          <AdminChatPanel
+            messages={chat.messages}
+            loaded={chat.loaded}
+            onMarkRead={chat.markSessionAsRead}
+            onAddOptimistic={chat.addOptimistic}
+            onReplaceOptimistic={chat.replaceOptimistic}
+            onRemoveOptimistic={chat.removeOptimistic}
+          />
         </div>
       </div>
     );
@@ -315,6 +292,12 @@ const Index = () => {
           isHistoryView={isHistoryView}
           onExitHistory={() => setIsHistoryView(false)}
           chatUnread={chatUnread}
+          chatMessages={chat.messages}
+          chatLoaded={chat.loaded}
+          onChatMarkRead={chat.markSessionAsRead}
+          onChatAddOptimistic={chat.addOptimistic}
+          onChatReplaceOptimistic={chat.replaceOptimistic}
+          onChatRemoveOptimistic={chat.removeOptimistic}
         />
       )}
     </div>

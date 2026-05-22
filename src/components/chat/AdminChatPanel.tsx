@@ -2,17 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Send, ArrowLeft, MessageCircle, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-
-type Message = {
-  id: string;
-  session_id: string;
-  sender: "customer" | "admin";
-  message: string;
-  customer_name: string | null;
-  customer_phone: string | null;
-  created_at: string;
-  read_by_admin: boolean;
-};
+import type { ChatMessage } from "@/hooks/useChatMessages";
 
 type Session = {
   session_id: string;
@@ -24,7 +14,12 @@ type Session = {
 };
 
 interface AdminChatPanelProps {
-  onUnreadChange?: (count: number) => void;
+  messages: ChatMessage[];
+  loaded: boolean;
+  onMarkRead: (sessionId: string) => Promise<void>;
+  onAddOptimistic: (msg: ChatMessage) => void;
+  onReplaceOptimistic: (tempId: string, real: ChatMessage) => void;
+  onRemoveOptimistic: (tempId: string) => void;
 }
 
 function whatsappLink(phone: string) {
@@ -33,52 +28,14 @@ function whatsappLink(phone: string) {
   return `https://wa.me/${number}`;
 }
 
-export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+export function AdminChatPanel({
+  messages, loaded, onMarkRead, onAddOptimistic, onReplaceOptimistic, onRemoveOptimistic,
+}: AdminChatPanelProps) {
   const [activeSession, setActiveSession] = useState<string | null>(null);
   const [input, setInput] = useState("");
-  const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    supabase
-      .from("chat_messages")
-      .select("*")
-      .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        if (data) setMessages(data as Message[]);
-      });
-
-    const channel = supabase
-      .channel("admin-chat-all")
-      .on("postgres_changes" as any, {
-        event: "INSERT",
-        schema: "public",
-        table: "chat_messages",
-      }, (payload: any) => {
-        const msg = payload.new as Message;
-        setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
-      })
-      .on("postgres_changes" as any, {
-        event: "UPDATE",
-        schema: "public",
-        table: "chat_messages",
-      }, (payload: any) => {
-        setMessages(prev =>
-          prev.map(m => m.id === payload.new.id ? { ...m, ...payload.new } : m)
-        );
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, []);
-
-  useEffect(() => {
-    const unread = messages.filter(m => m.sender === "customer" && !m.read_by_admin).length;
-    onUnreadChange?.(unread);
-  }, [messages, onUnreadChange]);
-
-  // Build session list from messages
+  // Build session list
   const sessionMap = new Map<string, Session>();
   for (const msg of messages) {
     const existing = sessionMap.get(msg.session_id);
@@ -104,18 +61,7 @@ export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
 
   const openSession = async (sid: string) => {
     setActiveSession(sid);
-    const unreadIds = messages
-      .filter(m => m.session_id === sid && m.sender === "customer" && !m.read_by_admin)
-      .map(m => m.id);
-    if (unreadIds.length > 0) {
-      await supabase
-        .from("chat_messages")
-        .update({ read_by_admin: true })
-        .in("id", unreadIds);
-      setMessages(prev =>
-        prev.map(m => unreadIds.includes(m.id) ? { ...m, read_by_admin: true } : m)
-      );
-    }
+    await onMarkRead(sid);
   };
 
   useEffect(() => {
@@ -126,10 +72,10 @@ export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
 
   const handleSend = async () => {
     const text = input.trim();
-    if (!text || !activeSession || sending) return;
+    if (!text || !activeSession) return;
 
     const tempId = `temp-${Date.now()}`;
-    const optimistic: Message = {
+    onAddOptimistic({
       id: tempId,
       session_id: activeSession,
       sender: "admin",
@@ -138,25 +84,19 @@ export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
       customer_phone: null,
       created_at: new Date().toISOString(),
       read_by_admin: true,
-    };
-    setMessages(prev => [...prev, optimistic]);
+    });
     setInput("");
 
     const { data, error } = await supabase
       .from("chat_messages")
-      .insert({
-        session_id: activeSession,
-        sender: "admin",
-        message: text,
-        read_by_admin: true,
-      })
+      .insert({ session_id: activeSession, sender: "admin", message: text, read_by_admin: true })
       .select("*")
       .single();
 
     if (data) {
-      setMessages(prev => prev.map(m => m.id === tempId ? data as Message : m));
+      onReplaceOptimistic(tempId, data as ChatMessage);
     } else if (error) {
-      setMessages(prev => prev.filter(m => m.id !== tempId));
+      onRemoveOptimistic(tempId);
     }
   };
 
@@ -164,7 +104,6 @@ export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
     const session = sessions.find(s => s.session_id === activeSession);
     return (
       <div className="flex flex-col h-full">
-        {/* Header da conversa */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40 shrink-0">
           <button
             onClick={() => setActiveSession(null)}
@@ -192,11 +131,7 @@ export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
           </div>
         </div>
 
-        {/* Mensagens */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-          {activeMessages.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground py-8">Nenhuma mensagem ainda.</p>
-          )}
           {activeMessages.map(msg => (
             <div
               key={msg.id}
@@ -215,7 +150,6 @@ export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
           <div ref={bottomRef} />
         </div>
 
-        {/* Input */}
         <div className="px-4 py-3 border-t border-border/40 flex gap-2 shrink-0">
           <input
             value={input}
@@ -227,12 +161,20 @@ export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
           />
           <button
             onClick={handleSend}
-            disabled={!input.trim() || sending}
+            disabled={!input.trim()}
             className="h-11 w-11 bg-primary text-primary-foreground rounded-xl flex items-center justify-center shrink-0 disabled:opacity-40 active:scale-95 transition-all"
           >
             <Send className="h-4 w-4" />
           </button>
         </div>
+      </div>
+    );
+  }
+
+  if (!loaded) {
+    return (
+      <div className="flex-1 flex items-center justify-center opacity-30">
+        <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
