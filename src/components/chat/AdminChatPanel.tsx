@@ -126,15 +126,37 @@ export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
   const handleSend = async () => {
     const text = input.trim();
     if (!text || !activeSession || sending) return;
-    setSending(true);
-    setInput("");
-    await supabase.from("chat_messages").insert({
+
+    const tempId = `temp-${Date.now()}`;
+    const optimistic: Message = {
+      id: tempId,
       session_id: activeSession,
       sender: "admin",
       message: text,
+      customer_name: null,
+      customer_phone: null,
+      created_at: new Date().toISOString(),
       read_by_admin: true,
-    });
-    setSending(false);
+    };
+    setMessages(prev => [...prev, optimistic]);
+    setInput("");
+
+    const { data, error } = await supabase
+      .from("chat_messages")
+      .insert({
+        session_id: activeSession,
+        sender: "admin",
+        message: text,
+        read_by_admin: true,
+      })
+      .select("*")
+      .single();
+
+    if (data) {
+      setMessages(prev => prev.map(m => m.id === tempId ? data as Message : m));
+    } else if (error) {
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+    }
   };
 
   if (activeSession) {

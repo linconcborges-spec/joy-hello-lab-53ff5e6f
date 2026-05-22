@@ -107,9 +107,20 @@ export function CustomerChatDrawer({ storeName, logoUrl }: CustomerChatDrawerPro
   const handleSend = async () => {
     const text = input.trim();
     if (!text || !sessionId || !isInfoComplete || sending) return;
-    setSending(true);
+
+    // Optimistic: mostra a mensagem imediatamente, sem esperar o servidor
+    const tempId = `temp-${Date.now()}`;
+    const optimistic: Message = {
+      id: tempId,
+      session_id: sessionId,
+      sender: "customer",
+      message: text,
+      created_at: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, optimistic]);
     setInput("");
-    const { data } = await supabase
+
+    const { data, error } = await supabase
       .from("chat_messages")
       .insert({
         session_id: sessionId,
@@ -120,10 +131,14 @@ export function CustomerChatDrawer({ storeName, logoUrl }: CustomerChatDrawerPro
       })
       .select("id, sender, message, created_at, session_id")
       .single();
+
     if (data) {
-      setMessages(prev => prev.some(m => m.id === data.id) ? prev : [...prev, data as Message]);
+      // Troca o temporário pelo registro real (evita duplicata via Realtime)
+      setMessages(prev => prev.map(m => m.id === tempId ? data as Message : m));
+    } else if (error) {
+      // Reverte em caso de falha
+      setMessages(prev => prev.filter(m => m.id !== tempId));
     }
-    setSending(false);
   };
 
   return (
