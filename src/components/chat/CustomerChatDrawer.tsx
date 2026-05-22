@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { MessageCircle, Send, ChevronDown } from "lucide-react";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
-import { supabase } from "@/integrations/supabase/client";
+import { supabasePublic as supabase } from "@/integrations/supabase/publicClient";
 import { cn } from "@/lib/utils";
 
 const SESSION_KEY = "joy_chat_session_id";
