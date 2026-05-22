@@ -16,8 +16,15 @@ export function useCategories() {
         .from("categories")
         .select("id, name, sort_order")
         .order("sort_order", { ascending: true });
-      if (error) throw error;
-      return data as Category[];
+      if (error) {
+        // sort_order pode não existir ainda — tenta sem a coluna
+        const { data: fallback, error: err2 } = await supabase
+          .from("categories")
+          .select("id, name");
+        if (err2) throw err2;
+        return ((fallback ?? []) as any[]).map(c => ({ ...c, sort_order: 0 })) as Category[];
+      }
+      return (data ?? []) as Category[];
     },
   });
 }
