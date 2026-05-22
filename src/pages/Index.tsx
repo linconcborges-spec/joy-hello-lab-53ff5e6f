@@ -17,6 +17,7 @@ import { FinancialDashboard } from "@/components/dashboard/FinancialDashboard";
 import {
   useOrders, useAddOrder, useUpdateOrder, useUpdateOrderStatus,
   useCancelOrder, useMarkAsPrinted, useDeleteOrder, useAutoprint,
+  useLiveOrderUpdates,
 } from "@/hooks/useOrders";
 import { useAuth } from "@/hooks/useAuth";
 import { useSettings } from "@/hooks/useSettings";
@@ -32,6 +33,7 @@ const Index = () => {
   useOfflineSync();
   const { theme, setTheme } = useTheme();
   useAutoprint(settings);
+  useLiveOrderUpdates();
 
   useEffect(() => { setTheme("light"); }, [setTheme]);
 

@@ -16,22 +16,6 @@ import { getCycleStart } from "@/lib/cycleUtils";
 
 export function useOrders(startDate?: string, endDate?: string, enabled = true) {
   const start = startDate || getCycleStart();
-  const qc = useQueryClient();
-
-  // Atualiza o painel em tempo real para qualquer INSERT ou UPDATE externo
-  useEffect(() => {
-    const channel = supabase
-      .channel("orders-live-panel")
-      .on("postgres_changes" as any, { event: "INSERT", schema: "public", table: "orders" }, () => {
-        qc.invalidateQueries({ queryKey: ["orders"] });
-      })
-      .on("postgres_changes" as any, { event: "UPDATE", schema: "public", table: "orders" }, () => {
-        qc.invalidateQueries({ queryKey: ["orders"] });
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [qc]);
 
   return useQuery({
     queryKey: ["orders", start, endDate],
@@ -409,6 +393,28 @@ export function useDeleteOrder() {
     },
     onError: () => toast.error("Erro ao excluir pedido"),
   });
+}
+
+// ---------------------------------------------------------------------------
+// Hook para atualização em tempo real do painel de pedidos.
+// Deve ser chamado UMA ÚNICA VEZ (em Index.tsx) para evitar canais duplicados.
+// ---------------------------------------------------------------------------
+export function useLiveOrderUpdates() {
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("orders-live-panel")
+      .on("postgres_changes" as any, { event: "INSERT", schema: "public", table: "orders" }, () => {
+        qc.invalidateQueries({ queryKey: ["orders"] });
+      })
+      .on("postgres_changes" as any, { event: "UPDATE", schema: "public", table: "orders" }, () => {
+        qc.invalidateQueries({ queryKey: ["orders"] });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
 }
 
 // ---------------------------------------------------------------------------
