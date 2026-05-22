@@ -92,45 +92,30 @@ export default function CustomerMenu() {
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories_public"],
+    staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("categories")
         .select("id, name, sort_order")
         .order("sort_order", { ascending: true });
-      if (error) {
-        // Fallback: coluna sort_order pode não existir ainda no banco
-        const { data: fallback } = await supabase
-          .from("categories")
-          .select("id, name");
-        return (fallback ?? []) as Category[];
-      }
       return (data ?? []) as Category[];
     }
   });
 
   const { data: products = [] } = useQuery({
     queryKey: ["products_public"],
+    staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("is_visible", true)
-        .order("sort_order", { ascending: true });
+      // Busca produtos e relações de categoria em paralelo
+      const [productsRes, pcRes] = await Promise.all([
+        supabase.from("products").select("*").eq("is_visible", true).order("sort_order", { ascending: true }),
+        supabase.from("product_categories").select("product_id, category_id"),
+      ]);
 
-      let rows: any[] = data ?? [];
+      const rows: any[] = productsRes.data ?? [];
 
-      if (error) {
-        // Fallback: colunas is_visible/sort_order podem não existir no banco ainda
-        const { data: fallback } = await supabase.from("products").select("*");
-        rows = fallback ?? [];
-      }
-
-      // Busca relações de categoria na tabela de junção
-      const { data: pcData } = await supabase
-        .from("product_categories")
-        .select("product_id, category_id");
       const pcMap: Record<string, string[]> = {};
-      (pcData ?? []).forEach((pc: any) => {
+      (pcRes.data ?? []).forEach((pc: any) => {
         if (!pcMap[pc.product_id]) pcMap[pc.product_id] = [];
         pcMap[pc.product_id].push(pc.category_id);
       });
