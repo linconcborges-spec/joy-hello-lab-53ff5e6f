@@ -105,7 +105,7 @@ export default function CustomerMenu() {
     return () => { supabase.removeChannel(channel); };
   }, [qc]);
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [], isLoading: loadingCategories } = useQuery({
     queryKey: ["categories_public"],
     staleTime: 60_000,
     queryFn: async () => {
@@ -117,7 +117,7 @@ export default function CustomerMenu() {
     }
   });
 
-  const { data: products = [] } = useQuery({
+  const { data: products = [], isLoading: loadingProducts } = useQuery({
     queryKey: ["products_public"],
     staleTime: 60_000,
     queryFn: async () => {
@@ -219,6 +219,10 @@ export default function CustomerMenu() {
       }
     });
   };
+
+  if (loadingCategories || loadingProducts) {
+    return <MenuSkeleton />;
+  }
 
   if (trackingOrder) {
     return (
@@ -814,6 +818,59 @@ export default function CustomerMenu() {
         </DrawerContent>
       </Drawer>
     </div>
+    </div>
+  );
+}
+
+/* Skeleton de carregamento do cardápio */
+function MenuSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-100 max-w-md mx-auto animate-pulse">
+      {/* Banner */}
+      <div className="bg-white">
+        <div className="h-32 w-full bg-gray-200" />
+        <div className="px-4 pt-4 pb-5">
+          <div className="flex gap-4 items-start">
+            <div className="h-20 w-20 rounded-2xl bg-gray-200 shrink-0 -mt-10" />
+            <div className="flex-1 pt-1 space-y-2">
+              <div className="h-5 bg-gray-200 rounded-lg w-40" />
+              <div className="h-3 bg-gray-200 rounded-lg w-28" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Search bar */}
+      <div className="bg-white mt-2 px-4 py-3">
+        <div className="h-11 bg-gray-200 rounded-xl" />
+      </div>
+
+      {/* Category pills */}
+      <div className="bg-white border-b border-gray-100 px-4 py-3 flex gap-2">
+        {[80, 96, 72, 88].map((w, i) => (
+          <div key={i} className="h-8 bg-gray-200 rounded-full shrink-0" style={{ width: w }} />
+        ))}
+      </div>
+
+      {/* Em Destaque */}
+      <div className="bg-white mt-2 pt-5 pb-4">
+        <div className="px-4 mb-3 h-5 bg-gray-200 rounded-lg w-32" />
+        <div className="flex gap-3 px-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="shrink-0 w-28 rounded-xl bg-gray-200 h-32" />
+          ))}
+        </div>
+      </div>
+
+      {/* Categoria com produtos */}
+      <div className="bg-white mt-2 pt-5 pb-5">
+        <div className="px-4 mb-4 h-5 bg-gray-200 rounded-lg w-24" />
+        <div className="grid grid-cols-2 gap-3 px-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="rounded-xl bg-gray-200 h-36" />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
