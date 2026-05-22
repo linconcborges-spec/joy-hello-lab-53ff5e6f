@@ -160,10 +160,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const logout = useCallback(async () => {
+  const logout = useCallback(() => {
     try { localStorage.removeItem(LOCAL_SESSION_KEY); } catch { /* ok */ }
-    await supabase.auth.signOut();
     setUser(null);
+    supabase.auth.signOut();
   }, []);
 
   return (
