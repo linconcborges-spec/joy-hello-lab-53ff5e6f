@@ -114,29 +114,23 @@ export default function CustomerMenu() {
     staleTime: 2 * 60_000,
     retry: 0,
     queryFn: async () => {
-      // Tenta query completa: join com product_categories + filtro is_visible
       const { data, error } = await supabase
         .from("products")
-        .select("*, product_categories(category_id)")
+        .select("*")
         .eq("is_visible", true)
         .order("sort_order", { ascending: true });
 
-      if (!error && data) {
-        return data.map((p: any) => ({
-          ...p,
-          category_ids: (p.product_categories ?? []).map((pc: any) => pc.category_id),
-        })) as Product[];
-      }
+      if (!error && data) return data as Product[];
 
-      // Fallback: sem join, sem filtro is_visible, sem sort_order (banco mínimo)
+      // Fallback sem filtros que possam não existir
       const { data: simple, error: e2 } = await supabase
         .from("products")
         .select("*");
-      if (e2) throw e2;
-      return (simple ?? []).map((p: any) => ({
-        ...p,
-        category_ids: p.category_id ? [p.category_id] : [],
-      })) as Product[];
+      if (e2) {
+        console.error("[cardapio] products error:", e2);
+        throw e2;
+      }
+      return (simple ?? []) as Product[];
     }
   });
 
