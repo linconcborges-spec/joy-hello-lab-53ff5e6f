@@ -89,56 +89,31 @@ export default function CustomerMenu() {
   const [globalObservation, setGlobalObservation] = useState("");
   const [trackingOrder, setTrackingOrder] = useState<{ id: string; number: number; isPickup: boolean } | null>(null);
 
-  const { data: categories = [], isLoading: loadingCategories, error: errorCategories, refetch: refetchCategories } = useQuery({
+  const { data: categories = [], isLoading: loadingCategories, refetch: refetchCategories } = useQuery({
     queryKey: ["categories_public"],
     staleTime: 2 * 60_000,
-    retry: 0,
+    retry: 1,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("categories")
         .select("id, name, sort_order")
         .order("sort_order", { ascending: true });
-      if (!error && data) return data as Category[];
-
-      // Fallback: sort_order pode não existir ou ter NULLs
-      const { data: fallback, error: e2 } = await supabase
-        .from("categories")
-        .select("id, name");
-      if (e2) throw e2;
-      return (fallback ?? []) as Category[];
+      return (data ?? []) as Category[];
     }
   });
 
-  const { data: products = [], isLoading: loadingProducts, error: errorProducts, refetch: refetchProducts } = useQuery({
+  const { data: products = [], isLoading: loadingProducts, refetch: refetchProducts } = useQuery({
     queryKey: ["products_public"],
     staleTime: 2 * 60_000,
-    retry: 0,
+    retry: 1,
     queryFn: async () => {
-      // Busca produtos e categorias em paralelo
-      // Usa OR para pegar is_visible=true E is_visible=NULL (produtos antes da coluna existir)
       const [productsRes, pcRes] = await Promise.all([
-        supabase
-          .from("products")
-          .select("*")
-          .or("is_visible.eq.true,is_visible.is.null")
-          .order("sort_order", { ascending: true }),
-        supabase
-          .from("product_categories")
-          .select("product_id, category_id"),
+        supabase.from("products").select("*").eq("is_visible", true).order("sort_order", { ascending: true }),
+        supabase.from("product_categories").select("product_id, category_id"),
       ]);
 
-      let rows: any[] = productsRes.data ?? [];
+      const rows: any[] = productsRes.data ?? [];
 
-      // Se a query com filtro falhou, busca tudo sem filtro
-      if (productsRes.error || rows.length === 0) {
-        const { data: all, error: e2 } = await supabase
-          .from("products")
-          .select("*");
-        if (e2) throw e2;
-        rows = all ?? [];
-      }
-
-      // Monta mapa product_id → category_ids[] da tabela de junção
       const pcMap: Record<string, string[]> = {};
       (pcRes.data ?? []).forEach((pc: any) => {
         if (!pcMap[pc.product_id]) pcMap[pc.product_id] = [];
@@ -147,7 +122,6 @@ export default function CustomerMenu() {
 
       return rows.map((p: any) => ({
         ...p,
-        // Usa junction table se disponível, senão cai para category_id direto
         category_ids: pcMap[p.id]?.length
           ? pcMap[p.id]
           : (p.category_id ? [p.category_id] : []),
@@ -235,22 +209,6 @@ export default function CustomerMenu() {
 
   if (loadingCategories || loadingProducts) {
     return <MenuSkeleton />;
-  }
-
-  if (errorProducts || errorCategories) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center gap-4 p-6 text-center">
-        <p className="text-4xl">😕</p>
-        <p className="text-base font-bold text-gray-800">Não foi possível carregar o cardápio</p>
-        <p className="text-sm text-gray-400">Verifique sua conexão e tente novamente.</p>
-        <button
-          onClick={() => { refetchCategories(); refetchProducts(); }}
-          className="mt-2 h-12 px-8 bg-red-600 text-white rounded-2xl font-bold text-sm active:scale-95 transition-all"
-        >
-          Tentar novamente
-        </button>
-      </div>
-    );
   }
 
   if (trackingOrder) {
