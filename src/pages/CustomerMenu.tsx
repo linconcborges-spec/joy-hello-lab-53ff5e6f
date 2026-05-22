@@ -34,10 +34,12 @@ type Product = {
   id: string;
   name: string;
   price: number;
-  category_id: string;
+  category_id?: string | null;
+  category_ids?: string[];
   code: number;
   description?: string;
   image_url?: string;
+  is_visible?: boolean;
 };
 
 export default function CustomerMenu() {
@@ -91,23 +93,52 @@ export default function CustomerMenu() {
   const { data: categories = [] } = useQuery({
     queryKey: ["categories_public"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("categories")
         .select("id, name, sort_order")
         .order("sort_order", { ascending: true });
-      return data as Category[];
+      if (error) {
+        // Fallback: coluna sort_order pode não existir ainda no banco
+        const { data: fallback } = await supabase
+          .from("categories")
+          .select("id, name");
+        return (fallback ?? []) as Category[];
+      }
+      return (data ?? []) as Category[];
     }
   });
 
   const { data: products = [] } = useQuery({
     queryKey: ["products_public"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("products")
         .select("*")
         .eq("is_visible", true)
         .order("sort_order", { ascending: true });
-      return data as Product[];
+
+      let rows: any[] = data ?? [];
+
+      if (error) {
+        // Fallback: colunas is_visible/sort_order podem não existir no banco ainda
+        const { data: fallback } = await supabase.from("products").select("*");
+        rows = fallback ?? [];
+      }
+
+      // Busca relações de categoria na tabela de junção
+      const { data: pcData } = await supabase
+        .from("product_categories")
+        .select("product_id, category_id");
+      const pcMap: Record<string, string[]> = {};
+      (pcData ?? []).forEach((pc: any) => {
+        if (!pcMap[pc.product_id]) pcMap[pc.product_id] = [];
+        pcMap[pc.product_id].push(pc.category_id);
+      });
+
+      return rows.map((p: any) => ({
+        ...p,
+        category_ids: pcMap[p.id] ?? (p.category_id ? [p.category_id] : []),
+      })) as Product[];
     }
   });
 
@@ -431,7 +462,10 @@ export default function CustomerMenu() {
 
             {/* Categorias — grid 2 colunas estilo OlaClick */}
             {categories.map(cat => {
-              const catProducts = filteredProducts.filter(p => p.category_id === cat.id);
+              const catProducts = filteredProducts.filter(p =>
+                (p.category_ids && p.category_ids.includes(cat.id)) ||
+                p.category_id === cat.id
+              );
               if (catProducts.length === 0) return null;
               return (
                 <div key={cat.id} id={`cat-${cat.id}`} className="bg-white scroll-mt-28 pt-5 pb-5">
