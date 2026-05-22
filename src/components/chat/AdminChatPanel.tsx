@@ -56,7 +56,8 @@ export function AdminChatPanel({ onUnreadChange }: AdminChatPanelProps) {
         schema: "public",
         table: "chat_messages",
       }, (payload: any) => {
-        setMessages(prev => [...prev, payload.new as Message]);
+        const msg = payload.new as Message;
+        setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg]);
       })
       .on("postgres_changes" as any, {
         event: "UPDATE",
