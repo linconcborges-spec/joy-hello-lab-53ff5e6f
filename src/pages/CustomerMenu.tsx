@@ -94,13 +94,13 @@ export default function CustomerMenu() {
     staleTime: 2 * 60_000,
     retry: 0,
     queryFn: async () => {
-      // Tenta com sort_order; se falhar, tenta sem
       const { data, error } = await supabase
         .from("categories")
         .select("id, name, sort_order")
         .order("sort_order", { ascending: true });
       if (!error && data) return data as Category[];
 
+      // Fallback: sort_order pode não existir ou ter NULLs
       const { data: fallback, error: e2 } = await supabase
         .from("categories")
         .select("id, name");
@@ -114,23 +114,44 @@ export default function CustomerMenu() {
     staleTime: 2 * 60_000,
     retry: 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("is_visible", true)
-        .order("sort_order", { ascending: true });
+      // Busca produtos e categorias em paralelo
+      // Usa OR para pegar is_visible=true E is_visible=NULL (produtos antes da coluna existir)
+      const [productsRes, pcRes] = await Promise.all([
+        supabase
+          .from("products")
+          .select("*")
+          .or("is_visible.eq.true,is_visible.is.null")
+          .order("sort_order", { ascending: true }),
+        supabase
+          .from("product_categories")
+          .select("product_id, category_id"),
+      ]);
 
-      if (!error && data) return data as Product[];
+      let rows: any[] = productsRes.data ?? [];
 
-      // Fallback sem filtros que possam não existir
-      const { data: simple, error: e2 } = await supabase
-        .from("products")
-        .select("*");
-      if (e2) {
-        console.error("[cardapio] products error:", e2);
-        throw e2;
+      // Se a query com filtro falhou, busca tudo sem filtro
+      if (productsRes.error || rows.length === 0) {
+        const { data: all, error: e2 } = await supabase
+          .from("products")
+          .select("*");
+        if (e2) throw e2;
+        rows = all ?? [];
       }
-      return (simple ?? []) as Product[];
+
+      // Monta mapa product_id → category_ids[] da tabela de junção
+      const pcMap: Record<string, string[]> = {};
+      (pcRes.data ?? []).forEach((pc: any) => {
+        if (!pcMap[pc.product_id]) pcMap[pc.product_id] = [];
+        pcMap[pc.product_id].push(pc.category_id);
+      });
+
+      return rows.map((p: any) => ({
+        ...p,
+        // Usa junction table se disponível, senão cai para category_id direto
+        category_ids: pcMap[p.id]?.length
+          ? pcMap[p.id]
+          : (p.category_id ? [p.category_id] : []),
+      })) as Product[];
     }
   });
 
