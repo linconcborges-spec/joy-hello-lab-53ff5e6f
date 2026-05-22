@@ -18,7 +18,7 @@ import {
   Bike,
   Store
 } from "lucide-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSettings } from "@/hooks/useSettings";
 import { useAddOrder } from "@/hooks/useOrders";
@@ -89,55 +89,35 @@ export default function CustomerMenu() {
   const [globalObservation, setGlobalObservation] = useState("");
   const [trackingOrder, setTrackingOrder] = useState<{ id: string; number: number; isPickup: boolean } | null>(null);
 
-  const qc = useQueryClient();
-
-  useEffect(() => {
-    // Escuta apenas mudanças de produtos/categorias (settings já é monitorado pelo useSettings)
-    const channel = supabase.channel('customer-menu-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
-        qc.invalidateQueries({ queryKey: ["categories_public"] });
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
-        qc.invalidateQueries({ queryKey: ["products_public"] });
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [qc]);
-
-  const { data: categories = [], isLoading: loadingCategories } = useQuery({
+  const { data: categories = [], isLoading: loadingCategories, error: errorCategories, refetch: refetchCategories } = useQuery({
     queryKey: ["categories_public"],
-    staleTime: 60_000,
+    staleTime: 2 * 60_000,
+    retry: 2,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("categories")
         .select("id, name, sort_order")
         .order("sort_order", { ascending: true });
+      if (error) throw error;
       return (data ?? []) as Category[];
     }
   });
 
-  const { data: products = [], isLoading: loadingProducts } = useQuery({
+  const { data: products = [], isLoading: loadingProducts, error: errorProducts, refetch: refetchProducts } = useQuery({
     queryKey: ["products_public"],
-    staleTime: 60_000,
+    staleTime: 2 * 60_000,
+    retry: 2,
     queryFn: async () => {
-      // Busca produtos e relações de categoria em paralelo
-      const [productsRes, pcRes] = await Promise.all([
-        supabase.from("products").select("*").eq("is_visible", true).order("sort_order", { ascending: true }),
-        supabase.from("product_categories").select("product_id, category_id"),
-      ]);
-
-      const rows: any[] = productsRes.data ?? [];
-
-      const pcMap: Record<string, string[]> = {};
-      (pcRes.data ?? []).forEach((pc: any) => {
-        if (!pcMap[pc.product_id]) pcMap[pc.product_id] = [];
-        pcMap[pc.product_id].push(pc.category_id);
-      });
-
-      return rows.map((p: any) => ({
+      // Join único: produtos + categorias em uma só query
+      const { data, error } = await supabase
+        .from("products")
+        .select("*, product_categories(category_id)")
+        .eq("is_visible", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data ?? []).map((p: any) => ({
         ...p,
-        category_ids: pcMap[p.id] ?? (p.category_id ? [p.category_id] : []),
+        category_ids: (p.product_categories ?? []).map((pc: any) => pc.category_id),
       })) as Product[];
     }
   });
@@ -222,6 +202,22 @@ export default function CustomerMenu() {
 
   if (loadingCategories || loadingProducts) {
     return <MenuSkeleton />;
+  }
+
+  if (errorProducts || errorCategories) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center gap-4 p-6 text-center">
+        <p className="text-4xl">😕</p>
+        <p className="text-base font-bold text-gray-800">Não foi possível carregar o cardápio</p>
+        <p className="text-sm text-gray-400">Verifique sua conexão e tente novamente.</p>
+        <button
+          onClick={() => { refetchCategories(); refetchProducts(); }}
+          className="mt-2 h-12 px-8 bg-red-600 text-white rounded-2xl font-bold text-sm active:scale-95 transition-all"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    );
   }
 
   if (trackingOrder) {
