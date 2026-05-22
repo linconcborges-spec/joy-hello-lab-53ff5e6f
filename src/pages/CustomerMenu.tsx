@@ -92,32 +92,50 @@ export default function CustomerMenu() {
   const { data: categories = [], isLoading: loadingCategories, error: errorCategories, refetch: refetchCategories } = useQuery({
     queryKey: ["categories_public"],
     staleTime: 2 * 60_000,
-    retry: 2,
+    retry: 0,
     queryFn: async () => {
+      // Tenta com sort_order; se falhar, tenta sem
       const { data, error } = await supabase
         .from("categories")
         .select("id, name, sort_order")
         .order("sort_order", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as Category[];
+      if (!error && data) return data as Category[];
+
+      const { data: fallback, error: e2 } = await supabase
+        .from("categories")
+        .select("id, name");
+      if (e2) throw e2;
+      return (fallback ?? []) as Category[];
     }
   });
 
   const { data: products = [], isLoading: loadingProducts, error: errorProducts, refetch: refetchProducts } = useQuery({
     queryKey: ["products_public"],
     staleTime: 2 * 60_000,
-    retry: 2,
+    retry: 0,
     queryFn: async () => {
-      // Join único: produtos + categorias em uma só query
+      // Tenta query completa: join com product_categories + filtro is_visible
       const { data, error } = await supabase
         .from("products")
         .select("*, product_categories(category_id)")
         .eq("is_visible", true)
         .order("sort_order", { ascending: true });
-      if (error) throw error;
-      return (data ?? []).map((p: any) => ({
+
+      if (!error && data) {
+        return data.map((p: any) => ({
+          ...p,
+          category_ids: (p.product_categories ?? []).map((pc: any) => pc.category_id),
+        })) as Product[];
+      }
+
+      // Fallback: sem join, sem filtro is_visible, sem sort_order (banco mínimo)
+      const { data: simple, error: e2 } = await supabase
+        .from("products")
+        .select("*");
+      if (e2) throw e2;
+      return (simple ?? []).map((p: any) => ({
         ...p,
-        category_ids: (p.product_categories ?? []).map((pc: any) => pc.category_id),
+        category_ids: p.category_id ? [p.category_id] : [],
       })) as Product[];
     }
   });
