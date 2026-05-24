@@ -137,13 +137,18 @@ export function AdminChatPanel({
               key={msg.id}
               className={cn("flex", msg.sender === "admin" ? "justify-end" : "justify-start")}
             >
-              <div className={cn(
-                "max-w-[78%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed",
-                msg.sender === "admin"
-                  ? "bg-primary text-primary-foreground rounded-br-sm"
-                  : "bg-muted text-foreground rounded-bl-sm"
-              )}>
-                {msg.message}
+              <div className="flex flex-col gap-0.5">
+                <div className={cn(
+                  "max-w-[78%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed",
+                  msg.sender === "admin"
+                    ? "bg-primary text-primary-foreground rounded-br-sm"
+                    : "bg-muted text-foreground rounded-bl-sm"
+                )}>
+                  {msg.message}
+                </div>
+                <span className="text-[10px] text-muted-foreground px-1">
+                  {new Date(msg.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                </span>
               </div>
             </div>
           ))}

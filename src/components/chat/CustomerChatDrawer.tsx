@@ -230,13 +230,18 @@ export function CustomerChatDrawer({ storeName, logoUrl }: CustomerChatDrawerPro
                     key={msg.id}
                     className={cn("flex", msg.sender === "customer" ? "justify-end" : "justify-start")}
                   >
-                    <div className={cn(
-                      "max-w-[78%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed",
-                      msg.sender === "customer"
-                        ? "bg-red-600 text-white rounded-br-sm"
-                        : "bg-gray-100 text-gray-900 rounded-bl-sm"
-                    )}>
-                      {msg.message}
+                    <div className="flex flex-col gap-0.5">
+                      <div className={cn(
+                        "max-w-[78%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed",
+                        msg.sender === "customer"
+                          ? "bg-red-600 text-white rounded-br-sm"
+                          : "bg-gray-100 text-gray-900 rounded-bl-sm"
+                      )}>
+                        {msg.message}
+                      </div>
+                      <span className="text-[10px] text-gray-400 px-1">
+                        {new Date(msg.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                      </span>
                     </div>
                   </div>
                 ))}
